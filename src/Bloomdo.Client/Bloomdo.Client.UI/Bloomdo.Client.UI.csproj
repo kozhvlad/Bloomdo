@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Avalonia" />
+		<PackageReference Include="Avalonia.Controls.MediaPlayer" />
+		<PackageReference Include="Avalonia.Diagnostics" />
+		<PackageReference Include="Avalonia.Fonts.Inter" />
+		<PackageReference Include="Avalonia.Themes.Fluent" />
+		<PackageReference Include="AvaloniaUI.DiagnosticsSupport" />
+		<PackageReference Include="CommunityToolkit.Mvvm" />
+		<PackageReference Include="ShadUI" />
+
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Bloomdo.Client.Application\Bloomdo.Client.Application.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Assets\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Update="Views\OnbordingComponents\WelcomeView.axaml.cs">
+	    <DependentUpon>WelcomeView.axaml</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+
+</Project>

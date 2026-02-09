@@ -1,0 +1,26 @@
+<Solution>
+  <Folder Name="/00_UILibs/">
+    <Project Path="../shad-ui/src/ShadUI.Demo/ShadUI.Demo.csproj" />
+    <Project Path="../shad-ui/src/ShadUI/ShadUI.csproj" />
+  </Folder>
+  <Folder Name="/01_Shared/">
+    <Project Path="src/Bloomdo.Shared/Bloomdo.Shared.csproj" Id="bb0e2996-af10-4e58-8c4f-fbc6409d5976" />
+  </Folder>
+  <Folder Name="/02_Server/">
+    <Project Path="src/Bloomdo.Server/Bloomdo.Server.Api/Bloomdo.Server.Api.csproj" Id="cc0df862-f6f9-4fb7-a2a1-a02419cb9a11" />
+    <Project Path="src/Bloomdo.Server/Bloomdo.Server.Application/Bloomdo.Server.Application.csproj" Id="a4e9eb4c-486d-4dcd-81e1-4e599bbc5b78" />
+    <Project Path="src/Bloomdo.Server/Bloomdo.Server.Domain/Bloomdo.Server.Domain.csproj" Id="105854d6-8410-4b93-b1c0-5ecc2f042c53" />
+    <Project Path="src/Bloomdo.Server/Bloomdo.Server.Infrastructure/Bloomdo.Server.Infrastructure.csproj" Id="bc1a7cfd-0b34-4b4c-9468-490e253dc493" />
+  </Folder>
+  <Folder Name="/03_Client/">
+    <Project Path="src/Bloomdo.Client/Bloomdo.Client.Android/Bloomdo.Client.Android.csproj">
+      <Deploy />
+    </Project>
+    <Project Path="src/Bloomdo.Client/Bloomdo.Client.Application/Bloomdo.Client.Application.csproj" />
+    <Project Path="src/Bloomdo.Client/Bloomdo.Client.Core/Bloomdo.Client.Core.csproj" />
+    <Project Path="src/Bloomdo.Client/Bloomdo.Client.Domain/Bloomdo.Client.Domain.csproj" />
+    <Project Path="src/Bloomdo.Client/Bloomdo.Client.Infrastructure/Bloomdo.Client.Infrastructure.csproj" />
+    <Project Path="src/Bloomdo.Client/Bloomdo.Client.Startup/Bloomdo.Client.Startup.csproj" />
+    <Project Path="src/Bloomdo.Client/Bloomdo.Client.UI/Bloomdo.Client.UI.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:onbordingComponents="clr-namespace:Bloomdo.Application.ViewModels.OnbordingComponents;assembly=Bloomdo.Client.Application"
+			 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+			 x:Class="Bloomdo.UI.OnboardingView"
+			 x:DataType="onbordingComponents:OnboardingViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="ProgressBar">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="#404040"/>
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Grid Height="4" VerticalAlignment="Center" ClipToBounds="True">
+                        <Border Name="PART_Track"
+                                Background="#404040"
+                                CornerRadius="10"
+                                Height="4"/>
+                        <Border Name="PART_Indicator"
+                                Background="White"
+                                CornerRadius="10"
+                                Height="4"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                Padding="0"
+                                BorderThickness="0"/>
+                    </Grid>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*" Margin="24">
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*" Margin="0,0,0,12">
+            <Button Grid.Column="0" Classes="Ghost" Command="{Binding PreviousStepCommand}" IsVisible="{Binding HasPrevious}">
+                <PathIcon Height="20" Width="20" Classes="Primary" Data="{StaticResource arrow_left_regular}"/>
+            </Button>
+            <ProgressBar Grid.Column="1"
+                         Minimum="0"
+                         Maximum="{Binding ProgressTotal}"
+                         Value="{Binding ProgressValue}"
+                         VerticalAlignment="Center"
+                         IsIndeterminate="False"
+                         IsVisible="{Binding ShowProgressBar}"/>
+        </Grid>
+
+        <ContentControl Grid.Row="1" Content="{Binding CurrentStep}"/>
+    </Grid>
+
+</UserControl>

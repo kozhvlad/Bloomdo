@@ -1,0 +1,57 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:onbordingComponents="clr-namespace:Bloomdo.Application.ViewModels.OnbordingComponents;assembly=Bloomdo.Client.Application"
+			 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+			 x:DataType="onbordingComponents:SetGoalsStepViewModel"
+			 x:Class="Bloomdo.UI.OnbordingComponents.SetGoalsView">
+    <UserControl.Styles>
+        <Style Selector="ToggleButton.Outline:checked">
+            <Setter Property="Background" Value="{DynamicResource SuccessColor}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SuccessColor}" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryForegroundColor}" />
+        </Style>
+        <Style Selector="ToggleButton.Default:checked">
+            <Setter Property="Background" Value="{DynamicResource SuccessColor}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SuccessColor}" />
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryForegroundColor}" />
+        </Style>
+        <Style Selector="ToggleButton.Outline:checked /template/ Border#NameHoverBackground">
+            <Setter Property="Background" Value="{DynamicResource SuccessColor}" />
+        </Style>
+        <Style Selector="ToggleButton.Default:checked /template/ Border#NameHoverBackground">
+            <Setter Property="Background" Value="{DynamicResource SuccessColor}" />
+        </Style>
+    </UserControl.Styles>
+    
+	<Grid RowDefinitions="*,Auto" Background="{DynamicResource Brush.Background}" Margin="0">
+		<!-- Goals selection -->
+		<StackPanel Grid.Row="0" Spacing="12">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Text="Choose up to 3 goals" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource Brush.Foreground}"/>
+                <TextBlock Text="{Binding SelectionCounter}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource Brush.Foreground}"/>
+            </StackPanel>
+            <ItemsControl ItemsSource="{Binding AvailableGoals}">
+				<ItemsControl.ItemTemplate>
+					<DataTemplate>
+                        <ToggleButton Padding="16,8"
+                                      Classes="Outline"
+                                      IsChecked="{Binding IsSelected}"
+                                      IsEnabled="{Binding IsEnabled}">
+                            <TextBlock Text="{Binding Name}"/>
+                        </ToggleButton>
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+				<ItemsControl.ItemsPanel>
+					<ItemsPanelTemplate>
+						<WrapPanel/>
+					</ItemsPanelTemplate>
+				</ItemsControl.ItemsPanel>
+			</ItemsControl>
+		</StackPanel>
+
+		<!-- Continue -->
+        <Button Grid.Row="1" Classes="Primary" Height="48" Margin="0,24,0,0" Command="{Binding ContinueCommand}" IsEnabled="{Binding CanContinue}">Continue</Button>
+	</Grid>
+</UserControl>

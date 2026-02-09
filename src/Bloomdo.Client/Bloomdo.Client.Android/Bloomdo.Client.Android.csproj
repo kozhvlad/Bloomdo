@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net10.0-android</TargetFramework>
+		<SupportedOSPlatformVersion>23</SupportedOSPlatformVersion>
+		<Nullable>enable</Nullable>
+		<ApplicationId>com.CompanyName.Bloomdo.Client</ApplicationId>
+		<ApplicationVersion>1</ApplicationVersion>
+		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+		<AndroidPackageFormat>apk</AndroidPackageFormat>
+		<AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<AndroidResource Include="Icon.png">
+			<Link>Resources\drawable\Icon.png</Link>
+		</AndroidResource>
+	</ItemGroup>
+
+	<ItemGroup>
+		<AvaloniaUILicenseKey Include="avln_on_key:v1:c690c4ee1365401fa363ac6635a15cde" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Avalonia.Android" />
+		<PackageReference Include="Microsoft.Maui.Essentials" />
+		<PackageReference Include="Xamarin.AndroidX.Core.SplashScreen" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Bloomdo.Client.Application\Bloomdo.Client.Application.csproj" />
+		<ProjectReference Include="..\Bloomdo.Client.Core\Bloomdo.Client.Core.csproj" />
+		<ProjectReference Include="..\Bloomdo.Client.Domain\Bloomdo.Client.Domain.csproj" />
+		<ProjectReference Include="..\Bloomdo.Client.Infrastructure\Bloomdo.Client.Infrastructure.csproj" />
+		<ProjectReference Include="..\Bloomdo.Client.Startup\Bloomdo.Client.Startup.csproj" />
+	</ItemGroup>
+</Project>

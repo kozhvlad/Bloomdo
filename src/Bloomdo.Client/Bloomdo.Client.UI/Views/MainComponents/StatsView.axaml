@@ -1,0 +1,251 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:shadui="clr-namespace:ShadUI;assembly=ShadUI"
+             xmlns:mainComponents="clr-namespace:Bloomdo.Application.ViewModels.MainComponents;assembly=Bloomdo.Client.Application"
+             xmlns:converters="clr-namespace:Bloomdo.UI.Converters"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+			 x:DataType="mainComponents:StatsViewModel"
+			 x:Class="Bloomdo.UI.MainComponents.StatsView">
+    <UserControl.Resources>
+        <converters:BoolToThicknessConverter x:Key="BoolToThicknessConverter" />
+        <converters:BoolToBrushConverter x:Key="BoolToBrushConverter" />
+        <converters:StringVisibilityConverter x:Key="StringVisibilityConverter" />
+    </UserControl.Resources>
+	<Grid Background="{DynamicResource Brush.Background}">
+		<ScrollViewer>
+			<Grid Margin="24">
+				<Grid.RowDefinitions>
+					<RowDefinition Height="Auto" />
+					<RowDefinition Height="Auto" />
+				</Grid.RowDefinitions>
+
+				<!-- Header -->
+				<StackPanel Grid.Row="0" Spacing="4" VerticalAlignment="Top">
+					<TextBlock Text="Stats"
+							   FontSize="28"
+							   FontWeight="Bold"
+							   Foreground="{DynamicResource Brush.Foreground}" />
+					<TextBlock Text="Insights into your progress"
+							   FontSize="14"
+							   Foreground="{DynamicResource Brush.Foreground}"
+							   Opacity="0.7" />
+				</StackPanel>
+
+				<!-- Content -->
+				<StackPanel Grid.Row="1" Margin="0,24,0,80" Spacing="24">
+					<!-- Main stats card -->
+					<shadui:Card HasShadow="True">
+						<Grid RowDefinitions="Auto,Auto" ColumnDefinitions="* Auto">
+							<!-- Screen time -->
+							<StackPanel Grid.Row="0" Grid.ColumnSpan="2" Spacing="4">
+								<TextBlock Text="{Binding ScreenTimeToday}"
+										   FontSize="32"
+										   FontWeight="SemiBold"
+										   HorizontalAlignment="Center"
+										   Foreground="{DynamicResource Brush.Foreground}" />
+								<TextBlock Text="SCREEN TIME TODAY"
+										   FontSize="12"
+										   HorizontalAlignment="Center"
+										   Foreground="{DynamicResource Brush.Foreground}"
+										   Opacity="0.6" />
+							</StackPanel>
+
+							<!-- Most used apps -->
+							<Button Grid.Row="1" Grid.Column="0" 
+									Margin="0,24,0,0" 
+									Padding="0"
+									Background="Transparent"
+									BorderThickness="0"
+									HorizontalContentAlignment="Left"
+									Command="{Binding ShowMostUsedPopupCommand}">
+								<Button.Styles>
+									<Style Selector="Button:pointerover /template/ ContentPresenter">
+										<Setter Property="Background" Value="Transparent" />
+									</Style>
+								</Button.Styles>
+								<StackPanel Spacing="8" HorizontalAlignment="Left">
+									<TextBlock Text="MOST USED"
+											   FontSize="11"
+											   Foreground="{DynamicResource Brush.Foreground}"
+											   Opacity="0.6" />
+									<ItemsControl ItemsSource="{Binding MostUsedApps}">
+										<ItemsControl.ItemsPanel>
+											<ItemsPanelTemplate>
+												<StackPanel Orientation="Horizontal" Spacing="8" />
+											</ItemsPanelTemplate>
+										</ItemsControl.ItemsPanel>
+										<ItemsControl.ItemTemplate>
+											<DataTemplate>
+												<shadui:Avatar Width="32" Height="32" Fallback="{Binding Icon}" />
+											</DataTemplate>
+										</ItemsControl.ItemTemplate>
+									</ItemsControl>
+								</StackPanel>
+							</Button>
+
+							<!-- Pickups -->
+							<StackPanel Grid.Row="1" Grid.Column="1" Margin="0,24,0,0" Spacing="8" HorizontalAlignment="Right">
+								<TextBlock Text="PICKUPS"
+										   FontSize="11"
+										   HorizontalAlignment="Right"
+										   Foreground="{DynamicResource Brush.Foreground}"
+										   Opacity="0.6" />
+								<Grid Height="32">
+									<TextBlock Text="{Binding Pickups}"
+											   FontSize="20"
+											   FontWeight="SemiBold"
+											   HorizontalAlignment="Right"
+											   VerticalAlignment="Center"
+											   Foreground="{DynamicResource Brush.Foreground}" />
+								</Grid>
+							</StackPanel>
+						</Grid>
+					</shadui:Card>
+
+					<!-- Calendar -->
+					<StackPanel Spacing="16">
+						<!-- Month navigation -->
+						<Grid HorizontalAlignment="Center" ColumnDefinitions="Auto,Auto,Auto">
+							<Button Grid.Column="0" 
+									Command="{Binding PreviousMonthCommand}" 
+									Classes="Ghost" 
+									Padding="12,8"
+									Margin="0,0,16,0">
+								<TextBlock Text="&lt;" FontSize="16" />
+							</Button>
+							
+							<TextBlock Grid.Column="1" 
+									   Text="{Binding CurrentMonthTitle}"
+									   FontSize="18"
+									   FontWeight="SemiBold"
+									   VerticalAlignment="Center"
+									   Foreground="{DynamicResource Brush.Foreground}"
+									   MinWidth="200"
+									   TextAlignment="Center" />
+							
+							<Button Grid.Column="2" 
+									Command="{Binding NextMonthCommand}" 
+									Classes="Ghost" 
+									Padding="12,8"
+									Margin="16,0,0,0">
+								<TextBlock Text=">" FontSize="16" />
+							</Button>
+						</Grid>
+
+						<!-- Calendar Grid -->
+						<StackPanel Spacing="8">
+							<!-- Week day headers -->
+							<Grid ColumnDefinitions="*,*,*,*,*,*,*">
+								<TextBlock Grid.Column="0" Text="Mon" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Center" 
+										   Foreground="{DynamicResource Brush.Foreground}" Opacity="0.7" />
+								<TextBlock Grid.Column="1" Text="Tue" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Center" 
+										   Foreground="{DynamicResource Brush.Foreground}" Opacity="0.7" />
+								<TextBlock Grid.Column="2" Text="Wed" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Center" 
+										   Foreground="{DynamicResource Brush.Foreground}" Opacity="0.7" />
+								<TextBlock Grid.Column="3" Text="Thu" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Center" 
+										   Foreground="{DynamicResource Brush.Foreground}" Opacity="0.7" />
+								<TextBlock Grid.Column="4" Text="Fri" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Center" 
+										   Foreground="{DynamicResource Brush.Foreground}" Opacity="0.7" />
+								<TextBlock Grid.Column="5" Text="Sat" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Center" 
+										   Foreground="{DynamicResource Brush.Foreground}" Opacity="0.5" />
+								<TextBlock Grid.Column="6" Text="Sun" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Center" 
+										   Foreground="{DynamicResource Brush.Foreground}" Opacity="0.5" />
+							</Grid>
+
+							<!-- Weeks -->
+							<ItemsControl ItemsSource="{Binding Weeks}">
+								<ItemsControl.ItemTemplate>
+									<DataTemplate>
+										<ItemsControl ItemsSource="{Binding Days}" Margin="0,4">
+											<ItemsControl.ItemsPanel>
+												<ItemsPanelTemplate>
+													<UniformGrid Rows="1" Columns="7" />
+												</ItemsPanelTemplate>
+											</ItemsControl.ItemsPanel>
+											<ItemsControl.ItemTemplate>
+												<DataTemplate>
+                                                    <Border
+                                                        Margin="2"
+                                                        CornerRadius="8"
+                                                        BorderThickness="{Binding IsToday, Converter={StaticResource BoolToThicknessConverter}}"
+                                                        BorderBrush="{Binding IsToday, Converter={StaticResource BoolToBrushConverter}}">
+														<shadui:Card HasShadow="True"
+																	 Padding="8"
+																	 IsEnabled="{Binding IsCurrentMonth}">
+															<shadui:Card.Styles>
+																<Style Selector="shadui|Card">
+																	<Setter Property="Background" Value="{DynamicResource Brush.Card}" />
+                                                                    <Setter Property="BorderThickness" Value="0" />
+                                                                    <Setter Property="BorderBrush" Value="Transparent" />
+																</Style>
+																<Style Selector="shadui|Card[IsEnabled=False]">
+																	<Setter Property="Background" Value="{DynamicResource Brush.Ghost}" />
+																	<Setter Property="Opacity" Value="0.4" />
+																</Style>
+															</shadui:Card.Styles>
+
+															<StackPanel Spacing="4" HorizontalAlignment="Center">
+																<TextBlock Text="{Binding DayNumber}"
+																		   FontSize="14"
+																		   FontWeight="Medium"
+																		   HorizontalAlignment="Center" />
+																<!-- Placeholder for status icon/image -->
+																<Panel Height="16" Width="16">
+																	<Image Source="{Binding StatusIcon}"
+																		   Width="16" 
+																		   Height="16"
+																		   HorizontalAlignment="Center"
+																		   Opacity="0.8"
+																		   IsVisible="{Binding StatusIcon, Converter={StaticResource StringVisibilityConverter}}" />
+																</Panel>
+															</StackPanel>
+														</shadui:Card>
+													</Border>
+												</DataTemplate>
+											</ItemsControl.ItemTemplate>
+										</ItemsControl>
+									</DataTemplate>
+								</ItemsControl.ItemTemplate>
+							</ItemsControl>
+						</StackPanel>
+					</StackPanel>
+				</StackPanel>
+			</Grid>
+		</ScrollViewer>
+
+		<!-- Popup Overlay -->
+		<Grid IsVisible="{Binding IsMostUsedPopupVisible}" Background="#80000000">
+			<Button Background="Transparent" 
+					HorizontalAlignment="Stretch" 
+					VerticalAlignment="Stretch" 
+					Command="{Binding HideMostUsedPopupCommand}" />
+			<shadui:Card HorizontalAlignment="Center" VerticalAlignment="Center" Width="300" MaxHeight="500" Padding="24">
+				<Grid RowDefinitions="Auto,*">
+					<Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,16">
+						<TextBlock Text="Most Used Apps" FontSize="18" FontWeight="Bold" />
+						<Button Grid.Column="1" Command="{Binding HideMostUsedPopupCommand}" 
+								Background="Transparent" BorderThickness="0" Padding="4">
+                            <PathIcon Data="{StaticResource dismiss_regular}" Width="12" Height="12" Foreground="{DynamicResource Brush.Foreground}" />
+                        </Button>
+					</Grid>
+					
+                    <ScrollViewer Grid.Row="1">
+					    <ItemsControl ItemsSource="{Binding AllAppsUsage}">
+						    <ItemsControl.ItemTemplate>
+							    <DataTemplate>
+								    <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,8">
+									    <shadui:Avatar Grid.Column="0" Width="32" Height="32" Fallback="{Binding Icon}" Margin="0,0,12,0" />
+									    <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" FontWeight="Medium" />
+									    <TextBlock Grid.Column="2" Text="{Binding Duration}" VerticalAlignment="Center" Opacity="0.7" />
+								    </Grid>
+							    </DataTemplate>
+						    </ItemsControl.ItemTemplate>
+					    </ItemsControl>
+                    </ScrollViewer>
+				</Grid>
+			</shadui:Card>
+		</Grid>
+	</Grid>
+</UserControl>

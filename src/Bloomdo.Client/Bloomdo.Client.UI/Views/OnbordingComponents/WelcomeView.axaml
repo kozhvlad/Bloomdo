@@ -1,0 +1,37 @@
+<UserControl
+    x:Class="Bloomdo.UI.OnbordingComponents.WelcomeView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:onbordingComponents="clr-namespace:Bloomdo.Application.ViewModels.OnbordingComponents;assembly=Bloomdo.Client.Application"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    x:DataType="onbordingComponents:WelcomeStepViewModel"
+    mc:Ignorable="d">
+    
+    <Grid RowDefinitions="2*,Auto,Auto" Background="{DynamicResource Brush.Background}" Margin="0">
+        <!-- Hero image placeholder taking ~2/3 top -->
+        <Border Grid.Row="0" Background="{DynamicResource Brush.Surface}" CornerRadius="24" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1">
+            <TextBlock Text="[ Illustration ]" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource Brush.Foreground.Subtle}"/>
+        </Border>
+
+        <!-- Copy -->
+        <StackPanel Grid.Row="1" Margin="0,24,0,0" Spacing="0">
+            <TextBlock Text="Welcome to Bloomdo"
+                       Foreground="{DynamicResource Brush.Foreground}"
+                       FontSize="28"
+                       FontWeight="Bold"/>
+            <TextBlock Text="Here you`ll meet your companion who will help you climb to the peak of your life."
+                       Foreground="{DynamicResource Brush.Foreground.Subtle}"
+                       FontSize="16"
+                       TextWrapping="Wrap" Margin="0,8,0,0"/>
+        </StackPanel>
+
+        <!-- Primary continue button -->
+        <Button Grid.Row="2" Classes="Primary" Height="48" Margin="0,24,0,0" Command="{Binding ContinueCommand}">
+            Get Started
+        </Button>
+    </Grid>
+    
+</UserControl>

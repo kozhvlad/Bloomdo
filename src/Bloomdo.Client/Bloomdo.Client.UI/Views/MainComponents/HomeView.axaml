@@ -1,0 +1,23 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:mainComponents="clr-namespace:Bloomdo.Application.ViewModels.MainComponents;assembly=Bloomdo.Client.Application"
+			 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+			 x:DataType="mainComponents:HomeViewModel"
+			 x:Class="Bloomdo.UI.MainComponents.HomeView">
+	<Grid Background="{DynamicResource Brush.Background}">
+		<StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="16">
+			<TextBlock Text="{Binding WelcomeMessage}" 
+					   FontSize="32" 
+					   FontWeight="Bold" 
+					   Foreground="{DynamicResource Brush.Foreground}"
+					   HorizontalAlignment="Center"/>
+			<TextBlock Text="Your productivity journey starts here" 
+					   FontSize="16" 
+					   Foreground="{DynamicResource Brush.Foreground}"
+					   Opacity="0.7"
+					   HorizontalAlignment="Center"/>
+		</StackPanel>
+	</Grid>
+</UserControl>

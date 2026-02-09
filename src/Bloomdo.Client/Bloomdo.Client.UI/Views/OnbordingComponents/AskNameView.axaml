@@ -1,0 +1,24 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:onbordingComponents="clr-namespace:Bloomdo.Application.ViewModels.OnbordingComponents;assembly=Bloomdo.Client.Application"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:DataType="onbordingComponents:AskNameStepViewModel"
+             x:Class="Bloomdo.UI.OnbordingComponents.AskNameView">
+    <Design.DataContext>
+        <onbordingComponents:AskNameStepViewModel />
+    </Design.DataContext>
+
+    <Grid RowDefinitions="*,Auto" Background="{DynamicResource Brush.Background}" Margin="0">
+        <!-- Content -->
+        <StackPanel Grid.Row="0" Spacing="12" VerticalAlignment="Center">
+            <TextBlock Text="What`s your name?" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource Brush.Foreground}"/>
+            <TextBox Text="{Binding Name, Mode=TwoWay}" Watermark="Enter your name"/>
+            <TextBlock Text="Name can`t be empty" Foreground="{DynamicResource Brush.Error}" IsVisible="{Binding IsInvalid}"/>
+        </StackPanel>
+
+        <!-- Next button -->
+        <Button Grid.Row="1" Classes="Primary" Height="48" Margin="0,24,0,0" Command="{Binding ContinueCommand}" IsEnabled="{Binding IsValid}">Next</Button>
+    </Grid>
+</UserControl>

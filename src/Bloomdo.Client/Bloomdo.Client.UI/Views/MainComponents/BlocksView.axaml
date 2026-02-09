@@ -1,0 +1,140 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:shad="clr-namespace:ShadUI;assembly=ShadUI"
+			 xmlns:mainComponents="clr-namespace:Bloomdo.Application.ViewModels.MainComponents;assembly=Bloomdo.Client.Application"
+			 mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="800"
+			 x:DataType="mainComponents:BlocksViewModel"
+			 x:Class="Bloomdo.UI.MainComponents.BlocksView">
+	<Grid Background="{DynamicResource Brush.Background}">
+		
+		<!-- Main Content -->
+		<ScrollViewer>
+			<StackPanel Margin="24" Spacing="24">
+				<TextBlock Text="Block apps with Limits or Schedules." 
+						   FontSize="28" 
+						   FontWeight="Bold" 
+						   TextWrapping="Wrap"
+						   Foreground="{DynamicResource Brush.Foreground}"/>
+
+				<ItemsControl ItemsSource="{Binding Blockers}">
+					<ItemsControl.ItemTemplate>
+						<DataTemplate>
+							<shad:Card Margin="0,0,0,16" Padding="0">
+								<Grid RowDefinitions="Auto,Auto" Margin="16">
+									<Grid ColumnDefinitions="*,Auto" Margin="0,0,0,12">
+										<StackPanel Spacing="4">
+											<TextBlock Text="{Binding Title}" FontSize="18" FontWeight="SemiBold"/>
+											<StackPanel Orientation="Horizontal" Spacing="8">
+												<PathIcon Data="{x:Static shad:Icons.DateTime}" Height="14" Width="14" Opacity="0.7"/>
+												<TextBlock Text="{Binding Time}" Opacity="0.7" FontSize="14"/>
+											</StackPanel>
+										</StackPanel>
+										<ToggleSwitch IsChecked="{Binding IsActive}" OnContent="" OffContent="" Grid.Column="1"/>
+									</Grid>
+									
+									<StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" IsVisible="{Binding IsLocked}">
+										<PathIcon Data="{x:Static shad:Icons.Warning}" Height="14" Width="14" Foreground="Red"/>
+										<TextBlock Text="Apps Blocked" Foreground="Red" FontSize="12" VerticalAlignment="Center"/>
+									</StackPanel>
+								</Grid>
+							</shad:Card>
+						</DataTemplate>
+					</ItemsControl.ItemTemplate>
+				</ItemsControl>
+			</StackPanel>
+		</ScrollViewer>
+
+		<!-- Dim Overlay -->
+		<Border Background="#B3000000" IsVisible="{Binding IsMenuOpen}" IsHitTestVisible="{Binding IsMenuOpen}">
+			<Border.Transitions>
+				<Transitions>
+					<DoubleTransition Property="Opacity" Duration="0:0:0.2"/>
+				</Transitions>
+			</Border.Transitions>
+		</Border>
+
+		<!-- FAB Menu -->
+		<StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,24,100" Spacing="24" IsVisible="{Binding IsMenuOpen}">
+			
+			<!-- Block Now -->
+			<Button Classes="Ghost" HorizontalAlignment="Right" Padding="8" Height="NaN" HorizontalContentAlignment="Right" Background="Transparent">
+				<StackPanel Orientation="Horizontal" Spacing="16">
+					<StackPanel HorizontalAlignment="Right" VerticalAlignment="Center">
+						<TextBlock Text="Block Now" FontWeight="Bold" HorizontalAlignment="Right" Foreground="White"/>
+						<TextBlock Text="Block apps for a set duration" FontSize="12" Opacity="0.7" HorizontalAlignment="Right" Foreground="White"/>
+						<TextBlock Text="starting now" FontSize="12" Opacity="0.7" HorizontalAlignment="Right" Foreground="White"/>
+					</StackPanel>
+					<Border Background="#FF9800" CornerRadius="25" Width="50" Height="50">
+						<PathIcon Data="{x:Static shad:Icons.Warning}" Foreground="White" Height="24" Width="24"/>
+					</Border>
+				</StackPanel>
+			</Button>
+
+			<!-- Schedule Block -->
+			<Button Classes="Ghost" HorizontalAlignment="Right" Padding="8" Height="NaN" HorizontalContentAlignment="Right" Background="Transparent">
+				<StackPanel Orientation="Horizontal" Spacing="16">
+					<StackPanel HorizontalAlignment="Right" VerticalAlignment="Center">
+						<TextBlock Text="Schedule Block" FontWeight="Bold" HorizontalAlignment="Right" Foreground="White"/>
+						<TextBlock Text="Block on the times and days" FontSize="12" Opacity="0.7" HorizontalAlignment="Right" Foreground="White"/>
+						<TextBlock Text="you select" FontSize="12" Opacity="0.7" HorizontalAlignment="Right" Foreground="White"/>
+					</StackPanel>
+					<Border Background="#009688" CornerRadius="25" Width="50" Height="50">
+						<PathIcon Data="{x:Static shad:Icons.Calendar}" Foreground="White" Height="24" Width="24"/>
+					</Border>
+				</StackPanel>
+			</Button>
+
+			<!-- Set Limits -->
+			<Button Classes="Ghost" HorizontalAlignment="Right" Padding="8" Height="NaN" HorizontalContentAlignment="Right" Background="Transparent">
+				<StackPanel Orientation="Horizontal" Spacing="16">
+					<StackPanel HorizontalAlignment="Right" VerticalAlignment="Center">
+						<TextBlock Text="Set Limits" FontWeight="Bold" HorizontalAlignment="Right" Foreground="White"/>
+						<TextBlock Text="Set daily usage limits" FontSize="12" Opacity="0.7" HorizontalAlignment="Right" Foreground="White"/>
+					</StackPanel>
+					<Border Background="#673AB7" CornerRadius="25" Width="50" Height="50">
+						<PathIcon Data="{x:Static shad:Icons.DateTime}" Foreground="White" Height="24" Width="24"/>
+					</Border>
+				</StackPanel>
+			</Button>
+
+			<!-- Blocking -->
+			<Button Classes="Ghost" HorizontalAlignment="Right" Padding="8" Height="NaN" HorizontalContentAlignment="Right" Background="Transparent">
+				<StackPanel Orientation="Horizontal" Spacing="16">
+					<StackPanel HorizontalAlignment="Right" VerticalAlignment="Center">
+						<TextBlock Text="Bloomdo Blocking" FontWeight="Bold" HorizontalAlignment="Right" Foreground="White"/>
+						<TextBlock Text="Block apps until you complete your" FontSize="12" Opacity="0.7" HorizontalAlignment="Right" Foreground="White"/>
+						<TextBlock Text="daily Bloomdo" FontSize="12" Opacity="0.7" HorizontalAlignment="Right" Foreground="White"/>
+					</StackPanel>
+					<Border Background="#3F51B5" CornerRadius="25" Width="50" Height="50">
+						<PathIcon Data="{x:Static shad:Icons.Marker}" Foreground="White" Height="24" Width="24"/>
+					</Border>
+				</StackPanel>
+			</Button>
+
+		</StackPanel>
+
+		<!-- FAB -->
+		<Button Command="{Binding ToggleMenuCommand}" 
+				VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="24"
+				CornerRadius="50" Width="64" Height="64"
+				Background="White" Foreground="Black">
+			<Panel>
+				<!-- Plus Icon (Cross rotated 45deg) -->
+				<PathIcon Data="{x:Static shad:Icons.Cross}" 
+						  Height="24" Width="24" 
+						  IsVisible="{Binding !IsMenuOpen}">
+					<PathIcon.RenderTransform>
+						<RotateTransform Angle="45"/>
+					</PathIcon.RenderTransform>
+				</PathIcon>
+				
+				<!-- Close Icon (Cross) -->
+				<PathIcon Data="{x:Static shad:Icons.Cross}" 
+						  Height="24" Width="24" 
+						  IsVisible="{Binding IsMenuOpen}"/>
+			</Panel>
+		</Button>
+	</Grid>
+</UserControl>

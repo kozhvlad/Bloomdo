@@ -1,0 +1,73 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:shad="clr-namespace:ShadUI;assembly=ShadUI"
+			 xmlns:mainComponents="clr-namespace:Bloomdo.Application.ViewModels.MainComponents;assembly=Bloomdo.Client.Application"
+			 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="800"
+			 x:DataType="mainComponents:ProfileViewModel"
+			 x:Class="Bloomdo.UI.MainComponents.ProfileView">
+	<ScrollViewer>
+		<Grid Background="{DynamicResource Brush.Background}" Margin="24" RowDefinitions="Auto,Auto,Auto,Auto">
+
+			<!-- Header -->
+			<StackPanel Grid.Row="0" Spacing="16" HorizontalAlignment="Center" Margin="0,0,0,32">
+				<Border CornerRadius="100" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" HorizontalAlignment="Center">
+					<shad:Avatar Height="100" Width="100" Fallback="{Binding Initials}" />
+				</Border>
+				<StackPanel Spacing="4" HorizontalAlignment="Center">
+					<TextBlock Text="{Binding Name}" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Foreground}"/>
+					<TextBlock Text="{Binding Username}" Opacity="0.7" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Foreground}"/>
+					<shad:Badge Classes="Secondary" HorizontalAlignment="Center" Margin="0,8,0,0">
+						<TextBlock Text="{Binding Level}" />
+					</shad:Badge>
+				</StackPanel>
+			</StackPanel>
+
+			<!-- Stats -->
+			<shad:Card Grid.Row="1" Margin="0,0,0,24">
+				<shad:Card.Header>
+					<shad:CardTitle>Statistics</shad:CardTitle>
+				</shad:Card.Header>
+				<Grid ColumnDefinitions="*,*,*" Margin="0,16">
+					<StackPanel Grid.Column="0" Spacing="4" HorizontalAlignment="Center">
+						<TextBlock Text="{Binding StreakDays}" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Foreground}"/>
+						<TextBlock Text="Day Streak" FontSize="12" Opacity="0.7" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Foreground}"/>
+					</StackPanel>
+					<StackPanel Grid.Column="1" Spacing="4" HorizontalAlignment="Center">
+						<TextBlock Text="{Binding TasksCompleted}" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Foreground}"/>
+						<TextBlock Text="Tasks Done" FontSize="12" Opacity="0.7" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Foreground}"/>
+					</StackPanel>
+					<StackPanel Grid.Column="2" Spacing="4" HorizontalAlignment="Center">
+						<TextBlock Text="{Binding FocusHours}" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Foreground}"/>
+						<TextBlock Text="Focus Hours" FontSize="12" Opacity="0.7" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Foreground}"/>
+					</StackPanel>
+				</Grid>
+			</shad:Card>
+
+			<!-- Achievements -->
+			<shad:Card Grid.Row="2" Margin="0,0,0,24">
+				<shad:Card.Header>
+					<StackPanel>
+						<shad:CardTitle>Achievements</shad:CardTitle>
+						<shad:CardDescription>Recent awards and badges</shad:CardDescription>
+					</StackPanel>
+				</shad:Card.Header>
+				<WrapPanel Margin="0,16">
+					<shad:Badge Classes="Outline" Margin="0,0,8,8">Early Bird</shad:Badge>
+					<shad:Badge Classes="Outline" Margin="0,0,8,8">Task Master</shad:Badge>
+					<shad:Badge Classes="Outline" Margin="0,0,8,8">7 Day Streak</shad:Badge>
+					<shad:Badge Classes="Outline" Margin="0,0,8,8">Focus Guru</shad:Badge>
+				</WrapPanel>
+			</shad:Card>
+
+			<!-- Actions -->
+			<StackPanel Grid.Row="3" Spacing="12">
+				<Button Content="Edit Profile" Classes="Outline" HorizontalAlignment="Stretch"/>
+				<Button Content="Account Settings" Classes="Ghost" HorizontalAlignment="Stretch"/>
+				<Button Content="Log Out" Classes="Destructive" HorizontalAlignment="Stretch"/>
+			</StackPanel>
+
+		</Grid>
+	</ScrollViewer>
+</UserControl>
