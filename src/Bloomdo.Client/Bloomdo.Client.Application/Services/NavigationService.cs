@@ -1,12 +1,12 @@
-﻿using Bloomdo.Application.ViewModels;
-using Bloomdo.Application.ViewModels.MainComponents;
-using Bloomdo.Core.Attributes;
-using Bloomdo.Core.Interfaces;
+﻿using System.Diagnostics;
 using System.Reflection;
+using Bloomdo.Client.Application.ViewModels;
+using Bloomdo.Client.Application.ViewModels.MainComponents;
+using Bloomdo.Client.Core.Attributes;
+using Bloomdo.Client.Core.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
-using System.Diagnostics;
 
-namespace Bloomdo.Application.Services;
+namespace Bloomdo.Client.Application.Services;
 
 public class NavigationService(
     IServiceProvider serviceProvider,

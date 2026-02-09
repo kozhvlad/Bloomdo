@@ -1,6 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace Bloomdo.Application.ViewModels.Items;
+namespace Bloomdo.Client.Application.ViewModels.Items;
 
 public partial class MostUsedAppViewModel : ObservableObject
 {

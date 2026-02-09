@@ -1,7 +1,7 @@
-﻿using Bloomdo.Core.Interfaces;
+﻿using Bloomdo.Client.Core.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace Bloomdo.Application.ViewModels;
+namespace Bloomdo.Client.Application.ViewModels;
 
 public class PageViewModel : ObservableObject, IPage
 {

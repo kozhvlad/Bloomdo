@@ -1,7 +1,7 @@
-﻿using Bloomdo.Core.Interfaces;
+﻿using Bloomdo.Client.Core.Interfaces;
 using Microsoft.Maui.Storage;
 
-namespace Bloomdo.Infrastructure.Services;
+namespace Bloomdo.Client.Infrastructure.Services;
 
 public class AccessTokenManager : IAccessTokenManager
 {

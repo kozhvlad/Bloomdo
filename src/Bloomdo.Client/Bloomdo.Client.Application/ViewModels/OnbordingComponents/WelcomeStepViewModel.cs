@@ -1,6 +1,6 @@
 using CommunityToolkit.Mvvm.Input;
 
-namespace Bloomdo.Application.ViewModels.OnbordingComponents;
+namespace Bloomdo.Client.Application.ViewModels.OnbordingComponents;
 
 public partial class WelcomeStepViewModel : PageViewModel
 {

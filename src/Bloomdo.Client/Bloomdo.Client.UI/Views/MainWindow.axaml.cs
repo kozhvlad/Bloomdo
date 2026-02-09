@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace Bloomdo.UI;
+namespace Bloomdo.Client.UI;
 
 public partial class MainWindow : Window
 {

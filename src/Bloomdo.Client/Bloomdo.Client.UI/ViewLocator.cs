@@ -1,13 +1,13 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Controls.Templates;
-using Bloomdo.Application.ViewModels;
-using Bloomdo.Application.ViewModels.OnbordingComponents;
-using Bloomdo.Application.ViewModels.MainComponents;
-using Bloomdo.UI.OnbordingComponents;
-using Bloomdo.UI.MainComponents;
+using Bloomdo.Client.Application.ViewModels;
+using Bloomdo.Client.Application.ViewModels.MainComponents;
+using Bloomdo.Client.Application.ViewModels.OnbordingComponents;
+using Bloomdo.Client.UI.MainComponents;
+using Bloomdo.Client.UI.OnbordingComponents;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace Bloomdo.UI;
+namespace Bloomdo.Client.UI;
 
 public class ViewLocator : IDataTemplate
 {

@@ -1,8 +1,8 @@
-﻿using Bloomdo.Core.Interfaces;
+﻿using System.Diagnostics;
+using Bloomdo.Client.Core.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
-using System.Diagnostics;
 
-namespace Bloomdo.Application.ViewModels;
+namespace Bloomdo.Client.Application.ViewModels;
 
 public partial class ShellViewModel : ObservableObject
 {

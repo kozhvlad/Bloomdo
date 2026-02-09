@@ -1,4 +1,4 @@
-namespace Bloomdo.Core.Models;
+namespace Bloomdo.Client.Core.Models;
 
 public sealed class AppUsageInfo
 {

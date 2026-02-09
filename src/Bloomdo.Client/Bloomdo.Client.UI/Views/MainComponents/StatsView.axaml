@@ -3,11 +3,11 @@
 			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 			 xmlns:shadui="clr-namespace:ShadUI;assembly=ShadUI"
-             xmlns:mainComponents="clr-namespace:Bloomdo.Application.ViewModels.MainComponents;assembly=Bloomdo.Client.Application"
-             xmlns:converters="clr-namespace:Bloomdo.UI.Converters"
+             xmlns:converters="clr-namespace:Bloomdo.Client.UI.Converters"
+             xmlns:mainComponents1="clr-namespace:Bloomdo.Client.Application.ViewModels.MainComponents;assembly=Bloomdo.Client.Application"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
-			 x:DataType="mainComponents:StatsViewModel"
-			 x:Class="Bloomdo.UI.MainComponents.StatsView">
+			 x:DataType="mainComponents1:StatsViewModel"
+			 x:Class="Bloomdo.Client.UI.MainComponents.StatsView">
     <UserControl.Resources>
         <converters:BoolToThicknessConverter x:Key="BoolToThicknessConverter" />
         <converters:BoolToBrushConverter x:Key="BoolToBrushConverter" />

@@ -2,10 +2,10 @@
 			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-			 xmlns:mainComponents="clr-namespace:Bloomdo.Application.ViewModels.MainComponents;assembly=Bloomdo.Client.Application"
+			 xmlns:mainComponents1="clr-namespace:Bloomdo.Client.Application.ViewModels.MainComponents;assembly=Bloomdo.Client.Application"
 			 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-			 x:DataType="mainComponents:HomeViewModel"
-			 x:Class="Bloomdo.UI.MainComponents.HomeView">
+			 x:DataType="mainComponents1:HomeViewModel"
+			 x:Class="Bloomdo.Client.UI.MainComponents.HomeView">
 	<Grid Background="{DynamicResource Brush.Background}">
 		<StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="16">
 			<TextBlock Text="{Binding WelcomeMessage}" 

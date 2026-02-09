@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace Bloomdo.UI.MainComponents;
+namespace Bloomdo.Client.UI.MainComponents;
 
 public partial class HomeView : UserControl
 {

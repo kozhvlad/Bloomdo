@@ -1,17 +1,16 @@
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
-using Bloomdo.Core.Interfaces;
-using Microsoft.Extensions.DependencyInjection;
-using System.Linq;
-using Bloomdo.UI;
 using Avalonia.Styling;
-using Bloomdo.Application.ViewModels;
-using Bloomdo.Application.ViewModels.MainComponents;
-using Bloomdo.Application.ViewModels.OnbordingComponents;
+using Bloomdo.Client.Application.ViewModels;
+using Bloomdo.Client.Application.ViewModels.OnbordingComponents;
+using Bloomdo.Client.Core.Interfaces;
+using Bloomdo.Client.UI;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace Bloomdo.Startup;
+namespace Bloomdo.Client.Startup;
 
 public partial class App : Avalonia.Application
 {

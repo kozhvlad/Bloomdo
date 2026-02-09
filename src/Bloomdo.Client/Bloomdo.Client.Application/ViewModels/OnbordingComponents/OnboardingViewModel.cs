@@ -1,10 +1,10 @@
-using Bloomdo.Core.Interfaces;
+using System.Diagnostics;
+using Bloomdo.Client.Core.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
-using System.Diagnostics;
 
-namespace Bloomdo.Application.ViewModels.OnbordingComponents;
+namespace Bloomdo.Client.Application.ViewModels.OnbordingComponents;
 
 public partial class OnboardingViewModel : PageViewModel
 {

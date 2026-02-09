@@ -2,12 +2,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:onbordingComponents="clr-namespace:Bloomdo.Application.ViewModels.OnbordingComponents;assembly=Bloomdo.Client.Application"
+             xmlns:onbordingComponents1="clr-namespace:Bloomdo.Client.Application.ViewModels.OnbordingComponents;assembly=Bloomdo.Client.Application"
              mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:DataType="onbordingComponents:AskNameStepViewModel"
-             x:Class="Bloomdo.UI.OnbordingComponents.AskNameView">
+             x:DataType="onbordingComponents1:AskNameStepViewModel"
+             x:Class="Bloomdo.Client.UI.OnbordingComponents.AskNameView">
     <Design.DataContext>
-        <onbordingComponents:AskNameStepViewModel />
+        <onbordingComponents1:AskNameStepViewModel />
     </Design.DataContext>
 
     <Grid RowDefinitions="*,Auto" Background="{DynamicResource Brush.Background}" Margin="0">

@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace Bloomdo.UI.OnbordingComponents;
+namespace Bloomdo.Client.UI.OnbordingComponents;
 
 public partial class SetGoalsView : UserControl
 {

@@ -1,4 +1,4 @@
-﻿namespace Bloomdo.Application.ViewModels;
+﻿namespace Bloomdo.Client.Application.ViewModels;
 
 public class LoginViewModel : PageViewModel
 {

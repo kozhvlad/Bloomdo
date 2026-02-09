@@ -1,4 +1,4 @@
-﻿namespace Bloomdo.Core.Interfaces;
+﻿namespace Bloomdo.Client.Core.Interfaces;
 
 public interface IAccessTokenManager
 {

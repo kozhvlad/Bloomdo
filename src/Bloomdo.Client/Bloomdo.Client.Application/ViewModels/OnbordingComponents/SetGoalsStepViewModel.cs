@@ -1,8 +1,8 @@
-using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
-using Bloomdo.Application.ViewModels.Items;
+using Bloomdo.Client.Application.ViewModels.Items;
+using CommunityToolkit.Mvvm.Input;
 
-namespace Bloomdo.Application.ViewModels.OnbordingComponents;
+namespace Bloomdo.Client.Application.ViewModels.OnbordingComponents;
 
 public partial class SetGoalsStepViewModel : PageViewModel
 {

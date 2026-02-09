@@ -1,9 +1,9 @@
+using System.Collections.ObjectModel;
+using Bloomdo.Client.Application.ViewModels.Items;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using System.Collections.ObjectModel;
-using Bloomdo.Application.ViewModels.Items;
 
-namespace Bloomdo.Application.ViewModels.MainComponents;
+namespace Bloomdo.Client.Application.ViewModels.MainComponents;
 
 public partial class BlocksViewModel : PageViewModel
 {

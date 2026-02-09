@@ -1,6 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace Bloomdo.Application.ViewModels.MainComponents;
+namespace Bloomdo.Client.Application.ViewModels.MainComponents;
 
 public partial class ProfileViewModel : PageViewModel
 {

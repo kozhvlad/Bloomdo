@@ -3,13 +3,13 @@ using Android.Content.PM;
 using Android.OS;
 using Avalonia;
 using Avalonia.Android;
-using Bloomdo.Startup;
-using Microsoft.Maui.ApplicationModel;
-using Bloomdo.Core.Interfaces;
-using Bloomdo.Android.Services;
+using Bloomdo.Client.Android.Services;
+using Bloomdo.Client.Core.Interfaces;
+using Bloomdo.Client.Startup;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Maui.ApplicationModel;
 
-namespace Bloomdo.Android;
+namespace Bloomdo.Client.Android;
 
 [Activity(
     Label = "Bloomdo.Client.Android",

@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace Bloomdo.Infrastructure.DatabaseContexts;
+namespace Bloomdo.Client.Infrastructure.DatabaseContexts;
 
 public class LocalDatabaseContext : DbContext
 {

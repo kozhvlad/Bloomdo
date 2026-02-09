@@ -1,10 +1,9 @@
-using Bloomdo.Core.Models;
+using Bloomdo.Client.Core.Models;
 
-namespace Bloomdo.Core.Interfaces
+namespace Bloomdo.Client.Core.Interfaces;
+
+public interface IAppUsageService
 {
-    public interface IAppUsageService
-    {
-        Task<IReadOnlyList<AppUsageInfo>> GetTodayUsageAsync();
-        Task<int> GetPickupsTodayAsync();
-    }
+    Task<IReadOnlyList<AppUsageInfo>> GetTodayUsageAsync();
+    Task<int> GetPickupsTodayAsync();
 }

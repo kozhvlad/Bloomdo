@@ -11,28 +11,27 @@
     <PackageVersion Include="Avalonia.iOS" Version="11.3.11" />
     <PackageVersion Include="Avalonia.Browser" Version="11.3.11" />
     <PackageVersion Include="Avalonia.Android" Version="11.3.11" />
-    
     <PackageVersion Include="Avalonia.Controls.MediaPlayer" Version="11.3.8" />
     <PackageVersion Include="Avalonia.Controls.VirtualKeyboard" Version="11.3.1" />
     <PackageVersion Include="AvaloniaUI.DiagnosticsSupport" Version="2.1.1" />
+    <PackageVersion Include="FluentValidation" Version="12.1.1" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.2" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageVersion Include="ShadUI" Version="0.1.6" />
-
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.2" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.2" />
-    
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.2" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.2" />
-
     <PackageVersion Include="Microsoft.Maui.Essentials" Version="10.0.31" />
-
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-    <PackageVersion Include="Serilog" Version="4.2.0" />
+    <PackageVersion Include="Serilog" Version="4.3.0" />
     <PackageVersion Include="Serilog.Extensions.Hosting" Version="9.0.0" />
     <PackageVersion Include="Serilog.Sinks.Async" Version="2.1.0" />
-    <PackageVersion Include="Serilog.Sinks.File" Version="6.0.0" />
-
+    <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.1.2" />
     <PackageVersion Include="Xamarin.AndroidX.Core.SplashScreen" Version="1.0.1.14" />
     <PackageVersion Include="Xamarin.AndroidX.Lifecycle.ViewModelSavedState" Version="2.9.2.1" />
     <PackageVersion Include="Xamarin.AndroidX.Lifecycle.Common" Version="2.9.2.1" />
@@ -41,7 +40,6 @@
     <PackageVersion Include="Xamarin.AndroidX.Lifecycle.LiveData.Core" Version="2.9.2.1" />
     <PackageVersion Include="Xamarin.AndroidX.Lifecycle.Process" Version="2.9.2.1" />
     <PackageVersion Include="Xamarin.AndroidX.Lifecycle.ViewModelSavedState.Android" Version="2.9.2.1" />
-	
-	<PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
   </ItemGroup>
 </Project>

@@ -1,9 +1,10 @@
 <Application
-x:Class="Bloomdo.Startup.App"
+x:Class="Bloomdo.Client.Startup.App"
 xmlns="https://github.com/avaloniaui"
 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 xmlns:themes="clr-namespace:ShadUI;assembly=ShadUI"
 xmlns:ui1="clr-namespace:Bloomdo.UI;assembly=Bloomdo.Client.UI"
+xmlns:ui="clr-namespace:Bloomdo.Client.UI;assembly=Bloomdo.Client.UI"
 x:CompileBindings="True"
 RequestedThemeVariant="Light">
 
@@ -13,7 +14,7 @@ RequestedThemeVariant="Light">
 	</Application.Styles>
 
 	<Application.DataTemplates>
-		<ui1:ViewLocator />
+		<ui:ViewLocator />
 	</Application.DataTemplates>
 
 	<Application.Resources>

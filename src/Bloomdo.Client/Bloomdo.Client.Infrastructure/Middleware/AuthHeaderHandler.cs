@@ -1,7 +1,7 @@
-﻿using Bloomdo.Core.Interfaces;
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
+using Bloomdo.Client.Core.Interfaces;
 
-namespace Bloomdo.Infrastructure.Middleware;
+namespace Bloomdo.Client.Infrastructure.Middleware;
 
 public class AuthHeaderHandler(IAccessTokenManager authService) : DelegatingHandler
 {

@@ -1,17 +1,17 @@
-﻿using Bloomdo.Application.Services;
-using Bloomdo.Application.ViewModels;
-using Bloomdo.Application.ViewModels.OnbordingComponents;
-using Bloomdo.Application.ViewModels.MainComponents;
-using Bloomdo.Core.Interfaces;
-using Bloomdo.Infrastructure.Middleware;
-using Bloomdo.Infrastructure.Services;
+﻿using System;
+using System.IO;
+using Bloomdo.Client.Application.Services;
+using Bloomdo.Client.Application.ViewModels;
+using Bloomdo.Client.Application.ViewModels.MainComponents;
+using Bloomdo.Client.Application.ViewModels.OnbordingComponents;
+using Bloomdo.Client.Core.Interfaces;
+using Bloomdo.Client.Infrastructure.DatabaseContexts;
+using Bloomdo.Client.Infrastructure.Middleware;
+using Bloomdo.Client.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.IO;
-using Bloomdo.Infrastructure.DatabaseContexts;
 
-namespace Bloomdo.Startup;
+namespace Bloomdo.Client.Startup;
 
 public static class DependencyContainer
 {

@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Bloomdo.Server.Domain\Bloomdo.Server.Domain.csproj" />
+    <ProjectReference Include="..\Bloomdo.Server.Infrastructure\Bloomdo.Server.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>

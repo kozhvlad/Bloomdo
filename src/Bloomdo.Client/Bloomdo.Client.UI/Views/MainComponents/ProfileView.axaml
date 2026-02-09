@@ -3,10 +3,10 @@
 			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 			 xmlns:shad="clr-namespace:ShadUI;assembly=ShadUI"
-			 xmlns:mainComponents="clr-namespace:Bloomdo.Application.ViewModels.MainComponents;assembly=Bloomdo.Client.Application"
+			 xmlns:mainComponents1="clr-namespace:Bloomdo.Client.Application.ViewModels.MainComponents;assembly=Bloomdo.Client.Application"
 			 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="800"
-			 x:DataType="mainComponents:ProfileViewModel"
-			 x:Class="Bloomdo.UI.MainComponents.ProfileView">
+			 x:DataType="mainComponents1:ProfileViewModel"
+			 x:Class="Bloomdo.Client.UI.MainComponents.ProfileView">
 	<ScrollViewer>
 		<Grid Background="{DynamicResource Brush.Background}" Margin="24" RowDefinitions="Auto,Auto,Auto,Auto">
 

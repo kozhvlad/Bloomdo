@@ -1,12 +1,12 @@
 ﻿using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Windows.Input;
-using Bloomdo.Application.ViewModels.Items;
-using Bloomdo.Core.Models;
+using Bloomdo.Client.Application.ViewModels.Items;
+using Bloomdo.Client.Core.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
-namespace Bloomdo.Application.ViewModels.MainComponents;
+namespace Bloomdo.Client.Application.ViewModels.MainComponents;
 
 public partial class StatsViewModel : PageViewModel
 {

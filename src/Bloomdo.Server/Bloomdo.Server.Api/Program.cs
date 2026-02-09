@@ -1,34 +1,69 @@
+using Bloomdo.Server.Api.Extensions;
+using Bloomdo.Server.Api.Middleware;
+using Microsoft.OpenApi;
+using Serilog;
 
-namespace Bloomdo.Server.Api
+namespace Bloomdo.Server.Api;
+
+public class Program
 {
-    public class Program
+    public static void Main(string[] args)
     {
-        public static void Main(string[] args)
+        var builder = WebApplication.CreateBuilder(args);
+
+        Log.Logger = new LoggerConfiguration()
+            .WriteTo.Console()
+            .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
+            .CreateLogger();
+
+        builder.Services.AddControllers();
+
+        // Dependency injection configuration
+        builder.Services.AddDatabaseContext(builder.Configuration.GetConnectionString("DefaultConnection"));
+        builder.Services.RegisterServices();
+        builder.Services.RegisterRepositories();
+
+        builder.Services.AddSwaggerGen(c =>
         {
-            var builder = WebApplication.CreateBuilder(args);
-
-            // Add services to the container.
-
-            builder.Services.AddControllers();
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            builder.Services.AddOpenApi();
-
-            var app = builder.Build();
-
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
+            c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
-                app.MapOpenApi();
-            }
+                In = ParameterLocation.Header,
+                Description = "Please insert JWT with Bearer into field (e.g. Bearer mytoken)",
+                Name = "Authorization",
+                Type = SecuritySchemeType.ApiKey,
+                Scheme = "Bearer"
+            });
+            /*
+            c.AddSecurityRequirement(new OpenApiSecurityRequirement {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                new string[] { }
+            }});
+            */
+        });
 
-            app.UseHttpsRedirection();
+        var app = builder.Build();
 
-            app.UseAuthorization();
-
-
-            app.MapControllers();
-
-            app.Run();
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI();
         }
+
+        app.UseMiddleware<ExceptionHandlingMiddleware>();
+        app.UseHttpsRedirection();
+
+        app.UseAuthentication();
+        app.UseAuthorization();
+
+        app.MapControllers();
+        app.Run();
     }
 }
