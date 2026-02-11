@@ -12,6 +12,16 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
+        // Configure Kestrel to listen on all network interfaces for Android emulator access
+        builder.WebHost.ConfigureKestrel(serverOptions =>
+        {
+            serverOptions.ListenAnyIP(5043);
+            serverOptions.ListenAnyIP(7270, listenOptions =>
+            {
+                listenOptions.UseHttps();
+            });
+        });
+
         Log.Logger = new LoggerConfiguration()
             .WriteTo.Console()
             .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)

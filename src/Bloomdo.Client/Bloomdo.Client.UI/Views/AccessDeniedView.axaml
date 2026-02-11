@@ -1,0 +1,104 @@
+<UserControl
+    x:Class="Bloomdo.Client.UI.AccessDeniedView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:shad="clr-namespace:ShadUI;assembly=ShadUI"
+    xmlns:viewModels="clr-namespace:Bloomdo.Client.Application.ViewModels;assembly=Bloomdo.Client.Application"
+    d:DesignHeight="600"
+    d:DesignWidth="400"
+    x:DataType="viewModels:AccessDeniedViewModel"
+    mc:Ignorable="d">
+
+    <Grid
+        Margin="24"
+        RowDefinitions="*,Auto,*"
+        Background="{DynamicResource Brush.Background}">
+
+        <!-- Center Content -->
+        <StackPanel
+            Grid.Row="1"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Spacing="24"
+            MaxWidth="400">
+
+            <!-- Icon -->
+            <Viewbox Width="120" Height="120">
+                <TextBlock
+                    Text="{Binding Icon}"
+                    FontSize="80"
+                    HorizontalAlignment="Center" />
+            </Viewbox>
+
+            <!-- Title -->
+            <TextBlock
+                FontSize="28"
+                FontWeight="Bold"
+                Foreground="{DynamicResource Brush.Foreground}"
+                HorizontalAlignment="Center"
+                Text="Access Denied"
+                TextAlignment="Center" />
+
+            <!-- Message Card -->
+            <shad:Card Padding="20">
+                <StackPanel Spacing="16">
+                    <TextBlock
+                        FontSize="16"
+                        Foreground="{DynamicResource Brush.Foreground.Subtle}"
+                        HorizontalAlignment="Center"
+                        Text="{Binding Message}"
+                        TextAlignment="Center"
+                        TextWrapping="Wrap" />
+
+                    <!-- Additional Info -->
+                    <Border
+                        Background="{DynamicResource Brush.Muted}"
+                        BorderBrush="{DynamicResource Brush.Border}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="12">
+                        <StackPanel Spacing="8">
+                            <TextBlock
+                                FontSize="14"
+                                FontWeight="Medium"
+                                Foreground="{DynamicResource Brush.Foreground}"
+                                Text="What you can do:" />
+                            <TextBlock
+                                FontSize="13"
+                                Foreground="{DynamicResource Brush.Foreground.Subtle}"
+                                Text="• Contact your administrator to request access"
+                                TextWrapping="Wrap" />
+                            <TextBlock
+                                FontSize="13"
+                                Foreground="{DynamicResource Brush.Foreground.Subtle}"
+                                Text="• Return to the main page and try another section"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </shad:Card>
+
+            <!-- Action Buttons -->
+            <StackPanel Spacing="12" HorizontalAlignment="Stretch">
+                <Button
+                    Classes="Primary"
+                    Command="{Binding GoBackCommand}"
+                    Height="48"
+                    HorizontalAlignment="Stretch">
+                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="8">
+                        <PathIcon
+                            Data="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"
+                            Width="16"
+                            Height="16" />
+                        <TextBlock
+                            FontSize="16"
+                            FontWeight="Medium"
+                            Text="Go Back" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</UserControl>

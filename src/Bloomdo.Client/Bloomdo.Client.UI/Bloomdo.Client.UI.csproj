@@ -30,7 +30,7 @@
 
 	<ItemGroup>
 	  <Compile Update="Views\OnbordingComponents\WelcomeView.axaml.cs">
-	    <DependentUpon>WelcomeView.axaml</DependentUpon>
+		<DependentUpon>WelcomeView.axaml</DependentUpon>
 	  </Compile>
 	</ItemGroup>
 

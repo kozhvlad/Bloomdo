@@ -32,10 +32,13 @@ public class ViewLocator : IDataTemplate
                 
             case LoginViewModel:
                 return new LoginView();
-                
+
             case RegisterViewModel:
                 return new RegisterView();
-                
+
+            case AccessDeniedViewModel:
+                return new AccessDeniedView();
+
             case MainViewModel:
                 return new MainView();
                 

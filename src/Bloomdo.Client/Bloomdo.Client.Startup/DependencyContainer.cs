@@ -90,7 +90,7 @@ public static class DependencyContainer
     {
         services.AddTransient<AuthHeaderHandler>();
 
-        var apiBaseUrl = "https://localhost:7001/";
+        var apiBaseUrl = "https://10.0.2.2:7270/";
 
         // Auth endpoints (login, register, refresh) don't require authentication
         // so we don't add AuthHeaderHandler here to avoid circular dependency
@@ -99,7 +99,15 @@ public static class DependencyContainer
             client.BaseAddress = new Uri(apiBaseUrl);
             client.Timeout = TimeSpan.FromSeconds(30);
         })
-        .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler());
+        .ConfigurePrimaryHttpMessageHandler(() => 
+        {
+            var handler = new HttpClientHandler();
+#if DEBUG
+            // For development with self-signed certificates on Android emulator
+            handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+#endif
+            return handler;
+        });
 
         // For other API services that need authentication, add AuthHeaderHandler:
         // services.AddHttpClient<IOtherApiService, OtherApiService>(...)

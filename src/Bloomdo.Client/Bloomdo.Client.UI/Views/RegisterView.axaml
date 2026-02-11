@@ -80,7 +80,7 @@
                     <TextBox
                         Classes="PasswordReveal"
                         IsEnabled="{Binding !IsLoading}"
-                        PasswordChar="•"
+                        PasswordChar="*"
                         Text="{Binding Password, Mode=TwoWay}"
                         Watermark="At least 6 characters"
                         shad:ControlAssist.Label="Password" />
@@ -89,7 +89,7 @@
                     <TextBox
                         Classes="PasswordReveal"
                         IsEnabled="{Binding !IsLoading}"
-                        PasswordChar="•"
+                        PasswordChar="*"
                         Text="{Binding ConfirmPassword, Mode=TwoWay}"
                         Watermark="Re-enter your password"
                         shad:ControlAssist.Label="Confirm Password" />

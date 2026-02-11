@@ -1,3 +1,4 @@
+using Bloomdo.Client.Application.ViewModels.MainComponents;
 using Bloomdo.Client.Core.Interfaces;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -27,6 +28,6 @@ public partial class AccessDeniedViewModel : PageViewModel
     [RelayCommand]
     private void GoBack()
     {
-        // Navigate back to the main page
+        _navigationService.NavigateTo<MainViewModel>();
     }
 }
