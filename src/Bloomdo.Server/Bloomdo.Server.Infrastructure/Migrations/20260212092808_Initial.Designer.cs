@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Bloomdo.Server.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260211124328_Add-roles")]
-    partial class Addroles
+    [Migration("20260212092808_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -73,11 +73,6 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("Role")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -91,6 +86,52 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                         .HasFilter("\"IsDeleted\" = false");
 
                     b.ToTable("Accounts");
+                });
+
+            modelBuilder.Entity("Bloomdo.Server.Domain.Entities.AccountRole", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("uuid_generate_v4()");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.HasIndex("AccountId", "RoleId")
+                        .IsUnique();
+
+                    b.ToTable("AccountRoles");
                 });
 
             modelBuilder.Entity("Bloomdo.Server.Domain.Entities.RefreshToken", b =>
@@ -161,6 +202,70 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
+            modelBuilder.Entity("Bloomdo.Server.Domain.Entities.Role", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Roles");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 0,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Standard user",
+                            IsActive = true,
+                            Name = "User"
+                        },
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Premium subscriber",
+                            IsActive = true,
+                            Name = "Premium"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Content moderator",
+                            IsActive = true,
+                            Name = "Moderator"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "System administrator",
+                            IsActive = true,
+                            Name = "Admin"
+                        });
+                });
+
             modelBuilder.Entity("Bloomdo.Server.Domain.Entities.RolePermission", b =>
                 {
                     b.Property<Guid>("Id")
@@ -190,7 +295,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
 
-                    b.Property<int>("Role")
+                    b.Property<int>("RoleId")
                         .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -201,7 +306,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Role", "Permission")
+                    b.HasIndex("RoleId", "Permission")
                         .IsUnique();
 
                     b.ToTable("RolePermissions");
@@ -213,7 +318,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "profile:view",
-                            Role = 0
+                            RoleId = 0
                         },
                         new
                         {
@@ -221,7 +326,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "profile:edit",
-                            Role = 0
+                            RoleId = 0
                         },
                         new
                         {
@@ -229,7 +334,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "goals:create",
-                            Role = 0
+                            RoleId = 0
                         },
                         new
                         {
@@ -237,7 +342,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "goals:edit",
-                            Role = 0
+                            RoleId = 0
                         },
                         new
                         {
@@ -245,7 +350,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "goals:delete",
-                            Role = 0
+                            RoleId = 0
                         },
                         new
                         {
@@ -253,7 +358,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "blocks:manage",
-                            Role = 0
+                            RoleId = 0
                         },
                         new
                         {
@@ -261,7 +366,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "stats:view",
-                            Role = 0
+                            RoleId = 0
                         },
                         new
                         {
@@ -269,7 +374,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "profile:view",
-                            Role = 1
+                            RoleId = 1
                         },
                         new
                         {
@@ -277,7 +382,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "profile:edit",
-                            Role = 1
+                            RoleId = 1
                         },
                         new
                         {
@@ -285,7 +390,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "goals:create",
-                            Role = 1
+                            RoleId = 1
                         },
                         new
                         {
@@ -293,7 +398,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "goals:edit",
-                            Role = 1
+                            RoleId = 1
                         },
                         new
                         {
@@ -301,7 +406,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "goals:delete",
-                            Role = 1
+                            RoleId = 1
                         },
                         new
                         {
@@ -309,7 +414,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "blocks:manage",
-                            Role = 1
+                            RoleId = 1
                         },
                         new
                         {
@@ -317,7 +422,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "stats:view",
-                            Role = 1
+                            RoleId = 1
                         },
                         new
                         {
@@ -325,7 +430,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "premium:access",
-                            Role = 1
+                            RoleId = 1
                         },
                         new
                         {
@@ -333,7 +438,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "stats:export",
-                            Role = 1
+                            RoleId = 1
                         },
                         new
                         {
@@ -341,7 +446,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "profile:view",
-                            Role = 2
+                            RoleId = 2
                         },
                         new
                         {
@@ -349,7 +454,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "profile:edit",
-                            Role = 2
+                            RoleId = 2
                         },
                         new
                         {
@@ -357,7 +462,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "goals:create",
-                            Role = 2
+                            RoleId = 2
                         },
                         new
                         {
@@ -365,7 +470,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "goals:edit",
-                            Role = 2
+                            RoleId = 2
                         },
                         new
                         {
@@ -373,7 +478,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "goals:delete",
-                            Role = 2
+                            RoleId = 2
                         },
                         new
                         {
@@ -381,7 +486,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "blocks:manage",
-                            Role = 2
+                            RoleId = 2
                         },
                         new
                         {
@@ -389,7 +494,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "stats:view",
-                            Role = 2
+                            RoleId = 2
                         },
                         new
                         {
@@ -397,7 +502,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "premium:access",
-                            Role = 2
+                            RoleId = 2
                         },
                         new
                         {
@@ -405,7 +510,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "stats:export",
-                            Role = 2
+                            RoleId = 2
                         },
                         new
                         {
@@ -413,7 +518,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "users:view",
-                            Role = 2
+                            RoleId = 2
                         },
                         new
                         {
@@ -421,7 +526,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "users:manage",
-                            Role = 2
+                            RoleId = 2
                         },
                         new
                         {
@@ -429,7 +534,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "profile:view",
-                            Role = 3
+                            RoleId = 3
                         },
                         new
                         {
@@ -437,7 +542,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "profile:edit",
-                            Role = 3
+                            RoleId = 3
                         },
                         new
                         {
@@ -445,7 +550,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "goals:create",
-                            Role = 3
+                            RoleId = 3
                         },
                         new
                         {
@@ -453,7 +558,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "goals:edit",
-                            Role = 3
+                            RoleId = 3
                         },
                         new
                         {
@@ -461,7 +566,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "goals:delete",
-                            Role = 3
+                            RoleId = 3
                         },
                         new
                         {
@@ -469,7 +574,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "blocks:manage",
-                            Role = 3
+                            RoleId = 3
                         },
                         new
                         {
@@ -477,7 +582,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "stats:view",
-                            Role = 3
+                            RoleId = 3
                         },
                         new
                         {
@@ -485,7 +590,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "premium:access",
-                            Role = 3
+                            RoleId = 3
                         },
                         new
                         {
@@ -493,7 +598,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "stats:export",
-                            Role = 3
+                            RoleId = 3
                         },
                         new
                         {
@@ -501,7 +606,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "users:view",
-                            Role = 3
+                            RoleId = 3
                         },
                         new
                         {
@@ -509,7 +614,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "users:manage",
-                            Role = 3
+                            RoleId = 3
                         },
                         new
                         {
@@ -517,7 +622,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "roles:manage",
-                            Role = 3
+                            RoleId = 3
                         },
                         new
                         {
@@ -525,7 +630,7 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "settings:manage",
-                            Role = 3
+                            RoleId = 3
                         },
                         new
                         {
@@ -533,8 +638,27 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                             CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsDeleted = false,
                             Permission = "analytics:view",
-                            Role = 3
+                            RoleId = 3
                         });
+                });
+
+            modelBuilder.Entity("Bloomdo.Server.Domain.Entities.AccountRole", b =>
+                {
+                    b.HasOne("Bloomdo.Server.Domain.Entities.Account", "Account")
+                        .WithMany("AccountRoles")
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Bloomdo.Server.Domain.Entities.Role", "Role")
+                        .WithMany("AccountRoles")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+
+                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("Bloomdo.Server.Domain.Entities.RefreshToken", b =>
@@ -548,9 +672,29 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                     b.Navigation("Account");
                 });
 
+            modelBuilder.Entity("Bloomdo.Server.Domain.Entities.RolePermission", b =>
+                {
+                    b.HasOne("Bloomdo.Server.Domain.Entities.Role", "Role")
+                        .WithMany("RolePermissions")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+                });
+
             modelBuilder.Entity("Bloomdo.Server.Domain.Entities.Account", b =>
                 {
+                    b.Navigation("AccountRoles");
+
                     b.Navigation("RefreshTokens");
+                });
+
+            modelBuilder.Entity("Bloomdo.Server.Domain.Entities.Role", b =>
+                {
+                    b.Navigation("AccountRoles");
+
+                    b.Navigation("RolePermissions");
                 });
 #pragma warning restore 612, 618
         }

@@ -3,6 +3,7 @@ using Bloomdo.Client.Core.Interfaces;
 using Bloomdo.Client.Domain.Attributes;
 using Bloomdo.Client.Domain.Enums;
 using Bloomdo.Client.Domain.Models;
+using Bloomdo.Shared.Constants;
 using Bloomdo.Shared.Enums;
 
 namespace Bloomdo.Client.Application.Services;
@@ -21,15 +22,21 @@ public class AuthorizationService : IAuthorizationService
         return CheckAccess(viewModelType).IsAuthorized;
     }
 
+    /// <summary>
+    /// Checks if the current user has the specified role (exact match).
+    /// No hierarchy — use permissions for capability-based checks.
+    /// </summary>
     public bool HasRole(UserRole role)
     {
         if (!_accessTokenManager.IsAuthenticated)
             return false;
 
-        // Higher-privilege roles implicitly satisfy lower-privilege checks
-        return _accessTokenManager.CurrentRole >= role;
+        return _accessTokenManager.HasRole(role);
     }
 
+    /// <summary>
+    /// Checks if the current user has at least one of the specified roles (exact match).
+    /// </summary>
     public bool HasAnyRole(params UserRole[] roles)
     {
         return roles.Any(HasRole);
@@ -51,9 +58,9 @@ public class AuthorizationService : IAuthorizationService
         {
             AuthorizationPolicy.None => true,
             AuthorizationPolicy.RequireAuthentication => _accessTokenManager.IsAuthenticated,
-            AuthorizationPolicy.RequirePremium => HasRole(UserRole.Premium),
-            AuthorizationPolicy.RequireAdmin => HasRole(UserRole.Admin),
-            AuthorizationPolicy.RequireModerator => HasRole(UserRole.Moderator),
+            AuthorizationPolicy.RequirePremium => HasPermission(Permissions.PremiumAccess),
+            AuthorizationPolicy.RequireModerator => HasPermission(Permissions.UsersManage),
+            AuthorizationPolicy.RequireAdmin => HasPermission(Permissions.RolesManage),
             _ => false
         };
     }

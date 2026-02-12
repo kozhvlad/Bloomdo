@@ -15,13 +15,13 @@ public class AccessTokenManager : IAccessTokenManager
     private string? _refreshToken;
     private DateTime _accessTokenExpiresAt;
     private AccountProfileResponse? _currentUser;
-    private UserRole _currentRole;
+    private List<UserRole> _currentRoles = [];
     private List<string> _currentPermissions = [];
 
     public string? AuthToken => _accessToken;
     public bool IsAuthenticated => !string.IsNullOrEmpty(_accessToken);
     public AccountProfileResponse? CurrentUser => _currentUser;
-    public UserRole CurrentRole => _currentRole;
+    public IReadOnlyList<UserRole> CurrentRoles => _currentRoles;
     public IReadOnlyList<string> CurrentPermissions => _currentPermissions;
 
     /// <summary>
@@ -160,6 +160,11 @@ public class AccessTokenManager : IAccessTokenManager
         }
     }
 
+    public bool HasRole(UserRole role)
+    {
+        return _currentRoles.Contains(role);
+    }
+
     public bool HasPermission(string permission)
     {
         return _currentPermissions.Contains(permission);
@@ -175,7 +180,7 @@ public class AccessTokenManager : IAccessTokenManager
         _accessToken = response.AccessToken;
         _refreshToken = response.RefreshToken;
         _accessTokenExpiresAt = response.AccessTokenExpiresAt;
-        _currentRole = response.Role;
+        _currentRoles = response.Roles;
         _currentPermissions = response.Permissions;
     }
 
@@ -192,7 +197,7 @@ public class AccessTokenManager : IAccessTokenManager
 
             if (_currentUser != null)
             {
-                _currentRole = _currentUser.Role;
+                _currentRoles = _currentUser.Roles;
                 _currentPermissions = _currentUser.Permissions;
             }
         }
@@ -209,7 +214,7 @@ public class AccessTokenManager : IAccessTokenManager
         _refreshToken = null;
         _accessTokenExpiresAt = DateTime.MinValue;
         _currentUser = null;
-        _currentRole = UserRole.User;
+        _currentRoles = [];
         _currentPermissions = [];
     }
 
@@ -243,16 +248,29 @@ public class AccessTokenManager : IAccessTokenManager
                 _accessTokenExpiresAt = DateTimeOffset.FromUnixTimeSeconds(exp).UtcDateTime;
             }
 
-            // Role (ClaimTypes.Role serialises as "http://schemas.microsoft.com/ws/2008/06/identity/claims/role")
-            if (root.TryGetProperty("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", out var roleProp))
+            // Roles (ClaimTypes.Role serialises as "http://schemas.microsoft.com/ws/2008/06/identity/claims/role")
+            _currentRoles = [];
+            var roleKey = root.TryGetProperty("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", out var roleProp)
+                ? roleProp
+                : root.TryGetProperty("role", out var roleShortProp)
+                    ? roleShortProp
+                    : (JsonElement?)null;
+
+            if (roleKey is { } rp)
             {
-                if (Enum.TryParse<UserRole>(roleProp.GetString(), true, out var role))
-                    _currentRole = role;
-            }
-            else if (root.TryGetProperty("role", out var roleShortProp))
-            {
-                if (Enum.TryParse<UserRole>(roleShortProp.GetString(), true, out var role))
-                    _currentRole = role;
+                if (rp.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var elem in rp.EnumerateArray())
+                    {
+                        if (Enum.TryParse<UserRole>(elem.GetString(), true, out var r))
+                            _currentRoles.Add(r);
+                    }
+                }
+                else if (rp.ValueKind == JsonValueKind.String)
+                {
+                    if (Enum.TryParse<UserRole>(rp.GetString(), true, out var r))
+                        _currentRoles.Add(r);
+                }
             }
 
             // Permissions (can be a single string or a JSON array)

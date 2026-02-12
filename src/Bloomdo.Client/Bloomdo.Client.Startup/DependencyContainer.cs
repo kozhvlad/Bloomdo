@@ -64,6 +64,9 @@ public static class DependencyContainer
         services.AddSingleton<IAuthApiService, AuthApiService>();
         services.AddSingleton<IAccessTokenManager, AccessTokenManager>();
 
+        // Preferences
+        services.AddSingleton<IPreferencesService, PreferencesService>();
+
         // Authorization service
         services.AddSingleton<IAuthorizationService, AuthorizationService>();
 
@@ -119,13 +122,15 @@ public static class DependencyContainer
         services.AddSingleton<ShellViewModel>(sp =>
         {
             var tokenManager = sp.GetRequiredService<IAccessTokenManager>();
-            return new ShellViewModel(tokenManager, () => sp.GetRequiredService<INavigationService>());
+            var preferencesService = sp.GetRequiredService<IPreferencesService>();
+            return new ShellViewModel(tokenManager, preferencesService, () => sp.GetRequiredService<INavigationService>());
         });
         
         // Auth views
         services.AddTransient<LoginViewModel>();
         services.AddTransient<RegisterViewModel>();
         services.AddTransient<AccessDeniedViewModel>();
+        services.AddTransient<NoConnectionViewModel>();
         
         // Onboarding components
         services.AddSingleton<OnboardingViewModel>();
@@ -134,10 +139,10 @@ public static class DependencyContainer
         services.AddTransient<SetGoalsStepViewModel>();
         
         // Main view and tabs
-        services.AddSingleton<MainViewModel>();
-        services.AddSingleton<HomeViewModel>();
-        services.AddSingleton<BlocksViewModel>();
-        services.AddSingleton<StatsViewModel>();
-        services.AddSingleton<ProfileViewModel>();
+        services.AddTransient<MainViewModel>();
+        services.AddTransient<HomeViewModel>();
+        services.AddTransient<BlocksViewModel>();
+        services.AddTransient<StatsViewModel>();
+        services.AddTransient<ProfileViewModel>();
     }
 }

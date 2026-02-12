@@ -33,11 +33,12 @@ public class NavigationService(
 
     public void OnboardingComplete()
     {
-        Debug.WriteLine("OnboardingComplete called - navigating to MainViewModel");
+        Debug.WriteLine("OnboardingComplete called - saving flag and navigating to LoginViewModel");
         try
         {
-            NavigateTo<MainViewModel>();
-            Debug.WriteLine("MainViewModel set in ShellViewModel");
+            shellViewModel.CompleteOnboarding();
+            NavigateTo<LoginViewModel>();
+            Debug.WriteLine("LoginViewModel set in ShellViewModel after onboarding");
         }
         catch (Exception ex)
         {

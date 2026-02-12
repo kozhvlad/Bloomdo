@@ -27,4 +27,8 @@
     <ProjectReference Include="..\..\Bloomdo.Shared\Bloomdo.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Migrations\" />
+  </ItemGroup>
+
 </Project>

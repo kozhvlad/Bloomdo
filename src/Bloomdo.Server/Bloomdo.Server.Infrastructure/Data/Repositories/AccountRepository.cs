@@ -10,9 +10,18 @@ public class AccountRepository : Repository<Account>, IAccountRepository
     {
     }
 
+    public override async Task<Account?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _dbSet
+            .Include(a => a.AccountRoles)
+            .FirstOrDefaultAsync(a => a.Id == id, cancellationToken);
+    }
+
     public async Task<Account?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
-        return await _dbSet.FirstOrDefaultAsync(a => a.Email == email, cancellationToken);
+        return await _dbSet
+            .Include(a => a.AccountRoles)
+            .FirstOrDefaultAsync(a => a.Email == email, cancellationToken);
     }
 
     public async Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken = default)

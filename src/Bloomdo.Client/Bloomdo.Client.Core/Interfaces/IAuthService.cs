@@ -8,7 +8,7 @@ public interface IAccessTokenManager
     string? AuthToken { get; }
     bool IsAuthenticated { get; }
     AccountProfileResponse? CurrentUser { get; }
-    UserRole CurrentRole { get; }
+    IReadOnlyList<UserRole> CurrentRoles { get; }
     IReadOnlyList<string> CurrentPermissions { get; }
 
     Task<bool> LoginAsync(string email, string password);
@@ -17,6 +17,7 @@ public interface IAccessTokenManager
     Task LogoutAsync();
     Task InitializeAsync();
 
+    bool HasRole(UserRole role);
     bool HasPermission(string permission);
     bool HasAnyPermission(params string[] permissions);
 }

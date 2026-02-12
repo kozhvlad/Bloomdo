@@ -65,7 +65,7 @@
 			<StackPanel Grid.Row="3" Spacing="12">
 				<Button Content="Edit Profile" Classes="Outline" HorizontalAlignment="Stretch"/>
 				<Button Content="Account Settings" Classes="Ghost" HorizontalAlignment="Stretch"/>
-				<Button Content="Log Out" Classes="Destructive" HorizontalAlignment="Stretch"/>
+				<Button Content="Log Out" Classes="Destructive" HorizontalAlignment="Stretch" Command="{Binding LogoutCommand}"/>
 			</StackPanel>
 
 		</Grid>

@@ -5,7 +5,7 @@ namespace Bloomdo.Server.Application.Interfaces;
 
 public interface IJwtService
 {
-    string GenerateAccessToken(Guid accountId, string email, UserRole role, IReadOnlyList<string> permissions);
+    string GenerateAccessToken(Guid accountId, string email, IReadOnlyList<UserRole> roles, IReadOnlyList<string> permissions);
     string GenerateRefreshToken();
     ClaimsPrincipal? ValidateToken(string token);
     Guid? GetAccountIdFromToken(string token);

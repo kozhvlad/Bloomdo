@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using Bloomdo.Client.Core.Interfaces;
 using Bloomdo.Client.Application.ViewModels.MainComponents;
+using Bloomdo.Client.Application.ViewModels.OnbordingComponents;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Bloomdo.Client.Application.ViewModels;
@@ -8,15 +9,22 @@ namespace Bloomdo.Client.Application.ViewModels;
 public partial class ShellViewModel : ObservableObject
 {
     private readonly IAccessTokenManager _tokenManager;
+    private readonly IPreferencesService _preferencesService;
     private readonly Func<INavigationService> _navigationServiceFactory;
     private INavigationService? _navigationService;
+
+    private const string OnboardingCompletedKey = "OnboardingCompleted";
 
     [ObservableProperty]
     private IPage _currentViewModel = null!;
 
-    public ShellViewModel(IAccessTokenManager tokenManager, Func<INavigationService> navigationServiceFactory)
+    public ShellViewModel(
+        IAccessTokenManager tokenManager,
+        IPreferencesService preferencesService,
+        Func<INavigationService> navigationServiceFactory)
     {
         _tokenManager = tokenManager;
+        _preferencesService = preferencesService;
         _navigationServiceFactory = navigationServiceFactory;
     }
 
@@ -24,20 +32,40 @@ public partial class ShellViewModel : ObservableObject
     {
         Debug.WriteLine("ShellViewModel.InitializeAsync started");
 
-        // Lazy initialization of NavigationService to avoid circular dependency
         _navigationService ??= _navigationServiceFactory();
 
-        await _tokenManager.InitializeAsync();
-
-        if (_tokenManager.IsAuthenticated)
+        // First launch → show onboarding
+        if (!IsOnboardingCompleted())
         {
-            Debug.WriteLine("User is authenticated, navigating to MainViewModel");
-            _navigationService.NavigateTo<MainViewModel>();
+            Debug.WriteLine("First launch, navigating to OnboardingViewModel");
+            _navigationService.NavigateTo<OnboardingViewModel>();
+            return;
         }
-        else
+
+        try
         {
-            Debug.WriteLine("User is not authenticated, navigating to LoginViewModel");
-            _navigationService.NavigateTo<LoginViewModel>();
+            await _tokenManager.InitializeAsync();
+
+            if (_tokenManager.IsAuthenticated)
+            {
+                Debug.WriteLine("User is authenticated, navigating to MainViewModel");
+                _navigationService.NavigateTo<MainViewModel>();
+            }
+            else
+            {
+                Debug.WriteLine("User is not authenticated, navigating to LoginViewModel");
+                _navigationService.NavigateTo<LoginViewModel>();
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            Debug.WriteLine($"Network error during initialization: {ex.Message}");
+            _navigationService.NavigateTo<NoConnectionViewModel>();
+        }
+        catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
+        {
+            Debug.WriteLine($"Timeout during initialization: {ex.Message}");
+            _navigationService.NavigateTo<NoConnectionViewModel>();
         }
     }
 
@@ -48,6 +76,16 @@ public partial class ShellViewModel : ObservableObject
         CurrentViewModel = viewModel;
         CurrentViewModel.OnAppearing();
         Debug.WriteLine($"CurrentViewModel is now {CurrentViewModel?.GetType().Name ?? "null"}");
+    }
+
+    public void CompleteOnboarding()
+    {
+        _preferencesService.Set(OnboardingCompletedKey, true);
+    }
+
+    private bool IsOnboardingCompleted()
+    {
+        return _preferencesService.Get(OnboardingCompletedKey, false);
     }
 }
 

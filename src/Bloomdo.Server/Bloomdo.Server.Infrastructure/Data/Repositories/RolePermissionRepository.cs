@@ -14,11 +14,13 @@ public class RolePermissionRepository : IRolePermissionRepository
         _context = context;
     }
 
-    public async Task<IReadOnlyList<string>> GetPermissionsForRoleAsync(UserRole role, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<string>> GetPermissionsForRolesAsync(IEnumerable<UserRole> roles, CancellationToken cancellationToken = default)
     {
+        var roleIds = roles.Select(r => (int)r).ToList();
         return await _context.RolePermissions
-            .Where(rp => rp.RoleId == (int)role)
+            .Where(rp => roleIds.Contains(rp.RoleId))
             .Select(rp => rp.Permission)
+            .Distinct()
             .ToListAsync(cancellationToken);
     }
 

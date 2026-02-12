@@ -22,7 +22,7 @@ public class JwtService : IJwtService
 
     public int AccessTokenExpirationMinutes => _jwtSettings.AccessTokenExpirationMinutes;
 
-    public string GenerateAccessToken(Guid accountId, string email, UserRole role, IReadOnlyList<string> permissions)
+    public string GenerateAccessToken(Guid accountId, string email, IReadOnlyList<UserRole> roles, IReadOnlyList<string> permissions)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.UTF8.GetBytes(_jwtSettings.Secret);
@@ -31,9 +31,14 @@ public class JwtService : IJwtService
         {
             new(JwtRegisteredClaimNames.Sub, accountId.ToString()),
             new(JwtRegisteredClaimNames.Email, email),
-            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new(ClaimTypes.Role, role.ToString())
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+
+        // Add each role as a separate claim
+        foreach (var role in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role.ToString()));
+        }
 
         // Add each permission as a separate claim for easy lookup
         foreach (var permission in permissions)

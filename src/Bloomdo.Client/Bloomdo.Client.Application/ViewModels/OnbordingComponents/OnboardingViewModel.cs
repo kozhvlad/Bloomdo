@@ -93,6 +93,13 @@ public partial class OnboardingViewModel : PageViewModel
     }
 
     [RelayCommand]
+    private void Skip()
+    {
+        Debug.WriteLine("Onboarding skipped by user");
+        _navigationService.OnboardingComplete();
+    }
+
+    [RelayCommand]
     private void PreviousStep()
     {
         if (CurrentStepIndex > 0)

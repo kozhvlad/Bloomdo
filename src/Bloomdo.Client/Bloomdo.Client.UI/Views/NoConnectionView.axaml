@@ -1,0 +1,36 @@
+<UserControl x:Class="Bloomdo.Client.UI.NoConnectionView" xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:shad="clr-namespace:ShadUI;assembly=ShadUI"
+             xmlns:viewModels="clr-namespace:Bloomdo.Client.Application.ViewModels;assembly=Bloomdo.Client.Application"
+             d:DesignHeight="600" d:DesignWidth="400" x:DataType="viewModels:NoConnectionViewModel" mc:Ignorable="d">
+    <Grid Margin="24" RowDefinitions="*,Auto,*" Background="{DynamicResource Brush.Background}">
+        <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="24" MaxWidth="400">
+            <Viewbox Width="120" Height="120">
+                <TextBlock Text="&#128225;" FontSize="80" HorizontalAlignment="Center" />
+            </Viewbox>
+            <TextBlock FontSize="28" FontWeight="Bold" Foreground="{DynamicResource Brush.Foreground}"
+                       HorizontalAlignment="Center" Text="No Connection" TextAlignment="Center" />
+            <shad:Card Padding="20">
+                <StackPanel Spacing="16">
+                    <TextBlock FontSize="16" Foreground="{DynamicResource Brush.Foreground.Subtle}"
+                               HorizontalAlignment="Center" Text="{Binding Message}" TextAlignment="Center"
+                               TextWrapping="Wrap" />
+                    <StackPanel Spacing="8">
+                        <TextBlock FontSize="14" Foreground="{DynamicResource Brush.Foreground.Subtle}" Text="Tips:"
+                                   FontWeight="SemiBold" />
+                        <TextBlock FontSize="13" Foreground="{DynamicResource Brush.Foreground.Subtle}"
+                                   Text="&#8226; Check your Wi-Fi or mobile data" Margin="8,0,0,0" />
+                        <TextBlock FontSize="13" Foreground="{DynamicResource Brush.Foreground.Subtle}"
+                                   Text="&#8226; Try disabling VPN if enabled" Margin="8,0,0,0" />
+                        <TextBlock FontSize="13" Foreground="{DynamicResource Brush.Foreground.Subtle}"
+                                   Text="&#8226; Server may be unavailable" Margin="8,0,0,0" />
+                    </StackPanel>
+                </StackPanel>
+            </shad:Card>
+            <Button Content="Retry" Classes="Primary" HorizontalAlignment="Stretch" Command="{Binding RetryCommand}"
+                    IsEnabled="{Binding !IsRetrying}" />
+        </StackPanel>
+    </Grid>
+</UserControl>

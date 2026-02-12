@@ -42,8 +42,8 @@ public class AuthService : IAuthService
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
             FirstName = request.FirstName,
             LastName = request.LastName,
-            RoleId = (int)UserRole.User,
-            IsEmailConfirmed = false
+            IsEmailConfirmed = false,
+            AccountRoles = [new AccountRole { RoleId = (int)UserRole.User }]
         };
 
         await _accountRepository.AddAsync(account, cancellationToken);
@@ -92,7 +92,8 @@ public class AuthService : IAuthService
         token.ReplacedByToken = newRefreshToken;
         await _refreshTokenRepository.UpdateAsync(token, cancellationToken);
 
-        var permissions = await _rolePermissionRepository.GetPermissionsForRoleAsync((UserRole)account.RoleId, cancellationToken);
+        var roles = GetAccountRoles(account);
+        var permissions = await _rolePermissionRepository.GetPermissionsForRolesAsync(roles, cancellationToken);
 
         var newToken = new RefreshToken
         {
@@ -103,7 +104,7 @@ public class AuthService : IAuthService
         };
         await _refreshTokenRepository.AddAsync(newToken, cancellationToken);
 
-        var accessToken = _jwtService.GenerateAccessToken(account.Id, account.Email, (UserRole)account.RoleId, permissions);
+        var accessToken = _jwtService.GenerateAccessToken(account.Id, account.Email, roles, permissions);
 
         return new AuthResponse
         {
@@ -111,7 +112,7 @@ public class AuthService : IAuthService
             Email = account.Email,
             FirstName = account.FirstName,
             LastName = account.LastName,
-            Role = (UserRole)account.RoleId,
+            Roles = roles.ToList(),
             Permissions = permissions.ToList(),
             AccessToken = accessToken,
             RefreshToken = newRefreshToken,
@@ -146,7 +147,8 @@ public class AuthService : IAuthService
             throw new AccountNotFoundException(accountId);
         }
 
-        var permissions = await _rolePermissionRepository.GetPermissionsForRoleAsync((UserRole)account.RoleId, cancellationToken);
+        var roles = GetAccountRoles(account);
+        var permissions = await _rolePermissionRepository.GetPermissionsForRolesAsync(roles, cancellationToken);
 
         return new AccountProfileResponse
         {
@@ -154,7 +156,7 @@ public class AuthService : IAuthService
             Email = account.Email,
             FirstName = account.FirstName,
             LastName = account.LastName,
-            Role = (UserRole)account.RoleId,
+            Roles = roles.ToList(),
             Permissions = permissions.ToList(),
             IsEmailConfirmed = account.IsEmailConfirmed,
             LastLoginAt = account.LastLoginAt,
@@ -164,9 +166,10 @@ public class AuthService : IAuthService
 
     private async Task<AuthResponse> GenerateAuthResponseAsync(Account account, string ipAddress, CancellationToken cancellationToken)
     {
-        var permissions = await _rolePermissionRepository.GetPermissionsForRoleAsync((UserRole)account.RoleId, cancellationToken);
+        var roles = GetAccountRoles(account);
+        var permissions = await _rolePermissionRepository.GetPermissionsForRolesAsync(roles, cancellationToken);
 
-        var accessToken = _jwtService.GenerateAccessToken(account.Id, account.Email, (UserRole)account.RoleId, permissions);
+        var accessToken = _jwtService.GenerateAccessToken(account.Id, account.Email, roles, permissions);
         var refreshToken = _jwtService.GenerateRefreshToken();
 
         var refreshTokenEntity = new RefreshToken
@@ -185,12 +188,19 @@ public class AuthService : IAuthService
             Email = account.Email,
             FirstName = account.FirstName,
             LastName = account.LastName,
-            Role = (UserRole)account.RoleId,
+            Roles = roles.ToList(),
             Permissions = permissions.ToList(),
             AccessToken = accessToken,
             RefreshToken = refreshToken,
             AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(_jwtService.AccessTokenExpirationMinutes)
         };
     }
-}
 
+    private static IReadOnlyList<UserRole> GetAccountRoles(Account account)
+    {
+        return account.AccountRoles
+            .Select(ar => (UserRole)ar.RoleId)
+            .OrderBy(r => r)
+            .ToList();
+    }
+}

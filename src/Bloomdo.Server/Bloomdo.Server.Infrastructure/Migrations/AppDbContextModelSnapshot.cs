@@ -70,11 +70,6 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("RoleId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -87,9 +82,53 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                         .IsUnique()
                         .HasFilter("\"IsDeleted\" = false");
 
+                    b.ToTable("Accounts");
+                });
+
+            modelBuilder.Entity("Bloomdo.Server.Domain.Entities.AccountRole", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("uuid_generate_v4()");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
                     b.HasIndex("RoleId");
 
-                    b.ToTable("Accounts");
+                    b.HasIndex("AccountId", "RoleId")
+                        .IsUnique();
+
+                    b.ToTable("AccountRoles");
                 });
 
             modelBuilder.Entity("Bloomdo.Server.Domain.Entities.RefreshToken", b =>
@@ -600,13 +639,21 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Bloomdo.Server.Domain.Entities.Account", b =>
+            modelBuilder.Entity("Bloomdo.Server.Domain.Entities.AccountRole", b =>
                 {
+                    b.HasOne("Bloomdo.Server.Domain.Entities.Account", "Account")
+                        .WithMany("AccountRoles")
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Bloomdo.Server.Domain.Entities.Role", "Role")
-                        .WithMany("Accounts")
+                        .WithMany("AccountRoles")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Account");
 
                     b.Navigation("Role");
                 });
@@ -635,12 +682,14 @@ namespace Bloomdo.Server.Infrastructure.Migrations
 
             modelBuilder.Entity("Bloomdo.Server.Domain.Entities.Account", b =>
                 {
+                    b.Navigation("AccountRoles");
+
                     b.Navigation("RefreshTokens");
                 });
 
             modelBuilder.Entity("Bloomdo.Server.Domain.Entities.Role", b =>
                 {
-                    b.Navigation("Accounts");
+                    b.Navigation("AccountRoles");
 
                     b.Navigation("RolePermissions");
                 });

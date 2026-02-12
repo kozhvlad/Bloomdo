@@ -33,7 +33,7 @@
     </UserControl.Styles>
 
     <Grid RowDefinitions="Auto,*" Margin="24">
-        <Grid Grid.Row="0" ColumnDefinitions="Auto,*" Margin="0,0,0,12">
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,12">
             <Button Grid.Column="0" Classes="Ghost" Command="{Binding PreviousStepCommand}" IsVisible="{Binding HasPrevious}">
                 <PathIcon Height="20" Width="20" Classes="Primary" Data="{StaticResource arrow_left_regular}"/>
             </Button>
@@ -44,6 +44,7 @@
                          VerticalAlignment="Center"
                          IsIndeterminate="False"
                          IsVisible="{Binding ShowProgressBar}"/>
+            <Button Grid.Column="2" Classes="Ghost" Command="{Binding SkipCommand}" Content="Skip"/>
         </Grid>
 
         <ContentControl Grid.Row="1" Content="{Binding CurrentStep}"/>

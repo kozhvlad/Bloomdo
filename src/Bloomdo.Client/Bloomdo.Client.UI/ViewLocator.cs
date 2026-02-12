@@ -39,6 +39,9 @@ public class ViewLocator : IDataTemplate
             case AccessDeniedViewModel:
                 return new AccessDeniedView();
 
+            case NoConnectionViewModel:
+                return new NoConnectionView();
+
             case MainViewModel:
                 return new MainView();
                 

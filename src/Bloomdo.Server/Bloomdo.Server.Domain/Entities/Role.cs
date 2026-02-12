@@ -12,6 +12,6 @@ public class Role
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; }
 
-    public ICollection<Account> Accounts { get; set; } = [];
+    public ICollection<AccountRole> AccountRoles { get; set; } = [];
     public ICollection<RolePermission> RolePermissions { get; set; } = [];
 }

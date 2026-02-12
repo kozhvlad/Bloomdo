@@ -12,6 +12,7 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<Account> Accounts { get; set; }
+    public DbSet<AccountRole> AccountRoles { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<Role> Roles { get; set; }
     public DbSet<RolePermission> RolePermissions { get; set; }
@@ -52,19 +53,15 @@ public class AppDbContext : DbContext
             entity.Property(e => e.FirstName).HasMaxLength(100);
             entity.Property(e => e.LastName).HasMaxLength(100);
 
-            entity.Property(e => e.RoleId)
-                .HasDefaultValue((int)UserRole.User)
-                .IsRequired();
-
-            entity.HasOne(e => e.Role)
-                .WithMany(r => r.Accounts)
-                .HasForeignKey(e => e.RoleId)
-                .OnDelete(DeleteBehavior.Restrict);
-
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);
 
             entity.HasQueryFilter(e => !e.IsDeleted);
+
+            entity.HasMany(e => e.AccountRoles)
+                .WithOne(ar => ar.Account)
+                .HasForeignKey(ar => ar.AccountId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasMany(e => e.RefreshTokens)
                 .WithOne(e => e.Account)
@@ -107,6 +104,25 @@ public class AppDbContext : DbContext
                 .HasMaxLength(128);
 
             entity.HasIndex(e => new { e.RoleId, e.Permission }).IsUnique();
+
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+
+            entity.HasQueryFilter(e => !e.IsDeleted);
+        });
+
+        // AccountRole configuration (many-to-many join entity)
+        modelBuilder.Entity<AccountRole>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasDefaultValueSql("uuid_generate_v4()");
+
+            entity.HasOne(e => e.Role)
+                .WithMany(r => r.AccountRoles)
+                .HasForeignKey(e => e.RoleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => new { e.AccountId, e.RoleId }).IsUnique();
 
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);

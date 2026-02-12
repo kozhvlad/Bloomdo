@@ -8,11 +8,9 @@ public class Account : BaseEntity
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
 
-    public int RoleId { get; set; }
-    public Role Role { get; set; } = null!;
-
     public bool IsEmailConfirmed { get; set; }
     public DateTime? LastLoginAt { get; set; }
 
-    public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+    public ICollection<AccountRole> AccountRoles { get; set; } = [];
+    public ICollection<RefreshToken> RefreshTokens { get; set; } = [];
 }
