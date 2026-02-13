@@ -1,5 +1,5 @@
-﻿using System.Text;
-using System.Text.Json;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Bloomdo.Client.Core.Interfaces;
 using Bloomdo.Shared.Constants;
 using Bloomdo.Shared.DTOs.Auth;
@@ -219,75 +219,38 @@ public class AccessTokenManager : IAccessTokenManager
     }
 
     /// <summary>
-    /// Lightweight JWT payload parsing (Base64 decode only, no signature validation).
+    /// Lightweight JWT payload parsing (no signature validation).
     /// Used to extract role, permissions and expiry when restoring tokens from storage.
     /// </summary>
     private void ParseJwtClaims(string token)
     {
         try
         {
-            var parts = token.Split('.');
-            if (parts.Length != 3) return;
+            var handler = new JwtSecurityTokenHandler();
+            if (!handler.CanReadToken(token))
+                return;
 
-            var payload = parts[1];
-            // Fix Base64url → Base64 padding
-            payload = payload.Replace('-', '+').Replace('_', '/');
-            switch (payload.Length % 4)
-            {
-                case 2: payload += "=="; break;
-                case 3: payload += "="; break;
-            }
-
-            var json = Encoding.UTF8.GetString(Convert.FromBase64String(payload));
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
+            var jwtToken = handler.ReadJwtToken(token);
 
             // Expiry
-            if (root.TryGetProperty("exp", out var expProp) && expProp.TryGetInt64(out var exp))
-            {
-                _accessTokenExpiresAt = DateTimeOffset.FromUnixTimeSeconds(exp).UtcDateTime;
-            }
+            _accessTokenExpiresAt = jwtToken.ValidTo;
 
-            // Roles (ClaimTypes.Role serialises as "http://schemas.microsoft.com/ws/2008/06/identity/claims/role")
+            // Roles (ClaimTypes.Role or "role")
             _currentRoles = [];
-            var roleKey = root.TryGetProperty("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", out var roleProp)
-                ? roleProp
-                : root.TryGetProperty("role", out var roleShortProp)
-                    ? roleShortProp
-                    : (JsonElement?)null;
+            var roleClaims = jwtToken.Claims.Where(c => 
+                c.Type == ClaimTypes.Role || c.Type == "role");
 
-            if (roleKey is { } rp)
+            foreach (var claim in roleClaims)
             {
-                if (rp.ValueKind == JsonValueKind.Array)
-                {
-                    foreach (var elem in rp.EnumerateArray())
-                    {
-                        if (Enum.TryParse<UserRole>(elem.GetString(), true, out var r))
-                            _currentRoles.Add(r);
-                    }
-                }
-                else if (rp.ValueKind == JsonValueKind.String)
-                {
-                    if (Enum.TryParse<UserRole>(rp.GetString(), true, out var r))
-                        _currentRoles.Add(r);
-                }
+                if (Enum.TryParse<UserRole>(claim.Value, true, out var role))
+                    _currentRoles.Add(role);
             }
 
-            // Permissions (can be a single string or a JSON array)
-            if (root.TryGetProperty(AppClaimTypes.Permission, out var permsProp))
-            {
-                if (permsProp.ValueKind == JsonValueKind.Array)
-                {
-                    _currentPermissions = permsProp.EnumerateArray()
-                        .Select(e => e.GetString()!)
-                        .Where(s => s != null)
-                        .ToList();
-                }
-                else if (permsProp.ValueKind == JsonValueKind.String)
-                {
-                    _currentPermissions = [permsProp.GetString()!];
-                }
-            }
+            // Permissions
+            _currentPermissions = jwtToken.Claims
+                .Where(c => c.Type == AppClaimTypes.Permission)
+                .Select(c => c.Value)
+                .ToList();
         }
         catch (Exception ex)
         {

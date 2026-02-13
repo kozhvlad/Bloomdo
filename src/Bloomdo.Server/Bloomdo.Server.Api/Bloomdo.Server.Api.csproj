@@ -27,8 +27,4 @@
     <ProjectReference Include="..\..\Bloomdo.Shared\Bloomdo.Shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Models\Responses\" />
-  </ItemGroup>
-
 </Project>
