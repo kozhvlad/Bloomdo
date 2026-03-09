@@ -13,6 +13,7 @@ public class AuthHeaderHandler : DelegatingHandler
 {
     private readonly IAccessTokenManager _tokenManager;
     private static readonly SemaphoreSlim RefreshLock = new(1, 1);
+    private static DateTime _lastRefreshTime = DateTime.MinValue;
 
     public AuthHeaderHandler(IAccessTokenManager tokenManager)
     {
@@ -32,7 +33,9 @@ public class AuthHeaderHandler : DelegatingHandler
         var response = await base.SendAsync(request, cancellationToken);
 
         // Reactive refresh: if the server returned 401, try refreshing and retry once
-        if (response.StatusCode == HttpStatusCode.Unauthorized && _tokenManager.IsAuthenticated)
+        // Skip if we just refreshed less than 5 seconds ago (avoid infinite loop)
+        if (response.StatusCode == HttpStatusCode.Unauthorized && _tokenManager.IsAuthenticated
+            && (DateTime.UtcNow - _lastRefreshTime).TotalSeconds > 5)
         {
             var refreshed = await TryRefreshTokenAsync(cancellationToken);
             if (refreshed)
@@ -61,7 +64,14 @@ public class AuthHeaderHandler : DelegatingHandler
         await RefreshLock.WaitAsync(cancellationToken);
         try
         {
-            return await _tokenManager.RefreshTokenAsync();
+            // Double-check: another call may have already refreshed
+            if (_tokenManager is AccessTokenManager concrete && !concrete.IsAccessTokenExpiringSoon)
+                return true;
+
+            var result = await _tokenManager.RefreshTokenAsync();
+            if (result)
+                _lastRefreshTime = DateTime.UtcNow;
+            return result;
         }
         finally
         {

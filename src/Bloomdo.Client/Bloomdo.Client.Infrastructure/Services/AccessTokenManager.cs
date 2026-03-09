@@ -9,7 +9,7 @@ namespace Bloomdo.Client.Infrastructure.Services;
 
 public class AccessTokenManager : IAccessTokenManager
 {
-    private readonly IAuthApiService _authApiService;
+    private readonly Func<IAuthApiService> _authApiServiceFactory;
     private readonly ITokenStorage _tokenStorage;
     private string? _accessToken;
     private string? _refreshToken;
@@ -24,15 +24,17 @@ public class AccessTokenManager : IAccessTokenManager
     public IReadOnlyList<UserRole> CurrentRoles => _currentRoles;
     public IReadOnlyList<string> CurrentPermissions => _currentPermissions;
 
+    public event Action? SessionInvalidated;
+
     /// <summary>
     /// Indicates whether the access token will expire within the next 30 seconds.
     /// Used by <see cref="Middleware.AuthHeaderHandler"/> for proactive refresh.
     /// </summary>
     public bool IsAccessTokenExpiringSoon => _accessTokenExpiresAt <= DateTime.UtcNow.AddSeconds(30);
 
-    public AccessTokenManager(IAuthApiService authApiService, ITokenStorage tokenStorage)
+    public AccessTokenManager(Func<IAuthApiService> authApiServiceFactory, ITokenStorage tokenStorage)
     {
-        _authApiService = authApiService;
+        _authApiServiceFactory = authApiServiceFactory;
         _tokenStorage = tokenStorage;
     }
 
@@ -41,7 +43,7 @@ public class AccessTokenManager : IAccessTokenManager
         try
         {
             var request = new LoginRequest { Email = email, Password = password };
-            var response = await _authApiService.LoginAsync(request);
+            var response = await _authApiServiceFactory().LoginAsync(request);
 
             if (response == null)
                 return false;
@@ -71,7 +73,7 @@ public class AccessTokenManager : IAccessTokenManager
                 LastName = lastName
             };
 
-            var response = await _authApiService.RegisterAsync(request);
+            var response = await _authApiServiceFactory().RegisterAsync(request);
 
             if (response == null)
                 return false;
@@ -91,25 +93,54 @@ public class AccessTokenManager : IAccessTokenManager
 
     public async Task InitializeAsync()
     {
+        _accessToken = await _tokenStorage.GetAccessTokenAsync();
+        _refreshToken = await _tokenStorage.GetRefreshTokenAsync();
+
+        if (string.IsNullOrEmpty(_refreshToken))
+        {
+            ClearState();
+            await _tokenStorage.ClearTokensAsync();
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(_accessToken))
+        {
+            ParseJwtClaims(_accessToken);
+        }
+
+        // Validate the session by refreshing the token server-side.
+        // This ensures the refresh token still exists in the DB
+        // (e.g. after a database reset or token expiry).
         try
         {
-            _accessToken = await _tokenStorage.GetAccessTokenAsync();
-            _refreshToken = await _tokenStorage.GetRefreshTokenAsync();
+            var response = await _authApiServiceFactory().RefreshTokenAsync(_refreshToken);
 
-            if (!string.IsNullOrEmpty(_accessToken))
+            if (response == null)
             {
-                ParseJwtClaims(_accessToken);
+                // Server rejected the refresh token — session is invalid
+                ClearState();
+                await _tokenStorage.ClearTokensAsync();
+                return;
             }
 
-            if (IsAuthenticated)
-            {
-                await LoadProfile();
-            }
+            ApplyAuthResponse(response);
+            await SaveTokens(response.AccessToken, response.RefreshToken);
+        }
+        catch (HttpRequestException)
+        {
+            // Network error — let ShellViewModel handle (NoConnectionViewModel)
+            throw;
+        }
+        catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
+        {
+            // Timeout — let ShellViewModel handle (NoConnectionViewModel)
+            throw;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to load tokens: {ex.Message}");
-            await LogoutAsync();
+            Console.WriteLine($"Failed to validate session: {ex.Message}");
+            ClearState();
+            await _tokenStorage.ClearTokensAsync();
         }
     }
 
@@ -120,11 +151,14 @@ public class AccessTokenManager : IAccessTokenManager
 
         try
         {
-            var response = await _authApiService.RefreshTokenAsync(_refreshToken);
+            var response = await _authApiServiceFactory().RefreshTokenAsync(_refreshToken);
 
             if (response == null)
             {
-                await LogoutAsync();
+                // Server rejected the refresh token — session is invalid
+                ClearState();
+                await _tokenStorage.ClearTokensAsync();
+                SessionInvalidated?.Invoke();
                 return false;
             }
 
@@ -134,8 +168,9 @@ public class AccessTokenManager : IAccessTokenManager
         }
         catch (Exception ex)
         {
+            // Network or unexpected error — don't invalidate the session,
+            // the user may still have a valid token once connectivity is restored.
             Console.WriteLine($"Refresh token failed: {ex.Message}");
-            await LogoutAsync();
             return false;
         }
     }
@@ -146,7 +181,7 @@ public class AccessTokenManager : IAccessTokenManager
         {
             if (!string.IsNullOrEmpty(_refreshToken))
             {
-                await _authApiService.RevokeTokenAsync(_refreshToken);
+                await _authApiServiceFactory().RevokeTokenAsync(_refreshToken);
             }
         }
         catch (Exception ex)
@@ -193,7 +228,7 @@ public class AccessTokenManager : IAccessTokenManager
     {
         try
         {
-            _currentUser = await _authApiService.GetProfileAsync();
+            _currentUser = await _authApiServiceFactory().GetProfileAsync();
 
             if (_currentUser != null)
             {

@@ -61,8 +61,9 @@ public static class DependencyContainer
     private static void RegisterServices(IServiceCollection services)
     {
         services.AddSingleton<ITokenStorage, TokenStorage>();
-        services.AddSingleton<IAuthApiService, AuthApiService>();
-        services.AddSingleton<IAccessTokenManager, AccessTokenManager>();
+
+        services.AddSingleton<IAccessTokenManager>(sp =>
+            new AccessTokenManager(() => sp.GetRequiredService<IAuthApiService>(), sp.GetRequiredService<ITokenStorage>()));
 
         // Preferences
         services.AddSingleton<IPreferencesService, PreferencesService>();
@@ -113,8 +114,35 @@ public static class DependencyContainer
         });
 
         // For other API services that need authentication, add AuthHeaderHandler:
-        // services.AddHttpClient<IOtherApiService, OtherApiService>(...)
-        //     .AddHttpMessageHandler<AuthHeaderHandler>();
+        services.AddHttpClient<IStatsApiService, StatsApiService>(client =>
+        {
+            client.BaseAddress = new Uri(apiBaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(30);
+        })
+        .AddHttpMessageHandler<AuthHeaderHandler>()
+        .ConfigurePrimaryHttpMessageHandler(() =>
+        {
+            var handler = new HttpClientHandler();
+#if DEBUG
+            handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+#endif
+            return handler;
+        });
+
+        services.AddHttpClient<IBlockApiService, BlockApiService>(client =>
+        {
+            client.BaseAddress = new Uri(apiBaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(30);
+        })
+        .AddHttpMessageHandler<AuthHeaderHandler>()
+        .ConfigurePrimaryHttpMessageHandler(() =>
+        {
+            var handler = new HttpClientHandler();
+#if DEBUG
+            handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+#endif
+            return handler;
+        });
     }
 
     private static void RegisterViewModels(IServiceCollection services)
@@ -141,8 +169,13 @@ public static class DependencyContainer
         // Main view and tabs
         services.AddTransient<MainViewModel>();
         services.AddTransient<HomeViewModel>();
-        services.AddTransient<BlocksViewModel>();
-        services.AddTransient<StatsViewModel>();
+        services.AddTransient<BlocksViewModel>(sp => new BlocksViewModel(sp.GetRequiredService<IBlockApiService>()));
+        services.AddTransient<StatsViewModel>(sp =>
+        {
+            var appUsageService = sp.GetService<IAppUsageService>();
+            var statsApiService = sp.GetRequiredService<IStatsApiService>();
+            return new StatsViewModel(appUsageService, statsApiService);
+        });
         services.AddTransient<ProfileViewModel>();
     }
 }

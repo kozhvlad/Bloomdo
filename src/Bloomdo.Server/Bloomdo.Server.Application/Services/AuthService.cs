@@ -66,15 +66,53 @@ public class AuthService : IAuthService
         return await GenerateAuthResponseAsync(account, ipAddress, cancellationToken);
     }
 
-    public async Task<AuthResponse> RefreshTokenAsync(string refreshToken, string ipAddress, CancellationToken cancellationToken = default)
+    public async Task<AuthResponse?> RefreshTokenAsync(string refreshToken, string ipAddress, CancellationToken cancellationToken = default)
     {
         var token = await _refreshTokenRepository.FirstOrDefaultAsync(
             rt => rt.Token == refreshToken,
             cancellationToken);
 
-        if (token == null || !token.IsActive)
+        if (token == null)
         {
-            throw new InvalidRefreshTokenException();
+            return null;
+        }
+
+        // Grace period: if this token was just revoked (< 30s ago) and was replaced,
+        // treat as a duplicate/retry request — return the replacement token's response.
+        if (!token.IsActive && token.IsRevoked && token.ReplacedByToken != null
+            && token.RevokedAt.HasValue && (DateTime.UtcNow - token.RevokedAt.Value).TotalSeconds < 30)
+        {
+            var replacementToken = await _refreshTokenRepository.FirstOrDefaultAsync(
+                rt => rt.Token == token.ReplacedByToken,
+                cancellationToken);
+
+            if (replacementToken is { IsActive: true })
+            {
+                var acct = await _accountRepository.GetByIdAsync(replacementToken.AccountId, cancellationToken)
+                           ?? throw new AccountNotFoundException(replacementToken.AccountId);
+
+                var acctRoles = GetAccountRoles(acct);
+                var acctPerms = await _rolePermissionRepository.GetPermissionsForRolesAsync(acctRoles, cancellationToken);
+                var acctAccessToken = _jwtService.GenerateAccessToken(acct.Id, acct.Email, acctRoles, acctPerms);
+
+                return new AuthResponse
+                {
+                    Id = acct.Id,
+                    Email = acct.Email,
+                    FirstName = acct.FirstName,
+                    LastName = acct.LastName,
+                    Roles = acctRoles.ToList(),
+                    Permissions = acctPerms.ToList(),
+                    AccessToken = acctAccessToken,
+                    RefreshToken = replacementToken.Token,
+                    AccessTokenExpiresAt = DateTime.UtcNow.AddMinutes(_jwtService.AccessTokenExpirationMinutes)
+                };
+            }
+        }
+
+        if (!token.IsActive)
+        {
+            return null;
         }
 
         var account = await _accountRepository.GetByIdAsync(token.AccountId, cancellationToken);
@@ -86,12 +124,6 @@ public class AuthService : IAuthService
         // Rotate the refresh token
         var newRefreshToken = _jwtService.GenerateRefreshToken();
 
-        token.IsRevoked = true;
-        token.RevokedAt = DateTime.UtcNow;
-        token.RevokedByIp = ipAddress;
-        token.ReplacedByToken = newRefreshToken;
-        await _refreshTokenRepository.UpdateAsync(token, cancellationToken);
-
         var roles = GetAccountRoles(account);
         var permissions = await _rolePermissionRepository.GetPermissionsForRolesAsync(roles, cancellationToken);
 
@@ -102,7 +134,16 @@ public class AuthService : IAuthService
             ExpiresAt = DateTime.UtcNow.AddDays(_authSettings.RefreshTokenExpirationDays),
             CreatedByIp = ipAddress
         };
+
+        // Persist new token first, so the user is never locked out
         await _refreshTokenRepository.AddAsync(newToken, cancellationToken);
+
+        // Then revoke old token
+        token.IsRevoked = true;
+        token.RevokedAt = DateTime.UtcNow;
+        token.RevokedByIp = ipAddress;
+        token.ReplacedByToken = newRefreshToken;
+        await _refreshTokenRepository.UpdateAsync(token, cancellationToken);
 
         var accessToken = _jwtService.GenerateAccessToken(account.Id, account.Email, roles, permissions);
 

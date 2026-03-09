@@ -11,6 +11,12 @@ public interface IAccessTokenManager
     IReadOnlyList<UserRole> CurrentRoles { get; }
     IReadOnlyList<string> CurrentPermissions { get; }
 
+    /// <summary>
+    /// Raised when an active session becomes invalid (e.g. refresh token rejected by server).
+    /// Subscribers should navigate the user to the login screen.
+    /// </summary>
+    event Action? SessionInvalidated;
+
     Task<bool> LoginAsync(string email, string password);
     Task<bool> RegisterAsync(string email, string password, string? firstName, string? lastName);
     Task<bool> RefreshTokenAsync();

@@ -56,23 +56,15 @@ public class AuthApiService : IAuthApiService
 
     public async Task<AuthResponse?> RefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var request = new RefreshTokenRequest { RefreshToken = refreshToken };
-            var response = await _httpClient.PostAsJsonAsync(ApiRoutes.Auth.Refresh, request, cancellationToken);
-            
-            if (response.IsSuccessStatusCode)
-            {
-                return await response.Content.ReadFromJsonAsync<AuthResponse>(cancellationToken);
-            }
+        var request = new RefreshTokenRequest { RefreshToken = refreshToken };
+        var response = await _httpClient.PostAsJsonAsync(ApiRoutes.Auth.Refresh, request, cancellationToken);
 
-            return null;
-        }
-        catch (Exception ex)
+        if (response.IsSuccessStatusCode)
         {
-            Console.WriteLine($"Refresh token failed: {ex.Message}");
-            return null;
+            return await response.Content.ReadFromJsonAsync<AuthResponse>(cancellationToken);
         }
+
+        return null;
     }
 
     public async Task<bool> RevokeTokenAsync(string refreshToken, CancellationToken cancellationToken = default)

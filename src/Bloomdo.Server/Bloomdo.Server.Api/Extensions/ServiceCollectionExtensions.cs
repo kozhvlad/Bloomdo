@@ -71,6 +71,9 @@ public static class ServiceCollectionExtensions
             serviceCollection.AddScoped<IJwtService, JwtService>();
             serviceCollection.AddScoped<IAuthService, AuthService>();
             serviceCollection.AddScoped<IAuthSettings>(sp => sp.GetRequiredService<JwtSettings>());
+            serviceCollection.AddScoped<IStatsService, StatsService>();
+            serviceCollection.AddScoped<IBlockService, BlockService>();
+            serviceCollection.AddScoped<IAchievementService, AchievementService>();
         }
 
         public void RegisterRepositories()
@@ -78,6 +81,7 @@ public static class ServiceCollectionExtensions
             serviceCollection.AddScoped(typeof(IRepository<>), typeof(Repository<>));
             serviceCollection.AddScoped<IAccountRepository, AccountRepository>();
             serviceCollection.AddScoped<IRolePermissionRepository, RolePermissionRepository>();
+            serviceCollection.AddScoped<IStatsRepository, StatsRepository>();
         }
     }
 }

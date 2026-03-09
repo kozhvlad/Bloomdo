@@ -12,6 +12,7 @@ public partial class ShellViewModel : ObservableObject
     private readonly IPreferencesService _preferencesService;
     private readonly Func<INavigationService> _navigationServiceFactory;
     private INavigationService? _navigationService;
+    private SynchronizationContext? _uiContext;
 
     private const string OnboardingCompletedKey = "OnboardingCompleted";
 
@@ -32,7 +33,9 @@ public partial class ShellViewModel : ObservableObject
     {
         Debug.WriteLine("ShellViewModel.InitializeAsync started");
 
+        _uiContext = SynchronizationContext.Current;
         _navigationService ??= _navigationServiceFactory();
+        _tokenManager.SessionInvalidated += OnSessionInvalidated;
 
         // First launch → show onboarding
         if (!IsOnboardingCompleted())
@@ -66,6 +69,26 @@ public partial class ShellViewModel : ObservableObject
         {
             Debug.WriteLine($"Timeout during initialization: {ex.Message}");
             _navigationService.NavigateTo<NoConnectionViewModel>();
+        }
+    }
+
+    private void OnSessionInvalidated()
+    {
+        Debug.WriteLine("Session invalidated, navigating to LoginViewModel");
+
+        void Navigate()
+        {
+            _navigationService ??= _navigationServiceFactory();
+            _navigationService.NavigateTo<LoginViewModel>();
+        }
+
+        if (_uiContext != null)
+        {
+            _uiContext.Post(_ => Navigate(), null);
+        }
+        else
+        {
+            Navigate();
         }
     }
 

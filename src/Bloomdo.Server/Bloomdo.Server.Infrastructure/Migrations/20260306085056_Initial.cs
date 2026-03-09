@@ -41,6 +41,29 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Achievements",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "uuid_generate_v4()"),
+                    Code = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    Title = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    Description = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false),
+                    Icon = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
+                    SortOrder = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedBy = table.Column<string>(type: "text", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "text", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    DeletedBy = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Achievements", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Roles",
                 columns: table => new
                 {
@@ -53,6 +76,98 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Roles", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AppUsageRecords",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "uuid_generate_v4()"),
+                    AccountId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Date = table.Column<DateOnly>(type: "date", nullable: false),
+                    PackageName = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false),
+                    AppLabel = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                    ForegroundSeconds = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedBy = table.Column<string>(type: "text", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "text", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    DeletedBy = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AppUsageRecords", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AppUsageRecords_Accounts_AccountId",
+                        column: x => x.AccountId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "BlockRules",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "uuid_generate_v4()"),
+                    AccountId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Title = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    Type = table.Column<int>(type: "integer", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                    BlockedPackagesJson = table.Column<string>(type: "jsonb", nullable: false),
+                    StartTime = table.Column<TimeOnly>(type: "time without time zone", nullable: true),
+                    EndTime = table.Column<TimeOnly>(type: "time without time zone", nullable: true),
+                    ScheduleDaysJson = table.Column<string>(type: "jsonb", nullable: true),
+                    DailyLimitMinutes = table.Column<int>(type: "integer", nullable: true),
+                    FocusDurationMinutes = table.Column<int>(type: "integer", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedBy = table.Column<string>(type: "text", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "text", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    DeletedBy = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BlockRules", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_BlockRules_Accounts_AccountId",
+                        column: x => x.AccountId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DailySnapshots",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "uuid_generate_v4()"),
+                    AccountId = table.Column<Guid>(type: "uuid", nullable: false),
+                    Date = table.Column<DateOnly>(type: "date", nullable: false),
+                    TotalScreenTimeSeconds = table.Column<int>(type: "integer", nullable: false),
+                    Pickups = table.Column<int>(type: "integer", nullable: false),
+                    GoalMet = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedBy = table.Column<string>(type: "text", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "text", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    DeletedBy = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DailySnapshots", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_DailySnapshots_Accounts_AccountId",
+                        column: x => x.AccountId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -83,6 +198,39 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                         name: "FK_RefreshTokens_Accounts_AccountId",
                         column: x => x.AccountId,
                         principalTable: "Accounts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AccountAchievements",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false, defaultValueSql: "uuid_generate_v4()"),
+                    AccountId = table.Column<Guid>(type: "uuid", nullable: false),
+                    AchievementId = table.Column<Guid>(type: "uuid", nullable: false),
+                    UnlockedDate = table.Column<DateOnly>(type: "date", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    CreatedBy = table.Column<string>(type: "text", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    UpdatedBy = table.Column<string>(type: "text", nullable: true),
+                    IsDeleted = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                    DeletedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    DeletedBy = table.Column<string>(type: "text", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AccountAchievements", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AccountAchievements_Accounts_AccountId",
+                        column: x => x.AccountId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AccountAchievements_Achievements_AchievementId",
+                        column: x => x.AchievementId,
+                        principalTable: "Achievements",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -146,6 +294,18 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                 });
 
             migrationBuilder.InsertData(
+                table: "Achievements",
+                columns: new[] { "Id", "Code", "CreatedAt", "CreatedBy", "DeletedAt", "DeletedBy", "Description", "Icon", "SortOrder", "Title", "UpdatedAt", "UpdatedBy" },
+                values: new object[,]
+                {
+                    { new Guid("a0000000-0000-0000-0000-000000000001"), "streak_3", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, null, null, "Achieve a 3-day streak", "🔥", 1, "Getting Started", null, null },
+                    { new Guid("a0000000-0000-0000-0000-000000000002"), "streak_7", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, null, null, "Achieve a 7-day streak", "⚡", 2, "Week Warrior", null, null },
+                    { new Guid("a0000000-0000-0000-0000-000000000003"), "streak_14", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, null, null, "Achieve a 14-day streak", "💪", 3, "Two Weeks Strong", null, null },
+                    { new Guid("a0000000-0000-0000-0000-000000000004"), "streak_30", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, null, null, "Achieve a 30-day streak", "🏆", 4, "Monthly Master", null, null },
+                    { new Guid("a0000000-0000-0000-0000-000000000005"), "streak_100", new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), null, null, null, "Achieve a 100-day streak", "👑", 5, "Century Club", null, null }
+                });
+
+            migrationBuilder.InsertData(
                 table: "Roles",
                 columns: new[] { "Id", "CreatedAt", "Description", "IsActive", "Name" },
                 values: new object[,]
@@ -205,6 +365,17 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_AccountAchievements_AccountId_AchievementId",
+                table: "AccountAchievements",
+                columns: new[] { "AccountId", "AchievementId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AccountAchievements_AchievementId",
+                table: "AccountAchievements",
+                column: "AchievementId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AccountRoles_AccountId_RoleId",
                 table: "AccountRoles",
                 columns: new[] { "AccountId", "RoleId" },
@@ -219,6 +390,31 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                 name: "IX_Accounts_Email",
                 table: "Accounts",
                 column: "Email",
+                unique: true,
+                filter: "\"IsDeleted\" = false");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Achievements_Code",
+                table: "Achievements",
+                column: "Code",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AppUsageRecords_AccountId_Date_PackageName",
+                table: "AppUsageRecords",
+                columns: new[] { "AccountId", "Date", "PackageName" },
+                unique: true,
+                filter: "\"IsDeleted\" = false");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BlockRules_AccountId",
+                table: "BlockRules",
+                column: "AccountId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DailySnapshots_AccountId_Date",
+                table: "DailySnapshots",
+                columns: new[] { "AccountId", "Date" },
                 unique: true,
                 filter: "\"IsDeleted\" = false");
 
@@ -250,13 +446,28 @@ namespace Bloomdo.Server.Infrastructure.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "AccountAchievements");
+
+            migrationBuilder.DropTable(
                 name: "AccountRoles");
+
+            migrationBuilder.DropTable(
+                name: "AppUsageRecords");
+
+            migrationBuilder.DropTable(
+                name: "BlockRules");
+
+            migrationBuilder.DropTable(
+                name: "DailySnapshots");
 
             migrationBuilder.DropTable(
                 name: "RefreshTokens");
 
             migrationBuilder.DropTable(
                 name: "RolePermissions");
+
+            migrationBuilder.DropTable(
+                name: "Achievements");
 
             migrationBuilder.DropTable(
                 name: "Accounts");

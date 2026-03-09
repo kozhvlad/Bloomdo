@@ -3,41 +3,86 @@
 			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 			 xmlns:shad="clr-namespace:ShadUI;assembly=ShadUI"
+			 xmlns:converters="clr-namespace:Bloomdo.Client.UI.Converters"
 			 xmlns:mainComponents="clr-namespace:Bloomdo.Client.Application.ViewModels.MainComponents;assembly=Bloomdo.Client.Application"
+			 xmlns:items="clr-namespace:Bloomdo.Client.Application.ViewModels.Items;assembly=Bloomdo.Client.Application"
 			 mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="800"
 			 x:DataType="mainComponents:BlocksViewModel"
 			 x:Class="Bloomdo.Client.UI.MainComponents.BlocksView">
+	<UserControl.Resources>
+		<converters:BlockTypeColorConverter x:Key="BlockTypeColorConverter" />
+	</UserControl.Resources>
 	<Grid Background="{DynamicResource Brush.Background}">
-		
+
 		<!-- Main Content -->
 		<ScrollViewer>
 			<StackPanel Margin="24" Spacing="24">
-				<TextBlock Text="Block apps with Limits or Schedules." 
-						   FontSize="28" 
-						   FontWeight="Bold" 
-						   TextWrapping="Wrap"
-						   Foreground="{DynamicResource Brush.Foreground}"/>
+				<StackPanel Spacing="4">
+					<TextBlock Text="Blocks" 
+							   FontSize="28" 
+							   FontWeight="Bold" 
+							   TextWrapping="Wrap"
+							   Foreground="{DynamicResource Brush.Foreground}"/>
+					<TextBlock Text="Block apps with Limits or Schedules"
+							   FontSize="14"
+							   Foreground="{DynamicResource Brush.Foreground}"
+							   Opacity="0.7" />
+				</StackPanel>
 
-				<ItemsControl ItemsSource="{Binding Blockers}">
+				<!-- Empty state -->
+				<StackPanel IsVisible="{Binding HasNoBlockers}" 
+							Spacing="12" 
+							HorizontalAlignment="Center" 
+							Margin="0,40">
+					<TextBlock Text="No blocks yet" 
+							   FontSize="18" 
+							   FontWeight="SemiBold" 
+							   HorizontalAlignment="Center"
+							   Opacity="0.6" />
+					<TextBlock Text="Tap + to create your first block" 
+							   FontSize="14" 
+							   HorizontalAlignment="Center"
+							   Opacity="0.4" />
+				</StackPanel>
+
+				<!-- Block rules list -->
+				<ItemsControl ItemsSource="{Binding Blockers}" Margin="0,0,0,80">
 					<ItemsControl.ItemTemplate>
-						<DataTemplate>
-							<shad:Card Margin="0,0,0,16" Padding="0">
+						<DataTemplate x:DataType="items:BlockerItem">
+							<shad:Card Margin="0,0,0,12" Padding="0">
 								<Grid RowDefinitions="Auto,Auto" Margin="16">
-									<Grid ColumnDefinitions="*,Auto" Margin="0,0,0,12">
-										<StackPanel Spacing="4">
+									<Grid ColumnDefinitions="Auto,*,Auto">
+										<!-- Type color indicator -->
+										<Border Grid.Column="0" 
+												Width="4" CornerRadius="2"
+												Background="{Binding TypeColor, Converter={StaticResource BlockTypeColorConverter}}"
+												Margin="0,0,12,0"
+												VerticalAlignment="Stretch" />
+
+										<StackPanel Grid.Column="1" Spacing="4">
 											<TextBlock Text="{Binding Title}" FontSize="18" FontWeight="SemiBold"/>
 											<StackPanel Orientation="Horizontal" Spacing="8">
-												<PathIcon Data="{x:Static shad:Icons.DateTime}" Height="14" Width="14" Opacity="0.7"/>
-												<TextBlock Text="{Binding Time}" Opacity="0.7" FontSize="14"/>
+												<Border Background="{Binding TypeColor, Converter={StaticResource BlockTypeColorConverter}}" 
+														CornerRadius="4" Padding="6,2" Opacity="0.8">
+													<TextBlock Text="{Binding TypeLabel}" FontSize="11" FontWeight="SemiBold" Foreground="White" />
+												</Border>
+												<TextBlock Text="{Binding TimeDescription}" Opacity="0.7" FontSize="13" VerticalAlignment="Center"/>
 											</StackPanel>
+											<TextBlock Opacity="0.5" FontSize="12" IsVisible="{Binding BlockedAppCount}">
+												<TextBlock.Text>
+													<MultiBinding StringFormat="{}{0} apps blocked">
+														<Binding Path="BlockedAppCount" />
+													</MultiBinding>
+												</TextBlock.Text>
+											</TextBlock>
 										</StackPanel>
-										<ToggleSwitch IsChecked="{Binding IsActive}" OnContent="" OffContent="" Grid.Column="1"/>
+
+										<ToggleSwitch Grid.Column="2" 
+													  IsChecked="{Binding IsActive}" 
+													  OnContent="" OffContent=""
+													  Command="{Binding $parent[ItemsControl].((mainComponents:BlocksViewModel)DataContext).ToggleBlockerActiveCommand}"
+													  CommandParameter="{Binding}" />
 									</Grid>
-									
-									<StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" IsVisible="{Binding IsLocked}">
-										<PathIcon Data="{x:Static shad:Icons.Warning}" Height="14" Width="14" Foreground="Red"/>
-										<TextBlock Text="Apps Blocked" Foreground="Red" FontSize="12" VerticalAlignment="Center"/>
-									</StackPanel>
 								</Grid>
 							</shad:Card>
 						</DataTemplate>
@@ -57,9 +102,10 @@
 
 		<!-- FAB Menu -->
 		<StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,24,100" Spacing="24" IsVisible="{Binding IsMenuOpen}">
-			
-			<!-- Block Now -->
-			<Button Classes="Ghost" HorizontalAlignment="Right" Padding="8" Height="NaN" HorizontalContentAlignment="Right" Background="Transparent">
+
+			<!-- Block Now (Focus) -->
+			<Button Classes="Ghost" HorizontalAlignment="Right" Padding="8" Height="NaN" HorizontalContentAlignment="Right" Background="Transparent"
+					Command="{Binding CreateFocusBlockCommand}">
 				<StackPanel Orientation="Horizontal" Spacing="16">
 					<StackPanel HorizontalAlignment="Right" VerticalAlignment="Center">
 						<TextBlock Text="Block Now" FontWeight="Bold" HorizontalAlignment="Right" Foreground="White"/>
@@ -73,7 +119,8 @@
 			</Button>
 
 			<!-- Schedule Block -->
-			<Button Classes="Ghost" HorizontalAlignment="Right" Padding="8" Height="NaN" HorizontalContentAlignment="Right" Background="Transparent">
+			<Button Classes="Ghost" HorizontalAlignment="Right" Padding="8" Height="NaN" HorizontalContentAlignment="Right" Background="Transparent"
+					Command="{Binding CreateScheduleBlockCommand}">
 				<StackPanel Orientation="Horizontal" Spacing="16">
 					<StackPanel HorizontalAlignment="Right" VerticalAlignment="Center">
 						<TextBlock Text="Schedule Block" FontWeight="Bold" HorizontalAlignment="Right" Foreground="White"/>
@@ -87,7 +134,8 @@
 			</Button>
 
 			<!-- Set Limits -->
-			<Button Classes="Ghost" HorizontalAlignment="Right" Padding="8" Height="NaN" HorizontalContentAlignment="Right" Background="Transparent">
+			<Button Classes="Ghost" HorizontalAlignment="Right" Padding="8" Height="NaN" HorizontalContentAlignment="Right" Background="Transparent"
+					Command="{Binding CreateLimitBlockCommand}">
 				<StackPanel Orientation="Horizontal" Spacing="16">
 					<StackPanel HorizontalAlignment="Right" VerticalAlignment="Center">
 						<TextBlock Text="Set Limits" FontWeight="Bold" HorizontalAlignment="Right" Foreground="White"/>
@@ -99,8 +147,9 @@
 				</StackPanel>
 			</Button>
 
-			<!-- Blocking -->
-			<Button Classes="Ghost" HorizontalAlignment="Right" Padding="8" Height="NaN" HorizontalContentAlignment="Right" Background="Transparent">
+			<!-- Bloomdo Blocking -->
+			<Button Classes="Ghost" HorizontalAlignment="Right" Padding="8" Height="NaN" HorizontalContentAlignment="Right" Background="Transparent"
+					Command="{Binding CreateBloomdoBlockCommand}">
 				<StackPanel Orientation="Horizontal" Spacing="16">
 					<StackPanel HorizontalAlignment="Right" VerticalAlignment="Center">
 						<TextBlock Text="Bloomdo Blocking" FontWeight="Bold" HorizontalAlignment="Right" Foreground="White"/>
@@ -129,7 +178,7 @@
 						<RotateTransform Angle="45"/>
 					</PathIcon.RenderTransform>
 				</PathIcon>
-				
+
 				<!-- Close Icon (Cross) -->
 				<PathIcon Data="{x:Static shad:Icons.Cross}" 
 						  Height="24" Width="24" 

@@ -16,6 +16,11 @@ public class AppDbContext : DbContext
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<Role> Roles { get; set; }
     public DbSet<RolePermission> RolePermissions { get; set; }
+    public DbSet<AppUsageRecord> AppUsageRecords { get; set; }
+    public DbSet<DailySnapshot> DailySnapshots { get; set; }
+    public DbSet<BlockRule> BlockRules { get; set; }
+    public DbSet<Achievement> Achievements { get; set; }
+    public DbSet<AccountAchievement> AccountAchievements { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -130,6 +135,113 @@ public class AppDbContext : DbContext
             entity.HasQueryFilter(e => !e.IsDeleted);
         });
 
+        // AppUsageRecord configuration
+        modelBuilder.Entity<AppUsageRecord>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasDefaultValueSql("uuid_generate_v4()");
+
+            entity.Property(e => e.PackageName).IsRequired().HasMaxLength(512);
+            entity.Property(e => e.AppLabel).HasMaxLength(256);
+            entity.Property(e => e.ForegroundSeconds).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+
+            entity.HasIndex(e => new { e.AccountId, e.Date, e.PackageName }).IsUnique()
+                .HasFilter("\"IsDeleted\" = false");
+
+            entity.HasOne(e => e.Account)
+                .WithMany()
+                .HasForeignKey(e => e.AccountId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasQueryFilter(e => !e.IsDeleted);
+        });
+
+        // DailySnapshot configuration
+        modelBuilder.Entity<DailySnapshot>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasDefaultValueSql("uuid_generate_v4()");
+
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+
+            entity.HasIndex(e => new { e.AccountId, e.Date }).IsUnique()
+                .HasFilter("\"IsDeleted\" = false");
+
+            entity.HasOne(e => e.Account)
+                .WithMany()
+                .HasForeignKey(e => e.AccountId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasQueryFilter(e => !e.IsDeleted);
+        });
+
+        // BlockRule configuration
+        modelBuilder.Entity<BlockRule>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasDefaultValueSql("uuid_generate_v4()");
+
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(256);
+            entity.Property(e => e.Type).IsRequired();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.BlockedPackagesJson).IsRequired().HasColumnType("jsonb");
+            entity.Property(e => e.ScheduleDaysJson).HasColumnType("jsonb");
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+
+            entity.HasOne(e => e.Account)
+                .WithMany()
+                .HasForeignKey(e => e.AccountId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasQueryFilter(e => !e.IsDeleted);
+        });
+
+        // Achievement configuration
+        modelBuilder.Entity<Achievement>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasDefaultValueSql("uuid_generate_v4()");
+
+            entity.Property(e => e.Code).IsRequired().HasMaxLength(64);
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(128);
+            entity.Property(e => e.Description).HasMaxLength(512);
+            entity.Property(e => e.Icon).HasMaxLength(16);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+
+            entity.HasIndex(e => e.Code).IsUnique();
+
+            entity.HasQueryFilter(e => !e.IsDeleted);
+        });
+
+        // AccountAchievement configuration
+        modelBuilder.Entity<AccountAchievement>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasDefaultValueSql("uuid_generate_v4()");
+
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+
+            entity.HasIndex(e => new { e.AccountId, e.AchievementId }).IsUnique();
+
+            entity.HasOne(e => e.Account)
+                .WithMany()
+                .HasForeignKey(e => e.AccountId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Achievement)
+                .WithMany(a => a.AccountAchievements)
+                .HasForeignKey(e => e.AchievementId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasQueryFilter(e => !e.IsDeleted);
+        });
+
         SeedData(modelBuilder);
     }
 
@@ -226,5 +338,14 @@ public class AppDbContext : DbContext
         }
 
         modelBuilder.Entity<RolePermission>().HasData(entries.ToArray());
+
+        // Seed Achievements
+        modelBuilder.Entity<Achievement>().HasData(
+            new Achievement { Id = new Guid("a0000000-0000-0000-0000-000000000001"), Code = "streak_3", Title = "Getting Started", Description = "Achieve a 3-day streak", Icon = "🔥", SortOrder = 1, CreatedAt = seedDate },
+            new Achievement { Id = new Guid("a0000000-0000-0000-0000-000000000002"), Code = "streak_7", Title = "Week Warrior", Description = "Achieve a 7-day streak", Icon = "⚡", SortOrder = 2, CreatedAt = seedDate },
+            new Achievement { Id = new Guid("a0000000-0000-0000-0000-000000000003"), Code = "streak_14", Title = "Two Weeks Strong", Description = "Achieve a 14-day streak", Icon = "💪", SortOrder = 3, CreatedAt = seedDate },
+            new Achievement { Id = new Guid("a0000000-0000-0000-0000-000000000004"), Code = "streak_30", Title = "Monthly Master", Description = "Achieve a 30-day streak", Icon = "🏆", SortOrder = 4, CreatedAt = seedDate },
+            new Achievement { Id = new Guid("a0000000-0000-0000-0000-000000000005"), Code = "streak_100", Title = "Century Club", Description = "Achieve a 100-day streak", Icon = "👑", SortOrder = 5, CreatedAt = seedDate }
+        );
     }
 }

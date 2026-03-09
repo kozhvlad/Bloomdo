@@ -39,6 +39,10 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
     {
         var response = await _authService.RefreshTokenAsync(request.RefreshToken, GetIpAddress(), cancellationToken);
+
+        if (response == null)
+            return Unauthorized(new { message = "Invalid or expired refresh token" });
+
         return Ok(response);
     }
 
