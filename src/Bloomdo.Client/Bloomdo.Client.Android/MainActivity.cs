@@ -1,4 +1,6 @@
-﻿using Android.App;
+﻿using System;
+using Android.App;
+using Android.Content;
 using Android.Content.PM;
 using Android.OS;
 using Avalonia;
@@ -24,11 +26,15 @@ public class MainActivity : AvaloniaMainActivity<App>
         DependencyContainer.RegisterPlatformServices = services =>
         {
             services.AddSingleton<IAppUsageService>(sp => new AndroidAppUsageService(global::Android.App.Application.Context));
+            services.AddSingleton<IInstalledAppsService>(sp => new AndroidInstalledAppsService(global::Android.App.Application.Context));
+            services.AddSingleton<IBlockEnforcementService>(sp => new AndroidBlockEnforcementService(global::Android.App.Application.Context));
         };
 
         base.OnCreate(savedInstanceState);
 
         Platform.Init(this, savedInstanceState);
+
+        StartBlockEnforcement();
     }
 
     protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
@@ -36,5 +42,18 @@ public class MainActivity : AvaloniaMainActivity<App>
         return base.CustomizeAppBuilder(builder)
             .WithInterFont()
             .LogToTrace();
+    }
+
+    private static void StartBlockEnforcement()
+    {
+        try
+        {
+            var enforcement = DependencyContainer.ServiceProvider.GetService<IBlockEnforcementService>();
+            enforcement?.Start();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to start enforcement: {ex.Message}");
+        }
     }
 }

@@ -1,0 +1,105 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:shad="clr-namespace:ShadUI;assembly=ShadUI"
+             xmlns:converters="clr-namespace:Bloomdo.Client.UI.Converters"
+             xmlns:vm="clr-namespace:Bloomdo.Client.Application.ViewModels;assembly=Bloomdo.Client.Application"
+             xmlns:items="clr-namespace:Bloomdo.Client.Application.ViewModels.Items;assembly=Bloomdo.Client.Application"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="800"
+             x:DataType="vm:BlockEditorViewModel"
+             x:Class="Bloomdo.Client.UI.MainComponents.BlockEditorView">
+    <UserControl.Resources>
+        <converters:BlockTypeColorConverter x:Key="BlockTypeColorConverter" />
+    </UserControl.Resources>
+    <Grid RowDefinitions="Auto,*,Auto" Background="{DynamicResource Brush.Background}">
+        <Grid ColumnDefinitions="Auto,*" Margin="16,16,16,0">
+            <Button Command="{Binding CancelCommand}" Background="Transparent" BorderThickness="0" Padding="8" Cursor="Hand">
+                <PathIcon Data="{StaticResource arrow_left_regular}" Width="20" Height="20" Foreground="{DynamicResource Brush.Foreground}"/>
+            </Button>
+            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="{Binding BlockTitle}" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource Brush.Foreground}"/>
+                <Border Background="{Binding TypeColor, Converter={StaticResource BlockTypeColorConverter}}" CornerRadius="4" Padding="8,2" HorizontalAlignment="Left" Opacity="0.8" Margin="0,4,0,0">
+                    <TextBlock Text="{Binding SelectedType}" FontSize="11" FontWeight="SemiBold" Foreground="White"/>
+                </Border>
+            </StackPanel>
+        </Grid>
+        <ScrollViewer Grid.Row="1" Margin="0,8,0,0">
+            <StackPanel Margin="24,0,24,24" Spacing="16">
+                <shad:Card Padding="0">
+                    <StackPanel Margin="16" Spacing="8">
+                        <TextBlock Text="Block Name" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Foreground}"/>
+                        <TextBox Text="{Binding BlockTitle, Mode=TwoWay}" Watermark="Enter block name..."/>
+                    </StackPanel>
+                </shad:Card>
+                <shad:Card Padding="0" IsVisible="{Binding IsScheduleType}">
+                    <StackPanel Margin="16" Spacing="12">
+                        <TextBlock Text="Schedule" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Foreground}"/>
+                        <Grid ColumnDefinitions="*,Auto,*" Margin="0,4">
+                            <TimePicker SelectedTime="{Binding StartTime}" ClockIdentifier="24HourClock" HorizontalAlignment="Stretch"/>
+                            <TextBlock Grid.Column="1" Text="to" VerticalAlignment="Center" Margin="12,0" Opacity="0.6" Foreground="{DynamicResource Brush.Foreground}"/>
+                            <TimePicker Grid.Column="2" SelectedTime="{Binding EndTime}" ClockIdentifier="24HourClock" HorizontalAlignment="Stretch"/>
+                        </Grid>
+                        <TextBlock Text="Days" FontWeight="SemiBold" Margin="0,8,0,0" Foreground="{DynamicResource Brush.Foreground}"/>
+                        <WrapPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                            <ToggleButton Content="Mon" IsChecked="{Binding Monday}" Margin="0,0,6,6" MinWidth="52" HorizontalContentAlignment="Center"/>
+                            <ToggleButton Content="Tue" IsChecked="{Binding Tuesday}" Margin="0,0,6,6" MinWidth="52" HorizontalContentAlignment="Center"/>
+                            <ToggleButton Content="Wed" IsChecked="{Binding Wednesday}" Margin="0,0,6,6" MinWidth="52" HorizontalContentAlignment="Center"/>
+                            <ToggleButton Content="Thu" IsChecked="{Binding Thursday}" Margin="0,0,6,6" MinWidth="52" HorizontalContentAlignment="Center"/>
+                            <ToggleButton Content="Fri" IsChecked="{Binding Friday}" Margin="0,0,6,6" MinWidth="52" HorizontalContentAlignment="Center"/>
+                            <ToggleButton Content="Sat" IsChecked="{Binding Saturday}" Margin="0,0,6,6" MinWidth="52" HorizontalContentAlignment="Center"/>
+                            <ToggleButton Content="Sun" IsChecked="{Binding Sunday}" Margin="0,0,6,6" MinWidth="52" HorizontalContentAlignment="Center"/>
+                        </WrapPanel>
+                    </StackPanel>
+                </shad:Card>
+                <shad:Card Padding="0" IsVisible="{Binding IsLimitType}">
+                    <StackPanel Margin="16" Spacing="8">
+                        <TextBlock Text="Daily Limit" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Foreground}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <NumericUpDown Value="{Binding DailyLimitMinutes}" Minimum="5" Maximum="1440" Increment="5" FormatString="0" MinWidth="120"/>
+                            <TextBlock Text="minutes" VerticalAlignment="Center" Opacity="0.6" Foreground="{DynamicResource Brush.Foreground}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </shad:Card>
+                <shad:Card Padding="0" IsVisible="{Binding IsFocusType}">
+                    <StackPanel Margin="16" Spacing="8">
+                        <TextBlock Text="Focus Duration" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Foreground}"/>
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <NumericUpDown Value="{Binding FocusDurationMinutes}" Minimum="5" Maximum="480" Increment="5" FormatString="0" MinWidth="120"/>
+                            <TextBlock Text="minutes" VerticalAlignment="Center" Opacity="0.6" Foreground="{DynamicResource Brush.Foreground}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </shad:Card>
+                <shad:Card Padding="0" IsVisible="{Binding IsBloomdoType}">
+                    <StackPanel Margin="16" Spacing="4">
+                        <TextBlock Text="Bloomdo Block" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Foreground}"/>
+                        <TextBlock Text="Selected apps will be blocked until you complete your daily Bloomdo goals." TextWrapping="Wrap" Opacity="0.6" FontSize="13" Foreground="{DynamicResource Brush.Foreground}"/>
+                    </StackPanel>
+                </shad:Card>
+                <shad:Card Padding="0">
+                    <StackPanel Margin="16" Spacing="12">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="Apps to Block" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Foreground}"/>
+                            <TextBlock Grid.Column="1" Text="{Binding SelectedAppCountText}" Opacity="0.6" FontSize="13" Foreground="{DynamicResource Brush.Foreground}"/>
+                        </Grid>
+                        <TextBox Text="{Binding SearchText, Mode=TwoWay}" Watermark="Search apps..."/>
+                        <ProgressBar IsVisible="{Binding IsLoadingApps}" IsIndeterminate="True" Margin="0,4"/>
+                        <ItemsControl ItemsSource="{Binding FilteredApps}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="items:SelectableAppItem">
+                                    <Border Margin="0,0,0,4" Padding="12,10" CornerRadius="8" Cursor="Hand">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <TextBlock Text="{Binding AppLabel}" VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource Brush.Foreground}"/>
+                                            <CheckBox Grid.Column="1" IsChecked="{Binding IsSelected}" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </shad:Card>
+            </StackPanel>
+        </ScrollViewer>
+        <Button Grid.Row="2" Content="Create Block" Command="{Binding SaveCommand}" IsEnabled="{Binding !IsSaving}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="24,12" Padding="0,14" Background="#2E7D32" Foreground="White" FontWeight="SemiBold" FontSize="16" CornerRadius="12"/>
+    </Grid>
+</UserControl>

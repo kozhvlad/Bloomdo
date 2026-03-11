@@ -11,6 +11,9 @@ namespace Bloomdo.Client.Application.ViewModels.MainComponents;
 public partial class BlocksViewModel : PageViewModel
 {
     private readonly IBlockApiService? _blockApiService;
+    private readonly IInstalledAppsService? _installedAppsService;
+    private readonly IBlockRuleStore? _blockRuleStore;
+    private List<BlockRuleResponse> _cachedRules = [];
 
     [ObservableProperty]
     private bool _isMenuOpen;
@@ -21,11 +24,22 @@ public partial class BlocksViewModel : PageViewModel
     [ObservableProperty]
     private bool _hasNoBlockers;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsEditing))]
+    private BlockEditorViewModel? _editor;
+
+    public bool IsEditing => Editor is not null;
+
     public ObservableCollection<BlockerItem> Blockers { get; } = [];
 
-    public BlocksViewModel(IBlockApiService? blockApiService = null)
+    public BlocksViewModel(
+        IBlockApiService? blockApiService = null,
+        IInstalledAppsService? installedAppsService = null,
+        IBlockRuleStore? blockRuleStore = null)
     {
         _blockApiService = blockApiService;
+        _installedAppsService = installedAppsService;
+        _blockRuleStore = blockRuleStore;
     }
 
     public override void OnAppearing()
@@ -48,7 +62,15 @@ public partial class BlocksViewModel : PageViewModel
         var newState = !item.IsActive;
         var result = await _blockApiService.UpdateBlockRuleAsync(item.Id, new UpdateBlockRuleRequest { IsActive = newState });
         if (result is not null)
+        {
             item.IsActive = newState;
+
+            var index = _cachedRules.FindIndex(r => r.Id == item.Id);
+            if (index >= 0 && result is not null)
+                _cachedRules[index] = result;
+
+            await SyncRulesToLocalStoreAsync();
+        }
     }
 
     [RelayCommand]
@@ -60,62 +82,70 @@ public partial class BlocksViewModel : PageViewModel
         if (deleted)
         {
             Blockers.Remove(item);
+            _cachedRules.RemoveAll(r => r.Id == item.Id);
             HasNoBlockers = Blockers.Count == 0;
+            await SyncRulesToLocalStoreAsync();
         }
     }
 
     [RelayCommand]
-    private async Task CreateFocusBlock()
+    private void CreateFocusBlock()
     {
         IsMenuOpen = false;
-        await CreateBlockAsync("Focus Session", BlockType.Focus, focusDurationMinutes: 60);
+        OpenEditor(BlockType.Focus, "Focus Session");
     }
 
     [RelayCommand]
-    private async Task CreateScheduleBlock()
+    private void CreateScheduleBlock()
     {
         IsMenuOpen = false;
-        await CreateBlockAsync("Schedule Block", BlockType.Schedule,
-            startTime: new TimeOnly(22, 0), endTime: new TimeOnly(7, 0),
-            days: [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday]);
+        OpenEditor(BlockType.Schedule, "Schedule Block");
     }
 
     [RelayCommand]
-    private async Task CreateLimitBlock()
+    private void CreateLimitBlock()
     {
         IsMenuOpen = false;
-        await CreateBlockAsync("Daily Limit", BlockType.Limit, dailyLimitMinutes: 90);
+        OpenEditor(BlockType.Limit, "Daily Limit");
     }
 
     [RelayCommand]
-    private async Task CreateBloomdoBlock()
+    private void CreateBloomdoBlock()
     {
         IsMenuOpen = false;
-        await CreateBlockAsync("Bloomdo Block", BlockType.Bloomdo);
+        OpenEditor(BlockType.Bloomdo, "Bloomdo Block");
     }
 
-    private async Task CreateBlockAsync(string title, BlockType type,
-        TimeOnly? startTime = null, TimeOnly? endTime = null,
-        List<DayOfWeek>? days = null, int? dailyLimitMinutes = null, int? focusDurationMinutes = null)
+    private void OpenEditor(BlockType type, string defaultTitle)
     {
-        if (_blockApiService is null) return;
+        var editor = new BlockEditorViewModel(_blockApiService, _installedAppsService);
+        editor.Configure(type, defaultTitle);
+        editor.Saved += OnBlockSaved;
+        editor.Cancelled += OnEditorCancelled;
+        Editor = editor;
+    }
 
-        var request = new CreateBlockRuleRequest
+    private async void OnBlockSaved(BlockRuleResponse response)
+    {
+        Blockers.Add(MapToBlockerItem(response));
+        _cachedRules.Add(response);
+        HasNoBlockers = false;
+        CloseEditor();
+        await SyncRulesToLocalStoreAsync();
+    }
+
+    private void OnEditorCancelled()
+    {
+        CloseEditor();
+    }
+
+    private void CloseEditor()
+    {
+        if (Editor is not null)
         {
-            Title = title,
-            Type = type,
-            StartTime = startTime,
-            EndTime = endTime,
-            Days = days,
-            DailyLimitMinutes = dailyLimitMinutes,
-            FocusDurationMinutes = focusDurationMinutes
-        };
-
-        var result = await _blockApiService.CreateBlockRuleAsync(request);
-        if (result is not null)
-        {
-            Blockers.Add(MapToBlockerItem(result));
-            HasNoBlockers = false;
+            Editor.Saved -= OnBlockSaved;
+            Editor.Cancelled -= OnEditorCancelled;
+            Editor = null;
         }
     }
 
@@ -128,14 +158,17 @@ public partial class BlocksViewModel : PageViewModel
         {
             var rules = await _blockApiService.GetBlockRulesAsync();
             Blockers.Clear();
+            _cachedRules.Clear();
 
             if (rules is not null)
             {
+                _cachedRules = [..rules];
                 foreach (var rule in rules)
                     Blockers.Add(MapToBlockerItem(rule));
             }
 
             HasNoBlockers = Blockers.Count == 0;
+            await SyncRulesToLocalStoreAsync();
         }
         catch (Exception ex)
         {
@@ -144,6 +177,20 @@ public partial class BlocksViewModel : PageViewModel
         finally
         {
             IsLoading = false;
+        }
+    }
+
+    private async Task SyncRulesToLocalStoreAsync()
+    {
+        if (_blockRuleStore is null) return;
+
+        try
+        {
+            await _blockRuleStore.SaveRulesAsync(_cachedRules);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"SyncRulesToLocalStore error: {ex}");
         }
     }
 

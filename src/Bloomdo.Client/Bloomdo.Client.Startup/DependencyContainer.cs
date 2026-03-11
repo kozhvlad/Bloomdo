@@ -83,6 +83,9 @@ public static class DependencyContainer
             var toastService = sp.GetRequiredService<IToastService>();
             return new NavigationService(sp, authorizationService, toastService, shellViewModel);
         });
+
+        // Block rule local store
+        services.AddSingleton<IBlockRuleStore, BlockRuleStore>();
     }
 
     private static void RegisterRepositories(IServiceCollection services)
@@ -169,7 +172,10 @@ public static class DependencyContainer
         // Main view and tabs
         services.AddTransient<MainViewModel>();
         services.AddTransient<HomeViewModel>();
-        services.AddTransient<BlocksViewModel>(sp => new BlocksViewModel(sp.GetRequiredService<IBlockApiService>()));
+        services.AddTransient<BlocksViewModel>(sp => new BlocksViewModel(
+            sp.GetRequiredService<IBlockApiService>(),
+            sp.GetService<IInstalledAppsService>(),
+            sp.GetService<IBlockRuleStore>()));
         services.AddTransient<StatsViewModel>(sp =>
         {
             var appUsageService = sp.GetService<IAppUsageService>();

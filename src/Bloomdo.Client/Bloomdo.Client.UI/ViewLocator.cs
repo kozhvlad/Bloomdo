@@ -50,7 +50,10 @@ public class ViewLocator : IDataTemplate
                 
             case BlocksViewModel:
                 return new BlocksView();
-                
+
+            case BlockEditorViewModel:
+                return new BlockEditorView();
+
             case StatsViewModel:
                 return new StatsView();
                 
