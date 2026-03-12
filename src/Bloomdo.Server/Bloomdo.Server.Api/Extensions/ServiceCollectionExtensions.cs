@@ -43,6 +43,7 @@ public static class ServiceCollectionExtensions
                 {
                     options.RequireHttpsMetadata = false;
                     options.SaveToken = true;
+                    options.MapInboundClaims = false;
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuerSigningKey = true,
@@ -52,8 +53,28 @@ public static class ServiceCollectionExtensions
                         ValidateAudience = true,
                         ValidAudience = jwtSettings.Audience,
                         ValidateLifetime = true,
-                        ClockSkew = TimeSpan.Zero,
+                        ClockSkew = TimeSpan.FromSeconds(30),
                         RoleClaimType = ClaimTypes.Role
+                    };
+
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnAuthenticationFailed = context =>
+                        {
+                            Console.WriteLine($"[JWT] Auth FAILED: {context.Exception.GetType().Name}: {context.Exception.Message}");
+                            return Task.CompletedTask;
+                        },
+                        OnTokenValidated = context =>
+                        {
+                            var sub = context.Principal?.FindFirst("sub")?.Value;
+                            Console.WriteLine($"[JWT] Token validated for sub={sub}");
+                            return Task.CompletedTask;
+                        },
+                        OnChallenge = context =>
+                        {
+                            Console.WriteLine($"[JWT] Challenge: Error={context.Error}, Description={context.ErrorDescription}, AuthFailure={context.AuthenticateFailure?.Message}");
+                            return Task.CompletedTask;
+                        }
                     };
                 });
 

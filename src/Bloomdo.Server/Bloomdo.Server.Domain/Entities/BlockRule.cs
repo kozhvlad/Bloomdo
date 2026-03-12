@@ -29,5 +29,10 @@ public class BlockRule : BaseEntity
     // Focus
     public int? FocusDurationMinutes { get; set; }
 
+    /// <summary>
+    /// UTC timestamp when a Focus session was activated. Null when not running.
+    /// </summary>
+    public DateTime? FocusStartedAtUtc { get; set; }
+
     public Account Account { get; set; } = null!;
 }

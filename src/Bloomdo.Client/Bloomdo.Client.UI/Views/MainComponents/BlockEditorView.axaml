@@ -35,11 +35,16 @@
                 <shad:Card Padding="0" IsVisible="{Binding IsScheduleType}">
                     <StackPanel Margin="16" Spacing="12">
                         <TextBlock Text="Schedule" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Foreground}"/>
-                        <Grid ColumnDefinitions="*,Auto,*" Margin="0,4">
-                            <TimePicker SelectedTime="{Binding StartTime}" ClockIdentifier="24HourClock" HorizontalAlignment="Stretch"/>
-                            <TextBlock Grid.Column="1" Text="to" VerticalAlignment="Center" Margin="12,0" Opacity="0.6" Foreground="{DynamicResource Brush.Foreground}"/>
-                            <TimePicker Grid.Column="2" SelectedTime="{Binding EndTime}" ClockIdentifier="24HourClock" HorizontalAlignment="Stretch"/>
-                        </Grid>
+                        <StackPanel Spacing="8" Margin="0,4">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="From" FontSize="12" Opacity="0.6" Foreground="{DynamicResource Brush.Foreground}"/>
+                                <TimePicker SelectedTime="{Binding StartTime}" ClockIdentifier="24HourClock" HorizontalAlignment="Stretch"/>
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="To" FontSize="12" Opacity="0.6" Foreground="{DynamicResource Brush.Foreground}"/>
+                                <TimePicker SelectedTime="{Binding EndTime}" ClockIdentifier="24HourClock" HorizontalAlignment="Stretch"/>
+                            </StackPanel>
+                        </StackPanel>
                         <TextBlock Text="Days" FontWeight="SemiBold" Margin="0,8,0,0" Foreground="{DynamicResource Brush.Foreground}"/>
                         <WrapPanel Orientation="Horizontal" HorizontalAlignment="Left">
                             <ToggleButton Content="Mon" IsChecked="{Binding Monday}" Margin="0,0,6,6" MinWidth="52" HorizontalContentAlignment="Center"/>
@@ -89,7 +94,7 @@
                                 <DataTemplate x:DataType="items:SelectableAppItem">
                                     <Border Margin="0,0,0,4" Padding="12,10" CornerRadius="8" Cursor="Hand">
                                         <Grid ColumnDefinitions="*,Auto">
-                                            <TextBlock Text="{Binding AppLabel}" VerticalAlignment="Center" FontSize="14" Foreground="{DynamicResource Brush.Foreground}"/>
+                                            <TextBlock Text="{Binding AppLabel}" VerticalAlignment="Center" FontSize="14" Foreground="#B0BEC5"/>
                                             <CheckBox Grid.Column="1" IsChecked="{Binding IsSelected}" VerticalAlignment="Center"/>
                                         </Grid>
                                     </Border>
@@ -100,6 +105,9 @@
                 </shad:Card>
             </StackPanel>
         </ScrollViewer>
-        <Button Grid.Row="2" Content="Create Block" Command="{Binding SaveCommand}" IsEnabled="{Binding !IsSaving}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="24,12" Padding="0,14" Background="#2E7D32" Foreground="White" FontWeight="SemiBold" FontSize="16" CornerRadius="12"/>
+        <StackPanel Grid.Row="2" Margin="24,8,24,12" Spacing="8">
+            <TextBlock Text="{Binding ErrorMessage}" IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Foreground="#EF5350" FontSize="13" HorizontalAlignment="Center"/>
+            <Button Content="Create Block" Command="{Binding SaveCommand}" IsEnabled="{Binding !IsSaving}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="0,14" Background="#2E7D32" Foreground="White" FontWeight="SemiBold" FontSize="16" CornerRadius="12"/>
+        </StackPanel>
     </Grid>
 </UserControl>

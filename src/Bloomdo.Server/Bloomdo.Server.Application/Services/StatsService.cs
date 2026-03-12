@@ -1,10 +1,14 @@
+using System.Text.Json;
 using Bloomdo.Server.Application.Interfaces;
 using Bloomdo.Server.Domain.Entities;
 using Bloomdo.Shared.DTOs.Stats;
+using Bloomdo.Shared.Enums;
 
 namespace Bloomdo.Server.Application.Services;
 
-public class StatsService(IStatsRepository statsRepository) : IStatsService
+public class StatsService(
+    IStatsRepository statsRepository,
+    IRepository<BlockRule> blockRuleRepository) : IStatsService
 {
     public async Task SyncUsageAsync(Guid accountId, SyncUsageRequest request, CancellationToken ct = default)
     {
@@ -33,10 +37,13 @@ public class StatsService(IStatsRepository statsRepository) : IStatsService
         var totalSeconds = request.Apps.Sum(a => a.ForegroundSeconds);
         var snapshot = await statsRepository.GetSnapshotAsync(accountId, request.Date, ct);
 
+        var goalMet = await EvaluateBlockComplianceAsync(accountId, request, ct);
+
         if (snapshot is not null)
         {
             snapshot.TotalScreenTimeSeconds = totalSeconds;
             snapshot.Pickups = request.Pickups;
+            snapshot.GoalMet = goalMet;
         }
         else
         {
@@ -45,7 +52,8 @@ public class StatsService(IStatsRepository statsRepository) : IStatsService
                 AccountId = accountId,
                 Date = request.Date,
                 TotalScreenTimeSeconds = totalSeconds,
-                Pickups = request.Pickups
+                Pickups = request.Pickups,
+                GoalMet = goalMet
             }, ct);
         }
 
@@ -153,5 +161,40 @@ public class StatsService(IStatsRepository statsRepository) : IStatsService
         longestStreak = Math.Max(longestStreak, streak);
 
         return (currentStreak, longestStreak);
+    }
+
+    /// <summary>
+    /// Evaluates whether the user complied with their active block rules for the given day.
+    /// GoalMet = true when the user has at least one active block rule AND
+    /// all Limit-type rules are respected (blocked apps stayed under the daily limit).
+    /// Schedule/Focus/Bloomdo rules are enforced client-side;
+    /// the server only verifies Limit compliance from actual usage data.
+    /// </summary>
+    private async Task<bool> EvaluateBlockComplianceAsync(Guid accountId, SyncUsageRequest request, CancellationToken ct)
+    {
+        var rules = await blockRuleRepository.FindAsync(r => r.AccountId == accountId && r.IsActive, ct);
+        var activeRules = rules.ToList();
+
+        if (activeRules.Count == 0)
+            return false;
+
+        var usageLookup = request.Apps.ToDictionary(a => a.PackageName, a => a.ForegroundSeconds);
+
+        foreach (var rule in activeRules)
+        {
+            if (rule.Type != BlockType.Limit || !rule.DailyLimitMinutes.HasValue)
+                continue;
+
+            var blockedPackages = JsonSerializer.Deserialize<List<string>>(rule.BlockedPackagesJson) ?? [];
+            var limitSeconds = rule.DailyLimitMinutes.Value * 60;
+
+            foreach (var pkg in blockedPackages)
+            {
+                if (usageLookup.TryGetValue(pkg, out var usedSeconds) && usedSeconds > limitSeconds)
+                    return false;
+            }
+        }
+
+        return true;
     }
 }

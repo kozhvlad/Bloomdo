@@ -29,6 +29,9 @@ public partial class BlockEditorViewModel : ObservableObject
     [ObservableProperty]
     private bool _isSaving;
 
+    [ObservableProperty]
+    private string? _errorMessage;
+
     // Schedule fields
     [ObservableProperty]
     private TimeSpan _startTime = new(22, 0, 0);
@@ -118,13 +121,45 @@ public partial class BlockEditorViewModel : ObservableObject
     {
         if (_blockApiService is null) return;
 
+        ErrorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(BlockTitle))
+        {
+            ErrorMessage = "Enter a block name";
+            return;
+        }
+
+        if (_allApps.Count(a => a.IsSelected) == 0)
+        {
+            ErrorMessage = "Select at least one app";
+            return;
+        }
+
         IsSaving = true;
         try
         {
             var request = BuildRequest();
+            System.Diagnostics.Debug.WriteLine($"Creating block: {request.Title}, type={request.Type}, apps={request.BlockedPackages.Count}");
             var result = await _blockApiService.CreateBlockRuleAsync(request);
             if (result is not null)
+            {
+                System.Diagnostics.Debug.WriteLine($"Block created: {result.Id}");
                 Saved?.Invoke(result);
+            }
+            else
+            {
+                ErrorMessage = "Server returned empty response";
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            ErrorMessage = ex.Message;
+            System.Diagnostics.Debug.WriteLine($"Save HTTP error: {ex}");
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error: {ex.Message}";
+            System.Diagnostics.Debug.WriteLine($"Save error: {ex}");
         }
         finally
         {

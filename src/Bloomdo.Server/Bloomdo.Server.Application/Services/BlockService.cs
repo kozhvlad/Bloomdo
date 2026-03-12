@@ -26,7 +26,8 @@ public class BlockService(IRepository<BlockRule> blockRuleRepository) : IBlockSe
             EndTime = request.EndTime,
             ScheduleDaysJson = request.Days is not null ? JsonSerializer.Serialize(request.Days) : null,
             DailyLimitMinutes = request.DailyLimitMinutes,
-            FocusDurationMinutes = request.FocusDurationMinutes
+            FocusDurationMinutes = request.FocusDurationMinutes,
+            FocusStartedAtUtc = request.Type == Bloomdo.Shared.Enums.BlockType.Focus ? DateTime.UtcNow : null
         };
 
         await blockRuleRepository.AddAsync(rule, ct);
@@ -79,6 +80,7 @@ public class BlockService(IRepository<BlockRule> blockRuleRepository) : IBlockSe
             ? JsonSerializer.Deserialize<List<DayOfWeek>>(rule.ScheduleDaysJson)
             : null,
         DailyLimitMinutes = rule.DailyLimitMinutes,
-        FocusDurationMinutes = rule.FocusDurationMinutes
+        FocusDurationMinutes = rule.FocusDurationMinutes,
+        FocusStartedAtUtc = rule.FocusStartedAtUtc
     };
 }

@@ -75,6 +75,7 @@ public class BlockEnforcementForegroundService : Service
     private bool ShouldBlock(string packageName)
     {
         var now = DateTime.Now;
+        var utcNow = DateTime.UtcNow;
         var today = now.DayOfWeek;
         var currentTime = TimeOnly.FromDateTime(now);
 
@@ -96,8 +97,12 @@ public class BlockEnforcementForegroundService : Service
                     break;
 
                 case BlockType.Focus:
-                    if (rule.FocusDurationMinutes.HasValue)
-                        return true;
+                    if (rule.FocusDurationMinutes.HasValue && rule.FocusStartedAtUtc.HasValue)
+                    {
+                        var elapsed = utcNow - rule.FocusStartedAtUtc.Value;
+                        if (elapsed.TotalMinutes < rule.FocusDurationMinutes.Value)
+                            return true;
+                    }
                     break;
 
                 case BlockType.Bloomdo:

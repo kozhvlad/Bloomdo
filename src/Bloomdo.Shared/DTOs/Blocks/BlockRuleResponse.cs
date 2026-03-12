@@ -20,4 +20,5 @@ public sealed class BlockRuleResponse
 
     // Focus-specific
     public int? FocusDurationMinutes { get; init; }
+    public DateTime? FocusStartedAtUtc { get; init; }
 }

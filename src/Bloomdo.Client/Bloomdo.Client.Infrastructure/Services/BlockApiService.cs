@@ -26,19 +26,12 @@ public class BlockApiService(HttpClient httpClient) : IBlockApiService
 
     public async Task<BlockRuleResponse?> CreateBlockRuleAsync(CreateBlockRuleRequest request, CancellationToken ct = default)
     {
-        try
-        {
-            var response = await httpClient.PostAsJsonAsync(ApiRoutes.Blocks.Create, request, ct);
-            if (response.IsSuccessStatusCode)
-                return await response.Content.ReadFromJsonAsync<BlockRuleResponse>(ct);
+        var response = await httpClient.PostAsJsonAsync(ApiRoutes.Blocks.Create, request, ct);
+        if (response.IsSuccessStatusCode)
+            return await response.Content.ReadFromJsonAsync<BlockRuleResponse>(ct);
 
-            return null;
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"CreateBlockRule failed: {ex.Message}");
-            return null;
-        }
+        var body = await response.Content.ReadAsStringAsync(ct);
+        throw new HttpRequestException($"HTTP {(int)response.StatusCode}: {body}");
     }
 
     public async Task<BlockRuleResponse?> UpdateBlockRuleAsync(Guid id, UpdateBlockRuleRequest request, CancellationToken ct = default)
