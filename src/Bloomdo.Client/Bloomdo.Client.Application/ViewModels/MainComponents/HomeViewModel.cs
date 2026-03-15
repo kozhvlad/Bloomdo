@@ -10,6 +10,7 @@ namespace Bloomdo.Client.Application.ViewModels.MainComponents;
 public partial class HomeViewModel : PageViewModel
 {
     private readonly IDailyActivityApiService? _activityApi;
+    private CancellationTokenSource? _timerCts;
 
     [ObservableProperty]
     private string _welcomeMessage = "Welcome to Bloomdo!";
@@ -36,7 +37,7 @@ public partial class HomeViewModel : PageViewModel
     private string _newGroupTitle = string.Empty;
 
     [ObservableProperty]
-    private string _newGroupIcon = "📋";
+    private string _newGroupIcon = string.Empty;
 
     [ObservableProperty]
     private string _newGroupColor = "#7E57C2";
@@ -45,12 +46,10 @@ public partial class HomeViewModel : PageViewModel
 
     public string ProgressText => TotalItems > 0 ? $"{CompletedItems}/{TotalItems}" : "0/0";
     public double ProgressPercent => TotalItems > 0 ? (double)CompletedItems / TotalItems * 100 : 0;
+    public double ProgressFraction => TotalItems > 0 ? (double)CompletedItems / TotalItems : 0;
 
     public static string[] AvailableColors { get; } =
         ["#7E57C2", "#42A5F5", "#66BB6A", "#FF9800", "#EF5350", "#26C6DA", "#AB47BC", "#5C6BC0", "#EC407A", "#8D6E63"];
-
-    public static string[] AvailableIcons { get; } =
-        ["📋", "📚", "🏃", "🧘", "💼", "🎨", "🎵", "🍳", "💻", "✍️", "🧹", "💪", "❤️", "🎯", "⭐", "🔥", "💧", "🧮", "📖", "🇬🇧", "🤸", "✨", "🧠", "🎓"];
 
     public HomeViewModel(IDailyActivityApiService? activityApi = null)
     {
@@ -111,12 +110,15 @@ public partial class HomeViewModel : PageViewModel
             HasNoGroups = Groups.Count == 0;
             OnPropertyChanged(nameof(ProgressText));
             OnPropertyChanged(nameof(ProgressPercent));
+            OnPropertyChanged(nameof(ProgressFraction));
         }
         finally
         {
             IsLoading = false;
         }
     }
+
+    // --- Toggle completion ---
 
     [RelayCommand]
     private async Task ToggleTask(ActivityTaskItemViewModel? task)
@@ -138,14 +140,10 @@ public partial class HomeViewModel : PageViewModel
                 task.IsCompleted = !task.IsCompleted;
                 task.CompletedAtUtc = task.IsCompleted ? DateTime.UtcNow : null;
 
-                // Recalculate progress
-                CompletedItems = Groups.Sum(g => g.Tasks.Count(t => t.IsCompleted));
-                TotalItems = Groups.Sum(g => g.Tasks.Count);
-                OnPropertyChanged(nameof(ProgressText));
-                OnPropertyChanged(nameof(ProgressPercent));
+                if (task.IsCompleted && task.IsTimerRunning)
+                    StopTimer(task);
 
-                foreach (var group in Groups)
-                    group.RefreshProgress();
+                RecalculateProgress();
             }
         }
         finally
@@ -154,12 +152,13 @@ public partial class HomeViewModel : PageViewModel
         }
     }
 
+    // --- Group CRUD ---
+
     [RelayCommand]
     private void ShowAddGroup()
     {
         IsAddingGroup = true;
         NewGroupTitle = string.Empty;
-        NewGroupIcon = AvailableIcons[new Random().Next(AvailableIcons.Length)];
         NewGroupColor = AvailableColors[new Random().Next(AvailableColors.Length)];
     }
 
@@ -201,16 +200,7 @@ public partial class HomeViewModel : PageViewModel
     }
 
     [RelayCommand]
-    private void SelectGroupIcon(string icon)
-    {
-        NewGroupIcon = icon;
-    }
-
-    [RelayCommand]
-    private void SelectGroupColor(string color)
-    {
-        NewGroupColor = color;
-    }
+    private void SelectGroupColor(string color) => NewGroupColor = color;
 
     [RelayCommand]
     private async Task DeleteGroup(ActivityGroupItemViewModel? group)
@@ -222,11 +212,7 @@ public partial class HomeViewModel : PageViewModel
         {
             Groups.Remove(group);
             HasNoGroups = Groups.Count == 0;
-
-            CompletedItems = Groups.Sum(g => g.Tasks.Count(t => t.IsCompleted));
-            TotalItems = Groups.Sum(g => g.Tasks.Count);
-            OnPropertyChanged(nameof(ProgressText));
-            OnPropertyChanged(nameof(ProgressPercent));
+            RecalculateProgress();
         }
     }
 
@@ -260,11 +246,19 @@ public partial class HomeViewModel : PageViewModel
     }
 
     [RelayCommand]
+    private void ToggleGroupExpanded(ActivityGroupItemViewModel? group)
+    {
+        if (group is null) return;
+        group.IsExpanded = !group.IsExpanded;
+    }
+
+    // --- Item CRUD ---
+
+    [RelayCommand]
     private void ShowAddItem(ActivityGroupItemViewModel? group)
     {
         if (group is null) return;
         group.ResetNewItemForm();
-        group.NewItemIcon = AvailableIcons[new Random().Next(AvailableIcons.Length)];
         group.NewItemColor = AvailableColors[new Random().Next(AvailableColors.Length)];
         group.IsAddingItem = true;
     }
@@ -275,20 +269,6 @@ public partial class HomeViewModel : PageViewModel
         if (group is null) return;
         group.IsAddingItem = false;
         group.ResetNewItemForm();
-    }
-
-    [RelayCommand]
-    private void SelectItemIcon(string? icon)
-    {
-        if (icon is null) return;
-        foreach (var group in Groups)
-        {
-            if (group.IsAddingItem)
-            {
-                group.NewItemIcon = icon;
-                break;
-            }
-        }
     }
 
     [RelayCommand]
@@ -306,6 +286,20 @@ public partial class HomeViewModel : PageViewModel
     }
 
     [RelayCommand]
+    private void IncrementNewItemDuration(ActivityGroupItemViewModel? group)
+    {
+        if (group is null) return;
+        group.NewItemDurationMinutes = Math.Min(group.NewItemDurationMinutes + 5, 480);
+    }
+
+    [RelayCommand]
+    private void DecrementNewItemDuration(ActivityGroupItemViewModel? group)
+    {
+        if (group is null) return;
+        group.NewItemDurationMinutes = Math.Max(group.NewItemDurationMinutes - 5, 5);
+    }
+
+    [RelayCommand]
     private async Task ConfirmAddItem(ActivityGroupItemViewModel? group)
     {
         if (group is null || string.IsNullOrWhiteSpace(group.NewItemTitle) || _activityApi is null) return;
@@ -315,7 +309,7 @@ public partial class HomeViewModel : PageViewModel
             ActivityGroupId = group.Id,
             Title = group.NewItemTitle.Trim(),
             Description = string.IsNullOrWhiteSpace(group.NewItemDescription) ? null : group.NewItemDescription.Trim(),
-            DurationMinutes = group.NewItemDuration,
+            DurationMinutes = group.NewItemDurationMinutes,
             Icon = group.NewItemIcon,
             Color = group.NewItemColor
         };
@@ -338,10 +332,7 @@ public partial class HomeViewModel : PageViewModel
             group.IsAddingItem = false;
             group.ResetNewItemForm();
             group.RefreshProgress();
-
-            TotalItems = Groups.Sum(g => g.Tasks.Count);
-            OnPropertyChanged(nameof(ProgressText));
-            OnPropertyChanged(nameof(ProgressPercent));
+            RecalculateProgress();
         }
     }
 
@@ -361,18 +352,146 @@ public partial class HomeViewModel : PageViewModel
                     break;
                 }
             }
+            RecalculateProgress();
+        }
+    }
 
-            CompletedItems = Groups.Sum(g => g.Tasks.Count(t => t.IsCompleted));
-            TotalItems = Groups.Sum(g => g.Tasks.Count);
-            OnPropertyChanged(nameof(ProgressText));
-            OnPropertyChanged(nameof(ProgressPercent));
+    // --- Edit item ---
+
+    [RelayCommand]
+    private void StartEditItem(ActivityTaskItemViewModel? task)
+    {
+        if (task is null) return;
+        task.StartEdit();
+    }
+
+    [RelayCommand]
+    private void CancelEditItem(ActivityTaskItemViewModel? task)
+    {
+        if (task is null) return;
+        task.IsEditing = false;
+    }
+
+    [RelayCommand]
+    private void IncrementEditDuration(ActivityTaskItemViewModel? task)
+    {
+        if (task is null) return;
+        task.EditDurationMinutes = Math.Min((task.EditDurationMinutes ?? 0) + 5, 480);
+    }
+
+    [RelayCommand]
+    private void DecrementEditDuration(ActivityTaskItemViewModel? task)
+    {
+        if (task is null) return;
+        task.EditDurationMinutes = Math.Max((task.EditDurationMinutes ?? 10) - 5, 5);
+    }
+
+    [RelayCommand]
+    private void SelectEditColor(string? color)
+    {
+        if (color is null) return;
+        foreach (var group in Groups)
+        {
+            foreach (var task in group.Tasks)
+            {
+                if (task.IsEditing)
+                {
+                    task.EditColor = color;
+                    return;
+                }
+            }
         }
     }
 
     [RelayCommand]
-    private void ToggleGroupExpanded(ActivityGroupItemViewModel? group)
+    private async Task ConfirmEditItem(ActivityTaskItemViewModel? task)
     {
-        if (group is null) return;
-        group.IsExpanded = !group.IsExpanded;
+        if (task is null || string.IsNullOrWhiteSpace(task.EditTitle) || _activityApi is null) return;
+
+        var request = new UpdateActivityItemRequest
+        {
+            Title = task.EditTitle.Trim(),
+            Description = string.IsNullOrWhiteSpace(task.EditDescription) ? null : task.EditDescription.Trim(),
+            DurationMinutes = task.EditDurationMinutes,
+            Color = task.EditColor
+        };
+
+        var result = await _activityApi.UpdateItemAsync(task.Id, request);
+        if (result is not null)
+        {
+            task.Title = result.Title;
+            task.Description = result.Description;
+            task.DurationMinutes = result.DurationMinutes;
+            task.Color = result.Color;
+            task.IsEditing = false;
+        }
+    }
+
+    // --- Timer ---
+
+    [RelayCommand]
+    private void StartTimer(ActivityTaskItemViewModel? task)
+    {
+        if (task is null || !task.HasDuration || task.IsTimerRunning) return;
+
+        StopActiveTimer();
+        task.IsTimerRunning = true;
+        task.TimerRemainingSeconds = (task.DurationMinutes ?? 0) * 60;
+
+        _timerCts = new CancellationTokenSource();
+        _ = RunTimerAsync(task, _timerCts.Token);
+    }
+
+    [RelayCommand]
+    private void StopTimer(ActivityTaskItemViewModel? task)
+    {
+        if (task is null) return;
+        task.IsTimerRunning = false;
+        _timerCts?.Cancel();
+        _timerCts = null;
+    }
+
+    private async Task RunTimerAsync(ActivityTaskItemViewModel task, CancellationToken ct)
+    {
+        try
+        {
+            while (task.TimerRemainingSeconds > 0 && !ct.IsCancellationRequested)
+            {
+                await Task.Delay(1000, ct);
+                task.TimerRemainingSeconds--;
+            }
+
+            if (!ct.IsCancellationRequested && !task.IsCompleted)
+            {
+                await ToggleTask(task);
+            }
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            task.IsTimerRunning = false;
+        }
+    }
+
+    private void StopActiveTimer()
+    {
+        _timerCts?.Cancel();
+        _timerCts = null;
+        foreach (var g in Groups)
+            foreach (var t in g.Tasks)
+                t.IsTimerRunning = false;
+    }
+
+    // --- Helpers ---
+
+    private void RecalculateProgress()
+    {
+        CompletedItems = Groups.Sum(g => g.Tasks.Count(t => t.IsCompleted));
+        TotalItems = Groups.Sum(g => g.Tasks.Count);
+        OnPropertyChanged(nameof(ProgressText));
+        OnPropertyChanged(nameof(ProgressFraction));
+        OnPropertyChanged(nameof(ProgressPercent));
+        foreach (var group in Groups)
+            group.RefreshProgress();
     }
 }

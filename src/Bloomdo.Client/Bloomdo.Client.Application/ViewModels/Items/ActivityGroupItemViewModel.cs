@@ -12,7 +12,7 @@ public partial class ActivityGroupItemViewModel : ObservableObject
     private string _title = string.Empty;
 
     [ObservableProperty]
-    private string _icon = "📋";
+    private string _icon = string.Empty;
 
     [ObservableProperty]
     private string _color = "#7E57C2";
@@ -39,22 +39,25 @@ public partial class ActivityGroupItemViewModel : ObservableObject
     private string? _newItemDescription;
 
     [ObservableProperty]
-    private int? _newItemDuration;
+    private int _newItemDurationMinutes = 30;
 
     [ObservableProperty]
-    private string _newItemIcon = "✨";
+    private string _newItemIcon = string.Empty;
 
     [ObservableProperty]
     private string _newItemColor = "#7E57C2";
 
     public ObservableCollection<ActivityTaskItemViewModel> Tasks { get; } = [];
 
+    public string FirstLetter =>
+        string.IsNullOrEmpty(Title) ? "?" : Title[..1].ToUpperInvariant();
+
     public int CompletedCount => Tasks.Count(t => t.IsCompleted);
     public int TotalCount => Tasks.Count;
     public string ProgressText => $"{CompletedCount}/{TotalCount}";
     public double ProgressPercent => TotalCount > 0 ? (double)CompletedCount / TotalCount * 100 : 0;
     public bool HasStreak => CurrentStreak > 0;
-    public string StreakText => $"🔥 {CurrentStreak}";
+    public string StreakText => CurrentStreak > 0 ? $"x{CurrentStreak}" : string.Empty;
 
     public void RefreshProgress()
     {
@@ -68,8 +71,10 @@ public partial class ActivityGroupItemViewModel : ObservableObject
     {
         NewItemTitle = string.Empty;
         NewItemDescription = null;
-        NewItemDuration = null;
-        NewItemIcon = "✨";
+        NewItemDurationMinutes = 30;
+        NewItemIcon = string.Empty;
         NewItemColor = "#7E57C2";
     }
+
+    partial void OnTitleChanged(string value) => OnPropertyChanged(nameof(FirstLetter));
 }

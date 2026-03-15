@@ -13,16 +13,17 @@ using ShadUI;
 namespace Bloomdo.Client.UI.Controls;
 
 /// <summary>
-/// A panel that reveals a delete action when swiped left.
+/// A panel that reveals Edit + Delete actions when swiped left.
 /// Properly distinguishes horizontal swipe from vertical scroll.
 /// Works on Android (no Cursor, no layout mutations during attach).
 /// </summary>
 public class SwipeRevealPanel : ContentControl
 {
-    private const double ActionPanelWidth = 80;
+    private const double SingleActionWidth = 70;
     private const double SnapThreshold = 0.35;
     private const double DirectionLockAngle = 1.2;
 
+    private double _effectiveWidth = SingleActionWidth;
     private TranslateTransform _contentTranslate = new();
     private Border? _actionBorder;
     private Point _startPoint;
@@ -50,6 +51,24 @@ public class SwipeRevealPanel : ContentControl
         set => SetValue(ActionCommandParameterProperty, value);
     }
 
+    public static readonly StyledProperty<ICommand?> EditCommandProperty =
+        AvaloniaProperty.Register<SwipeRevealPanel, ICommand?>(nameof(EditCommand));
+
+    public ICommand? EditCommand
+    {
+        get => GetValue(EditCommandProperty);
+        set => SetValue(EditCommandProperty, value);
+    }
+
+    public static readonly StyledProperty<object?> EditCommandParameterProperty =
+        AvaloniaProperty.Register<SwipeRevealPanel, object?>(nameof(EditCommandParameter));
+
+    public object? EditCommandParameter
+    {
+        get => GetValue(EditCommandParameterProperty);
+        set => SetValue(EditCommandParameterProperty, value);
+    }
+
     public static readonly StyledProperty<bool> IsActionEnabledProperty =
         AvaloniaProperty.Register<SwipeRevealPanel, bool>(nameof(IsActionEnabled), true);
 
@@ -65,8 +84,6 @@ public class SwipeRevealPanel : ContentControl
     {
         base.OnPropertyChanged(change);
 
-        // Intercept the first time real card content is set from AXAML.
-        // Defer to next tick so we never mutate Content during a layout pass.
         if (change.Property == ContentProperty && !_wrapped)
         {
             var ctrl = change.NewValue as Control;
@@ -80,6 +97,9 @@ public class SwipeRevealPanel : ContentControl
 
     private void WrapContent(Control child)
     {
+        var hasEdit = EditCommand is not null;
+        _effectiveWidth = hasEdit ? SingleActionWidth * 2 : SingleActionWidth;
+
         _contentTranslate = new TranslateTransform
         {
             Transitions = new Transitions
@@ -94,83 +114,169 @@ public class SwipeRevealPanel : ContentControl
         };
         child.RenderTransform = _contentTranslate;
 
-        var deleteIcon = new PathIcon
-        {
-            Data = Icons.Cross,
-            Foreground = Brushes.White,
-            Width = 20,
-            Height = 20,
-            HorizontalAlignment = HorizontalAlignment.Center
-        };
+        Control actionContent;
 
-        var deleteLabel = new TextBlock
+        if (hasEdit)
         {
-            Text = "Delete",
-            Foreground = Brushes.White,
-            FontSize = 11,
-            HorizontalAlignment = HorizontalAlignment.Center
-        };
+            var editIcon = new PathIcon
+            {
+                Data = Icons.Marker,
+                Foreground = Brushes.White,
+                Width = 18, Height = 18,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            var editLabel = new TextBlock
+            {
+                Text = "Edit",
+                Foreground = Brushes.White,
+                FontSize = 10,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            var editStack = new StackPanel
+            {
+                Spacing = 3,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Children = { editIcon, editLabel }
+            };
+            var editButton = new Button
+            {
+                Width = SingleActionWidth,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                VerticalContentAlignment = VerticalAlignment.Center,
+                Content = editStack,
+                Background = new SolidColorBrush(Color.Parse("#42A5F5")),
+                BorderThickness = new Thickness(0),
+                Padding = new Thickness(0),
+                CornerRadius = new CornerRadius(0)
+            };
+            editButton.Click += OnEditButtonClick;
 
-        var deleteStack = new StackPanel
-        {
-            Spacing = 4,
-            HorizontalAlignment = HorizontalAlignment.Center,
-            VerticalAlignment = VerticalAlignment.Center,
-            Children = { deleteIcon, deleteLabel }
-        };
+            var deleteIcon = new PathIcon
+            {
+                Data = Icons.Cross,
+                Foreground = Brushes.White,
+                Width = 18, Height = 18,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            var deleteLabel = new TextBlock
+            {
+                Text = "Delete",
+                Foreground = Brushes.White,
+                FontSize = 10,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            var deleteStack = new StackPanel
+            {
+                Spacing = 3,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Children = { deleteIcon, deleteLabel }
+            };
+            var deleteButton = new Button
+            {
+                Width = SingleActionWidth,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                VerticalContentAlignment = VerticalAlignment.Center,
+                Content = deleteStack,
+                Background = new SolidColorBrush(Color.Parse("#E53935")),
+                BorderThickness = new Thickness(0),
+                Padding = new Thickness(0),
+                CornerRadius = new CornerRadius(0)
+            };
+            deleteButton.Click += OnDeleteButtonClick;
 
-        var deleteButton = new Button
+            actionContent = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                VerticalAlignment = VerticalAlignment.Stretch,
+                Children = { editButton, deleteButton }
+            };
+        }
+        else
         {
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            VerticalAlignment = VerticalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Center,
-            VerticalContentAlignment = VerticalAlignment.Center,
-            Content = deleteStack,
-            Background = Brushes.Transparent,
-            BorderThickness = new Thickness(0),
-            Padding = new Thickness(0)
-        };
-        deleteButton.Click += OnDeleteButtonClick;
+            var deleteIcon = new PathIcon
+            {
+                Data = Icons.Cross,
+                Foreground = Brushes.White,
+                Width = 20, Height = 20,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            var deleteLabel = new TextBlock
+            {
+                Text = "Delete",
+                Foreground = Brushes.White,
+                FontSize = 11,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            var deleteStack = new StackPanel
+            {
+                Spacing = 4,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Children = { deleteIcon, deleteLabel }
+            };
+            var deleteButton = new Button
+            {
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                VerticalContentAlignment = VerticalAlignment.Center,
+                Content = deleteStack,
+                Background = Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Padding = new Thickness(0)
+            };
+            deleteButton.Click += OnDeleteButtonClick;
+            actionContent = deleteButton;
+        }
 
         _actionBorder = new Border
         {
-            Width = ActionPanelWidth,
+            Width = _effectiveWidth,
             HorizontalAlignment = HorizontalAlignment.Right,
-            Background = new SolidColorBrush(Color.Parse("#E53935")),
+            Background = hasEdit ? Brushes.Transparent : new SolidColorBrush(Color.Parse("#E53935")),
             CornerRadius = new CornerRadius(12),
             ClipToBounds = true,
             Opacity = 0,
-            Child = deleteButton
+            Child = actionContent
         };
 
-        // Detach child from its current visual parent (ContentPresenter) before
-        // reparenting it into the wrapper Panel. Without this, Avalonia throws
-        // "Control already has a visual parent" which crashes on Android as JavaProxyThrowable.
         Content = null;
-
         var root = new Panel { ClipToBounds = true };
         root.Children.Add(_actionBorder);
         root.Children.Add(child);
-
         Content = root;
+    }
+
+    private void OnEditButtonClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        if (!IsActionEnabled) return;
+        var cmd = EditCommand;
+        var param = EditCommandParameter;
+        if (cmd?.CanExecute(param) == true)
+            cmd.Execute(param);
+        AnimateClose();
     }
 
     private void OnDeleteButtonClick(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         if (!IsActionEnabled) return;
-
         var cmd = ActionCommand;
         var param = ActionCommandParameter;
         if (cmd?.CanExecute(param) == true)
             cmd.Execute(param);
-
         AnimateClose();
     }
 
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
-
         var props = e.GetCurrentPoint(this).Properties;
         if (!props.IsLeftButtonPressed) return;
 
@@ -211,11 +317,11 @@ public class SwipeRevealPanel : ContentControl
 
         if (!_isHorizontal) return;
 
-        var newOffset = Math.Clamp(_isOpen ? -ActionPanelWidth + dx : dx, -ActionPanelWidth, 0);
+        var newOffset = Math.Clamp(_isOpen ? -_effectiveWidth + dx : dx, -_effectiveWidth, 0);
         _contentTranslate.X = newOffset;
 
         if (_actionBorder is not null)
-            _actionBorder.Opacity = Math.Abs(newOffset) / ActionPanelWidth;
+            _actionBorder.Opacity = Math.Abs(newOffset) / _effectiveWidth;
 
         e.Handled = true;
     }
@@ -233,7 +339,7 @@ public class SwipeRevealPanel : ContentControl
         _isTracking = false;
         e.Pointer.Capture(null);
 
-        if (Math.Abs(_contentTranslate.X) > ActionPanelWidth * SnapThreshold)
+        if (Math.Abs(_contentTranslate.X) > _effectiveWidth * SnapThreshold)
             AnimateOpen();
         else
             AnimateClose();
@@ -247,7 +353,7 @@ public class SwipeRevealPanel : ContentControl
 
         if (_isTracking && _isHorizontal)
         {
-            if (Math.Abs(_contentTranslate.X) > ActionPanelWidth * SnapThreshold)
+            if (Math.Abs(_contentTranslate.X) > _effectiveWidth * SnapThreshold)
                 AnimateOpen();
             else
                 AnimateClose();
@@ -258,7 +364,7 @@ public class SwipeRevealPanel : ContentControl
 
     private void AnimateOpen()
     {
-        _contentTranslate.X = -ActionPanelWidth;
+        _contentTranslate.X = -_effectiveWidth;
 
         _actionBorder?
             .Animate(OpacityProperty)

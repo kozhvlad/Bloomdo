@@ -5,6 +5,21 @@ using Avalonia.Media;
 
 namespace Bloomdo.Client.UI.Converters;
 
+public class FirstLetterConverter : IValueConverter
+{
+    public static readonly FirstLetterConverter Instance = new();
+
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is string s && s.Length > 0)
+            return s[..1].ToUpperInvariant();
+        return "?";
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
 public class StreakStartCornerRadiusConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)

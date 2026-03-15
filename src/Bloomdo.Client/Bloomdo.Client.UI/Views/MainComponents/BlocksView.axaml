@@ -25,10 +25,10 @@
 								   FontSize="28" 
 								   FontWeight="Bold" 
 								   TextWrapping="Wrap"
-								   Foreground="{DynamicResource Brush.Foreground}"/>
+								   Foreground="#EFEFEF"/>
 						<TextBlock Text="Block apps with Limits or Schedules"
 								   FontSize="14"
-								   Foreground="{DynamicResource Brush.Foreground}"
+								   Foreground="#EFEFEF"
 								   Opacity="0.7" />
 					</StackPanel>
 
@@ -41,10 +41,12 @@
 								   FontSize="18" 
 								   FontWeight="SemiBold" 
 								   HorizontalAlignment="Center"
+								   Foreground="#EFEFEF"
 								   Opacity="0.6" />
 						<TextBlock Text="Tap + to create your first block" 
 								   FontSize="14" 
 								   HorizontalAlignment="Center"
+								   Foreground="#EFEFEF"
 								   Opacity="0.4" />
 					</StackPanel>
 
@@ -55,6 +57,8 @@
 								<controls:SwipeRevealPanel Margin="0,0,0,12"
 									ActionCommand="{Binding $parent[ItemsControl].((mainComponents:BlocksViewModel)DataContext).DeleteBlockerCommand}"
 									ActionCommandParameter="{Binding}"
+									EditCommand="{Binding $parent[ItemsControl].((mainComponents:BlocksViewModel)DataContext).EditBlockerCommand}"
+									EditCommandParameter="{Binding}"
 									IsActionEnabled="{Binding !IsDeleting}">
 									<shad:Card Padding="0" Background="{DynamicResource Brush.Card}">
 										<Grid RowDefinitions="Auto,Auto" Margin="16">
@@ -67,15 +71,15 @@
 														VerticalAlignment="Stretch" />
 
 												<StackPanel Grid.Column="1" Spacing="4">
-													<TextBlock Text="{Binding Title}" FontSize="18" FontWeight="SemiBold"/>
+													<TextBlock Text="{Binding Title}" FontSize="18" FontWeight="SemiBold" Foreground="#EFEFEF"/>
 													<StackPanel Orientation="Horizontal" Spacing="8">
 														<Border Background="{Binding TypeColor, Converter={StaticResource BlockTypeColorConverter}}" 
 																CornerRadius="4" Padding="6,2" Opacity="0.8">
 															<TextBlock Text="{Binding TypeLabel}" FontSize="11" FontWeight="SemiBold" Foreground="White" />
 														</Border>
-														<TextBlock Text="{Binding TimeDescription}" Opacity="0.7" FontSize="13" VerticalAlignment="Center"/>
+														<TextBlock Text="{Binding TimeDescription}" Opacity="0.7" FontSize="13" VerticalAlignment="Center" Foreground="#EFEFEF"/>
 													</StackPanel>
-													<TextBlock Opacity="0.5" FontSize="12" IsVisible="{Binding BlockedAppCount}">
+													<TextBlock Opacity="0.5" FontSize="12" IsVisible="{Binding BlockedAppCount}" Foreground="#EFEFEF">
 														<TextBlock.Text>
 															<MultiBinding StringFormat="{}{0} apps blocked">
 																<Binding Path="BlockedAppCount" />

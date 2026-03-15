@@ -134,6 +134,21 @@ public partial class BlocksViewModel : PageViewModel
         OpenEditor(BlockType.Bloomdo, "Bloomdo Block");
     }
 
+    [RelayCommand]
+    private void EditBlocker(BlockerItem? item)
+    {
+        if (item is null) return;
+
+        var cached = _cachedRules.FirstOrDefault(r => r.Id == item.Id);
+        if (cached is null) return;
+
+        var editor = new BlockEditorViewModel(_blockApiService, _installedAppsService);
+        editor.Configure(cached.Type, cached.Title);
+        editor.Saved += OnBlockSaved;
+        editor.Cancelled += OnEditorCancelled;
+        Editor = editor;
+    }
+
     private void OpenEditor(BlockType type, string defaultTitle)
     {
         var editor = new BlockEditorViewModel(_blockApiService, _installedAppsService);
