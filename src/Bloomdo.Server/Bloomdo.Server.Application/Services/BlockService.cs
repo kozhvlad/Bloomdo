@@ -5,12 +5,35 @@ using Bloomdo.Shared.DTOs.Blocks;
 
 namespace Bloomdo.Server.Application.Services;
 
-public class BlockService(IRepository<BlockRule> blockRuleRepository) : IBlockService
+public class BlockService(
+    IRepository<BlockRule> blockRuleRepository,
+    IRepository<ActivityGroup> activityGroupRepository,
+    IRepository<ActivityItem> activityItemRepository,
+    IRepository<ActivityCompletion> activityCompletionRepository) : IBlockService
 {
     public async Task<List<BlockRuleResponse>> GetBlockRulesAsync(Guid accountId, CancellationToken ct = default)
     {
         var rules = await blockRuleRepository.FindAsync(r => r.AccountId == accountId, ct);
-        return rules.Select(MapToResponse).ToList();
+        var responses = new List<BlockRuleResponse>();
+
+        foreach (var rule in rules)
+        {
+            string? groupTitle = null;
+            var isBloomdoSatisfied = false;
+
+            if (rule.Type == Bloomdo.Shared.Enums.BlockType.Bloomdo && rule.RequiredActivityGroupId.HasValue)
+            {
+                var group = await activityGroupRepository.FirstOrDefaultAsync(
+                    g => g.Id == rule.RequiredActivityGroupId.Value && g.AccountId == accountId, ct);
+
+                groupTitle = group?.Title;
+                isBloomdoSatisfied = await IsGroupCompletedAsync(accountId, rule.RequiredActivityGroupId.Value, ct);
+            }
+
+            responses.Add(MapToResponse(rule, groupTitle, isBloomdoSatisfied));
+        }
+
+        return responses;
     }
 
     public async Task<BlockRuleResponse> CreateBlockRuleAsync(Guid accountId, CreateBlockRuleRequest request, CancellationToken ct = default)
@@ -27,7 +50,8 @@ public class BlockService(IRepository<BlockRule> blockRuleRepository) : IBlockSe
             ScheduleDaysJson = request.Days is not null ? JsonSerializer.Serialize(request.Days) : null,
             DailyLimitMinutes = request.DailyLimitMinutes,
             FocusDurationMinutes = request.FocusDurationMinutes,
-            FocusStartedAtUtc = request.Type == Bloomdo.Shared.Enums.BlockType.Focus ? DateTime.UtcNow : null
+            FocusStartedAtUtc = request.Type == Bloomdo.Shared.Enums.BlockType.Focus ? DateTime.UtcNow : null,
+            RequiredActivityGroupId = request.RequiredActivityGroupId
         };
 
         await blockRuleRepository.AddAsync(rule, ct);
@@ -50,6 +74,7 @@ public class BlockService(IRepository<BlockRule> blockRuleRepository) : IBlockSe
         if (request.Days is not null) rule.ScheduleDaysJson = JsonSerializer.Serialize(request.Days);
         if (request.DailyLimitMinutes.HasValue) rule.DailyLimitMinutes = request.DailyLimitMinutes;
         if (request.FocusDurationMinutes.HasValue) rule.FocusDurationMinutes = request.FocusDurationMinutes;
+        if (request.RequiredActivityGroupId.HasValue) rule.RequiredActivityGroupId = request.RequiredActivityGroupId;
 
         await blockRuleRepository.UpdateAsync(rule, ct);
         return MapToResponse(rule);
@@ -67,7 +92,7 @@ public class BlockService(IRepository<BlockRule> blockRuleRepository) : IBlockSe
         return true;
     }
 
-    private static BlockRuleResponse MapToResponse(BlockRule rule) => new()
+    private static BlockRuleResponse MapToResponse(BlockRule rule, string? groupTitle = null, bool isBloomdoSatisfied = false) => new()
     {
         Id = rule.Id,
         Title = rule.Title,
@@ -81,6 +106,27 @@ public class BlockService(IRepository<BlockRule> blockRuleRepository) : IBlockSe
             : null,
         DailyLimitMinutes = rule.DailyLimitMinutes,
         FocusDurationMinutes = rule.FocusDurationMinutes,
-        FocusStartedAtUtc = rule.FocusStartedAtUtc
+        FocusStartedAtUtc = rule.FocusStartedAtUtc,
+        RequiredActivityGroupId = rule.RequiredActivityGroupId,
+        RequiredActivityGroupTitle = groupTitle,
+        IsBloomdoSatisfied = isBloomdoSatisfied
     };
+
+    private async Task<bool> IsGroupCompletedAsync(Guid accountId, Guid groupId, CancellationToken ct)
+    {
+        var items = (await activityItemRepository.FindAsync(
+            i => i.ActivityGroupId == groupId && i.IsActive, ct)).ToList();
+
+        if (items.Count == 0)
+            return false;
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var itemIds = items.Select(i => i.Id).ToHashSet();
+
+        var completions = await activityCompletionRepository.FindAsync(
+            c => c.AccountId == accountId && c.Date == today && itemIds.Contains(c.ActivityItemId), ct);
+
+        var completedIds = completions.Select(c => c.ActivityItemId).ToHashSet();
+        return itemIds.All(id => completedIds.Contains(id));
+    }
 }

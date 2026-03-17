@@ -10,6 +10,9 @@ namespace Bloomdo.Client.Application.ViewModels.MainComponents;
 public partial class HomeViewModel : PageViewModel
 {
     private readonly IDailyActivityApiService? _activityApi;
+    private readonly IGroupCompletionStore? _groupCompletionStore;
+    private readonly IBlockRuleStore? _blockRuleStore;
+    private readonly IBlockApiService? _blockApiService;
     private CancellationTokenSource? _timerCts;
 
     [ObservableProperty]
@@ -51,9 +54,16 @@ public partial class HomeViewModel : PageViewModel
     public static string[] AvailableColors { get; } =
         ["#7E57C2", "#42A5F5", "#66BB6A", "#FF9800", "#EF5350", "#26C6DA", "#AB47BC", "#5C6BC0", "#EC407A", "#8D6E63"];
 
-    public HomeViewModel(IDailyActivityApiService? activityApi = null)
+    public HomeViewModel(
+        IDailyActivityApiService? activityApi = null,
+        IGroupCompletionStore? groupCompletionStore = null,
+        IBlockRuleStore? blockRuleStore = null,
+        IBlockApiService? blockApiService = null)
     {
         _activityApi = activityApi;
+        _groupCompletionStore = groupCompletionStore;
+        _blockRuleStore = blockRuleStore;
+        _blockApiService = blockApiService;
     }
 
     public override void OnAppearing()
@@ -111,6 +121,8 @@ public partial class HomeViewModel : PageViewModel
             OnPropertyChanged(nameof(ProgressText));
             OnPropertyChanged(nameof(ProgressPercent));
             OnPropertyChanged(nameof(ProgressFraction));
+
+            await SyncGroupCompletionAsync();
         }
         finally
         {
@@ -144,6 +156,7 @@ public partial class HomeViewModel : PageViewModel
                     StopTimer(task);
 
                 RecalculateProgress();
+                await SyncGroupCompletionAsync();
             }
         }
         finally
@@ -493,5 +506,33 @@ public partial class HomeViewModel : PageViewModel
         OnPropertyChanged(nameof(ProgressPercent));
         foreach (var group in Groups)
             group.RefreshProgress();
+    }
+
+    private async Task SyncGroupCompletionAsync()
+    {
+        try
+        {
+            if (_groupCompletionStore is not null)
+            {
+                var status = new Dictionary<Guid, bool>();
+                foreach (var group in Groups)
+                {
+                    var allCompleted = group.Tasks.Count > 0 && group.Tasks.All(t => t.IsCompleted);
+                    status[group.Id] = allCompleted;
+                }
+                await _groupCompletionStore.SaveCompletionStatusAsync(status);
+            }
+
+            if (_blockApiService is not null && _blockRuleStore is not null)
+            {
+                var rules = await _blockApiService.GetBlockRulesAsync();
+                if (rules is not null)
+                    await _blockRuleStore.SaveRulesAsync(rules);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"SyncGroupCompletion error: {ex.Message}");
+        }
     }
 }

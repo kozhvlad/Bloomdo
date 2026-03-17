@@ -78,7 +78,45 @@
                 <shad:Card Padding="0" IsVisible="{Binding IsBloomdoType}">
                     <StackPanel Margin="16" Spacing="4">
                         <TextBlock Text="Bloomdo Block" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Foreground}"/>
-                        <TextBlock Text="Selected apps will be blocked until you complete your daily Bloomdo goals." TextWrapping="Wrap" Opacity="0.6" FontSize="13" Foreground="{DynamicResource Brush.Foreground}"/>
+                        <TextBlock Text="Selected apps will be blocked until you complete the chosen activity group." TextWrapping="Wrap" Opacity="0.6" FontSize="13" Foreground="{DynamicResource Brush.Foreground}"/>
+                    </StackPanel>
+                </shad:Card>
+                <shad:Card Padding="0" IsVisible="{Binding IsBloomdoType}">
+                    <StackPanel Margin="16" Spacing="12">
+                        <TextBlock Text="Required Activity Group" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Foreground}"/>
+                        <ProgressBar IsVisible="{Binding IsLoadingGroups}" IsIndeterminate="True" Margin="0,4"/>
+                        <ItemsControl ItemsSource="{Binding AvailableGroups}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="items:SelectableGroupItem">
+                                    <Button Classes="Ghost" Margin="0,0,0,4" Padding="12,10" CornerRadius="8"
+                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                                            Command="{Binding ((vm:BlockEditorViewModel)DataContext).SelectGroupCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Width="8" Height="8" CornerRadius="4"
+                                                    VerticalAlignment="Center" Margin="0,0,12,0">
+                                                <Border.Background>
+                                                    <SolidColorBrush Color="#66BB6A"/>
+                                                </Border.Background>
+                                            </Border>
+                                            <TextBlock Grid.Column="1" Text="{Binding Title}"
+                                                       VerticalAlignment="Center" FontSize="14"
+                                                       Foreground="#EFEFEF"/>
+                                            <Border Grid.Column="2" Width="22" Height="22" CornerRadius="11"
+                                                    BorderBrush="#66BB6A" BorderThickness="2"
+                                                    VerticalAlignment="Center" Margin="16,0,0,0">
+                                                <Border Width="12" Height="12" CornerRadius="6"
+                                                        IsVisible="{Binding IsSelected}">
+                                                    <Border.Background>
+                                                        <SolidColorBrush Color="#66BB6A"/>
+                                                    </Border.Background>
+                                                </Border>
+                                            </Border>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </StackPanel>
                 </shad:Card>
                 <shad:Card Padding="0">

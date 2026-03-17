@@ -12,6 +12,7 @@ public partial class BlockEditorViewModel : ObservableObject
 {
     private readonly IBlockApiService? _blockApiService;
     private readonly IInstalledAppsService? _installedAppsService;
+    private readonly IDailyActivityApiService? _activityApiService;
     private List<SelectableAppItem> _allApps = [];
 
     [ObservableProperty]
@@ -68,6 +69,15 @@ public partial class BlockEditorViewModel : ObservableObject
     [ObservableProperty]
     private decimal _focusDurationMinutes = 60;
 
+    // Bloomdo fields
+    [ObservableProperty]
+    private bool _isLoadingGroups;
+
+    [ObservableProperty]
+    private SelectableGroupItem? _selectedGroup;
+
+    public ObservableCollection<SelectableGroupItem> AvailableGroups { get; } = [];
+
     public ObservableCollection<SelectableAppItem> FilteredApps { get; } = [];
 
     public bool IsScheduleType => SelectedType == BlockType.Schedule;
@@ -96,10 +106,14 @@ public partial class BlockEditorViewModel : ObservableObject
     public event Action<BlockRuleResponse>? Saved;
     public event Action? Cancelled;
 
-    public BlockEditorViewModel(IBlockApiService? blockApiService, IInstalledAppsService? installedAppsService)
+    public BlockEditorViewModel(
+        IBlockApiService? blockApiService,
+        IInstalledAppsService? installedAppsService,
+        IDailyActivityApiService? activityApiService = null)
     {
         _blockApiService = blockApiService;
         _installedAppsService = installedAppsService;
+        _activityApiService = activityApiService;
     }
 
     public void Configure(BlockType type, string defaultTitle)
@@ -112,6 +126,9 @@ public partial class BlockEditorViewModel : ObservableObject
         OnPropertyChanged(nameof(IsBloomdoType));
         OnPropertyChanged(nameof(TypeColor));
         _ = LoadAppsAsync();
+
+        if (type == BlockType.Bloomdo)
+            _ = LoadGroupsAsync();
     }
 
     partial void OnSearchTextChanged(string value) => ApplyFilter();
@@ -132,6 +149,12 @@ public partial class BlockEditorViewModel : ObservableObject
         if (_allApps.Count(a => a.IsSelected) == 0)
         {
             ErrorMessage = "Select at least one app";
+            return;
+        }
+
+        if (IsBloomdoType && SelectedGroup is null)
+        {
+            ErrorMessage = "Select an activity group";
             return;
         }
 
@@ -176,6 +199,44 @@ public partial class BlockEditorViewModel : ObservableObject
         if (item is null) return;
         item.IsSelected = !item.IsSelected;
         OnPropertyChanged(nameof(SelectedAppCountText));
+    }
+
+    [RelayCommand]
+    private void SelectGroup(SelectableGroupItem? item)
+    {
+        if (item is null) return;
+
+        foreach (var g in AvailableGroups)
+            g.IsSelected = false;
+
+        item.IsSelected = true;
+        SelectedGroup = item;
+    }
+
+    private async Task LoadGroupsAsync()
+    {
+        if (_activityApiService is null) return;
+
+        IsLoadingGroups = true;
+        try
+        {
+            var groups = await _activityApiService.GetGroupsAsync();
+            AvailableGroups.Clear();
+
+            if (groups is not null)
+            {
+                foreach (var group in groups)
+                    AvailableGroups.Add(new SelectableGroupItem(group.Id, group.Title));
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"LoadGroups error: {ex}");
+        }
+        finally
+        {
+            IsLoadingGroups = false;
+        }
     }
 
     private async Task LoadAppsAsync()
@@ -231,7 +292,8 @@ public partial class BlockEditorViewModel : ObservableObject
             EndTime = IsScheduleType ? TimeOnly.FromTimeSpan(EndTime) : null,
             Days = IsScheduleType ? GetSelectedDays() : null,
             DailyLimitMinutes = IsLimitType ? (int)DailyLimitMinutes : null,
-            FocusDurationMinutes = IsFocusType ? (int)FocusDurationMinutes : null
+            FocusDurationMinutes = IsFocusType ? (int)FocusDurationMinutes : null,
+            RequiredActivityGroupId = IsBloomdoType ? SelectedGroup?.Id : null
         };
     }
 

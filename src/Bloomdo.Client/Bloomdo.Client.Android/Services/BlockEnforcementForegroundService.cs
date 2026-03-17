@@ -18,8 +18,10 @@ public class BlockEnforcementForegroundService : Service
 {
     private const int NotificationId = 9001;
     private const string ChannelId = "bloomdo_enforcement";
+    private const string OwnPackage = "com.CompanyName.Bloomdo.Client";
     private Timer? _timer;
     private List<BlockRuleResponse> _cachedRules = [];
+    private Dictionary<Guid, bool> _cachedGroupCompletion = [];
     private string? _lastBlockedPackage;
 
     public override IBinder? OnBind(Intent? intent) => null;
@@ -48,10 +50,14 @@ public class BlockEnforcementForegroundService : Service
         try
         {
             LoadRules();
+            LoadGroupCompletion();
             if (_cachedRules.Count == 0) return;
 
             var foregroundPkg = GetForegroundPackage();
             if (string.IsNullOrEmpty(foregroundPkg)) return;
+
+            // Never block our own app
+            if (foregroundPkg == OwnPackage) return;
 
             if (ShouldBlock(foregroundPkg))
             {
@@ -106,6 +112,9 @@ public class BlockEnforcementForegroundService : Service
                     break;
 
                 case BlockType.Bloomdo:
+                    if (rule.RequiredActivityGroupId.HasValue &&
+                        _cachedGroupCompletion.TryGetValue(rule.RequiredActivityGroupId.Value, out var groupDone) && groupDone)
+                        break; // Group completed — allow access
                     return true;
             }
         }
@@ -163,18 +172,21 @@ public class BlockEnforcementForegroundService : Service
         {
             var usm = (UsageStatsManager)GetSystemService(UsageStatsService)!;
             var now = Java.Lang.JavaSystem.CurrentTimeMillis();
-            var events = usm.QueryEvents(now - 5000, now);
+            // Use 30-minute window so apps open longer than a few seconds are still detected
+            var events = usm.QueryEvents(now - 30 * 60 * 1000, now);
             var ev = new UsageEvents.Event();
-            string? lastResumed = null;
+            string? currentForeground = null;
 
             while (events.HasNextEvent)
             {
                 events.GetNextEvent(ev);
                 if (ev.EventType == UsageEventType.ActivityResumed)
-                    lastResumed = ev.PackageName;
+                    currentForeground = ev.PackageName;
+                else if (ev.EventType == UsageEventType.ActivityPaused && ev.PackageName == currentForeground)
+                    currentForeground = null;
             }
 
-            return lastResumed;
+            return currentForeground;
         }
         catch (Exception ex)
         {
@@ -210,6 +222,29 @@ public class BlockEnforcementForegroundService : Service
         catch (Exception ex)
         {
             Log.Warn("Bloomdo", $"LoadRules error: {ex.Message}");
+        }
+    }
+
+    private void LoadGroupCompletion()
+    {
+        try
+        {
+            var filePath = System.IO.Path.Combine(
+                Microsoft.Maui.Storage.FileSystem.AppDataDirectory, "group_completion.json");
+
+            if (!System.IO.File.Exists(filePath))
+            {
+                _cachedGroupCompletion = [];
+                return;
+            }
+
+            var json = System.IO.File.ReadAllText(filePath);
+            _cachedGroupCompletion = JsonSerializer.Deserialize<Dictionary<Guid, bool>>(json,
+                new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }) ?? [];
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Bloomdo", $"LoadGroupCompletion error: {ex.Message}");
         }
     }
 

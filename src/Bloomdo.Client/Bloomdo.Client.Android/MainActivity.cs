@@ -1,8 +1,10 @@
 ﻿using System;
 using Android.App;
+using Android.App.Usage;
 using Android.Content;
 using Android.Content.PM;
 using Android.OS;
+using Android.Provider;
 using Avalonia;
 using Avalonia.Android;
 using Bloomdo.Client.Android.Services;
@@ -34,6 +36,7 @@ public class MainActivity : AvaloniaMainActivity<App>
 
         Platform.Init(this, savedInstanceState);
 
+        EnsureRequiredPermissions();
         StartBlockEnforcement();
     }
 
@@ -42,6 +45,40 @@ public class MainActivity : AvaloniaMainActivity<App>
         return base.CustomizeAppBuilder(builder)
             .WithInterFont()
             .LogToTrace();
+    }
+
+    private void EnsureRequiredPermissions()
+    {
+        // Overlay permission — required on Android 6+ for the foreground service
+        // to show BlockedActivity on top of blocked apps
+        if (Build.VERSION.SdkInt >= BuildVersionCodes.M &&
+            !global::Android.Provider.Settings.CanDrawOverlays(this))
+        {
+            var intent = new Intent(
+                global::Android.Provider.Settings.ActionManageOverlayPermission,
+                global::Android.Net.Uri.Parse("package:" + PackageName));
+            StartActivity(intent);
+        }
+
+        // Usage access permission — required for UsageStatsManager to detect
+        // which app is currently in the foreground
+        try
+        {
+            var appOps = (AppOpsManager)GetSystemService(AppOpsService)!;
+            var mode = appOps.UnsafeCheckOpNoThrow("android:get_usage_stats",
+                Process.MyUid(), PackageName ?? "");
+
+            if (mode != AppOpsManagerMode.Allowed)
+            {
+                var intent = new Intent(
+                    global::Android.Provider.Settings.ActionUsageAccessSettings);
+                StartActivity(intent);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Usage access check failed: {ex.Message}");
+        }
     }
 
     private static void StartBlockEnforcement()

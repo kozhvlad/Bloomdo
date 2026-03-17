@@ -86,6 +86,9 @@ public static class DependencyContainer
 
         // Block rule local store
         services.AddSingleton<IBlockRuleStore, BlockRuleStore>();
+
+        // Group completion local store
+        services.AddSingleton<IGroupCompletionStore, GroupCompletionStore>();
     }
 
     private static void RegisterRepositories(IServiceCollection services)
@@ -187,11 +190,15 @@ public static class DependencyContainer
         // Main view and tabs
         services.AddTransient<MainViewModel>();
         services.AddTransient<HomeViewModel>(sp => new HomeViewModel(
-            sp.GetRequiredService<IDailyActivityApiService>()));
+            sp.GetRequiredService<IDailyActivityApiService>(),
+            sp.GetRequiredService<IGroupCompletionStore>(),
+            sp.GetRequiredService<IBlockRuleStore>(),
+            sp.GetRequiredService<IBlockApiService>()));
         services.AddTransient<BlocksViewModel>(sp => new BlocksViewModel(
             sp.GetRequiredService<IBlockApiService>(),
             sp.GetService<IInstalledAppsService>(),
-            sp.GetService<IBlockRuleStore>()));
+            sp.GetService<IBlockRuleStore>(),
+            sp.GetRequiredService<IDailyActivityApiService>()));
         services.AddTransient<StatsViewModel>(sp =>
         {
             var appUsageService = sp.GetService<IAppUsageService>();

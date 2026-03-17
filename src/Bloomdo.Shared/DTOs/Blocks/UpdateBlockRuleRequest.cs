@@ -10,4 +10,5 @@ public sealed class UpdateBlockRuleRequest
     public List<DayOfWeek>? Days { get; init; }
     public int? DailyLimitMinutes { get; init; }
     public int? FocusDurationMinutes { get; init; }
+    public Guid? RequiredActivityGroupId { get; init; }
 }

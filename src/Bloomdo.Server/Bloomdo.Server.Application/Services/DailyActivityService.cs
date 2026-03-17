@@ -11,7 +11,7 @@ public class DailyActivityService(
 {
     public async Task<List<ActivityGroupResponse>> GetGroupsAsync(Guid accountId, CancellationToken ct = default)
     {
-        var groups = (await groupRepo.FindAsync(g => g.AccountId == accountId, ct))
+        var groups = (await groupRepo.FindAsync(g => g.AccountId == accountId && g.IsActive && !g.IsDeleted, ct))
             .OrderBy(g => g.SortOrder)
             .ToList();
 
@@ -140,7 +140,7 @@ public class DailyActivityService(
 
     public async Task<DailyActivitiesResponse> GetDailyAsync(Guid accountId, DateOnly date, CancellationToken ct = default)
     {
-        var groups = (await groupRepo.FindAsync(g => g.AccountId == accountId && g.IsActive, ct))
+        var groups = (await groupRepo.FindAsync(g => g.AccountId == accountId && g.IsActive && !g.IsDeleted, ct))
             .OrderBy(g => g.SortOrder)
             .ToList();
 
@@ -156,10 +156,10 @@ public class DailyActivityService(
                 .OrderBy(i => i.SortOrder)
                 .ToList();
 
-            if (items.Count == 0) continue;
-
-            var completions = await completionRepo.FindAsync(
-                c => c.AccountId == accountId && c.Date == date && items.Select(i => i.Id).Contains(c.ActivityItemId), ct);
+            var completions = items.Count > 0
+                ? await completionRepo.FindAsync(
+                    c => c.AccountId == accountId && c.Date == date && items.Select(i => i.Id).Contains(c.ActivityItemId), ct)
+                : [];
 
             var completionSet = completions.Select(c => c.ActivityItemId).ToHashSet();
 

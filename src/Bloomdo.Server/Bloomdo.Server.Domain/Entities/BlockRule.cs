@@ -34,5 +34,11 @@ public class BlockRule : BaseEntity
     /// </summary>
     public DateTime? FocusStartedAtUtc { get; set; }
 
+    // Bloomdo
+    /// <summary>
+    /// The activity group that must be completed before blocked apps are accessible.
+    /// </summary>
+    public Guid? RequiredActivityGroupId { get; set; }
+
     public Account Account { get; set; } = null!;
 }

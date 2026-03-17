@@ -21,4 +21,9 @@ public sealed class BlockRuleResponse
     // Focus-specific
     public int? FocusDurationMinutes { get; init; }
     public DateTime? FocusStartedAtUtc { get; init; }
+
+    // Bloomdo-specific
+    public Guid? RequiredActivityGroupId { get; init; }
+    public string? RequiredActivityGroupTitle { get; init; }
+    public bool IsBloomdoSatisfied { get; init; }
 }
