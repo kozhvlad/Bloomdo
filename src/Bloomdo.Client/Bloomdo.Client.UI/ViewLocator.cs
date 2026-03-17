@@ -60,6 +60,9 @@ public class ViewLocator : IDataTemplate
             case ProfileViewModel:
                 return new ProfileView();
 
+            case ProfileEditorViewModel:
+                return new ProfileEditorView();
+
             default:
                 var message = data is null
                     ? "Data passed to ViewLocator was null."

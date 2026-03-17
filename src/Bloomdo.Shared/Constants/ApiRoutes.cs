@@ -15,6 +15,14 @@ public static class ApiRoutes
         public const string Me = $"{BaseRoute}/me";
     }
 
+    public static class Profile
+    {
+        private const string BaseRoute = $"{Base}/profile";
+
+        public const string Update = BaseRoute;
+        public const string Stats = $"{BaseRoute}/stats";
+    }
+
     public static class Stats
     {
         private const string BaseRoute = $"{Base}/stats";

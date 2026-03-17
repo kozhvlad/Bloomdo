@@ -88,7 +88,7 @@ public class AuthApiService : IAuthApiService
         try
         {
             var response = await _httpClient.GetAsync(ApiRoutes.Auth.Me, cancellationToken);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadFromJsonAsync<AccountProfileResponse>(cancellationToken);

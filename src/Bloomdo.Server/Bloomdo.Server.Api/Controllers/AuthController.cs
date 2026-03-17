@@ -1,4 +1,5 @@
 using Bloomdo.Shared.DTOs.Auth;
+using Bloomdo.Shared.DTOs.Profile;
 using Bloomdo.Shared.Constants;
 using Bloomdo.Server.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -77,5 +78,33 @@ public class AuthController : ControllerBase
         }
 
         return HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+    }
+
+    private bool TryGetAccountId(out Guid accountId)
+    {
+        var claim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        return Guid.TryParse(claim, out accountId);
+    }
+
+    [Authorize]
+    [HttpPut(ApiRoutes.Profile.Update)]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request, CancellationToken cancellationToken)
+    {
+        if (!TryGetAccountId(out var accountId))
+            return Unauthorized(new { message = "Invalid token" });
+
+        var profile = await _authService.UpdateProfileAsync(accountId, request, cancellationToken);
+        return Ok(profile);
+    }
+
+    [Authorize]
+    [HttpGet(ApiRoutes.Profile.Stats)]
+    public async Task<IActionResult> GetProfileStats(CancellationToken cancellationToken)
+    {
+        if (!TryGetAccountId(out var accountId))
+            return Unauthorized(new { message = "Invalid token" });
+
+        var stats = await _authService.GetProfileStatsAsync(accountId, cancellationToken);
+        return Ok(stats);
     }
 }

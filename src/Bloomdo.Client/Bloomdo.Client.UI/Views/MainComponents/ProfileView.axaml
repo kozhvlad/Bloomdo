@@ -3,71 +3,185 @@
 			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 			 xmlns:shad="clr-namespace:ShadUI;assembly=ShadUI"
+			 xmlns:converters="clr-namespace:Bloomdo.Client.UI.Converters"
 			 xmlns:mainComponents1="clr-namespace:Bloomdo.Client.Application.ViewModels.MainComponents;assembly=Bloomdo.Client.Application"
-			 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="800"
+			 mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="900"
 			 x:DataType="mainComponents1:ProfileViewModel"
 			 x:Class="Bloomdo.Client.UI.MainComponents.ProfileView">
+
+	<UserControl.Resources>
+		<converters:StringToBrushConverter x:Key="StringToBrush"/>
+	</UserControl.Resources>
+
 	<ScrollViewer>
-		<Grid Background="{DynamicResource Brush.Background}" Margin="24" RowDefinitions="Auto,Auto,Auto,Auto">
+		<StackPanel Background="{DynamicResource Brush.Background}" Spacing="0">
 
-			<!-- Header -->
-			<StackPanel Grid.Row="0" Spacing="16" HorizontalAlignment="Center" Margin="0,0,0,32">
-				<Border CornerRadius="100" BorderBrush="{DynamicResource BorderColor}" BorderThickness="1" HorizontalAlignment="Center">
-					<shad:Avatar Height="100" Width="100" Fallback="{Binding Initials}" />
-				</Border>
-				<StackPanel Spacing="4" HorizontalAlignment="Center">
-					<TextBlock Text="{Binding Name}" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Foreground}"/>
-					<TextBlock Text="{Binding Username}" Opacity="0.7" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Foreground}"/>
-					<shad:Badge Classes="Secondary" HorizontalAlignment="Center" Margin="0,8,0,0">
-						<TextBlock Text="{Binding Level}" />
-					</shad:Badge>
-				</StackPanel>
-			</StackPanel>
+			<!-- Avatar Header Banner (Duolingo-style) -->
+			<Border Height="220" CornerRadius="0,0,24,24" ClipToBounds="True"
+					Background="{Binding AvatarBackgroundHex, Converter={StaticResource StringToBrush}}">
+				<Grid>
+					<!-- Settings button -->
+					<Button HorizontalAlignment="Right" VerticalAlignment="Top"
+							Margin="0,12,16,0" Background="Transparent"
+							BorderThickness="0" Padding="8" Cursor="Hand"
+							Command="{Binding EditProfileCommand}">
+						<PathIcon Data="{x:Static shad:Icons.Settings}" Width="22" Height="22" Foreground="White" Opacity="0.9"/>
+					</Button>
 
-			<!-- Stats -->
-			<shad:Card Grid.Row="1" Margin="0,0,0,24">
-				<shad:Card.Header>
-					<shad:CardTitle>Statistics</shad:CardTitle>
-				</shad:Card.Header>
-				<Grid ColumnDefinitions="*,*,*" Margin="0,16">
-					<StackPanel Grid.Column="0" Spacing="4" HorizontalAlignment="Center">
-						<TextBlock Text="{Binding StreakDays}" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Foreground}"/>
-						<TextBlock Text="Day Streak" FontSize="12" Opacity="0.7" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Foreground}"/>
-					</StackPanel>
-					<StackPanel Grid.Column="1" Spacing="4" HorizontalAlignment="Center">
-						<TextBlock Text="{Binding TasksCompleted}" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Foreground}"/>
-						<TextBlock Text="Tasks Done" FontSize="12" Opacity="0.7" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Foreground}"/>
-					</StackPanel>
-					<StackPanel Grid.Column="2" Spacing="4" HorizontalAlignment="Center">
-						<TextBlock Text="{Binding FocusHours}" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Foreground}"/>
-						<TextBlock Text="Focus Hours" FontSize="12" Opacity="0.7" HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Foreground}"/>
+					<!-- Avatar circle -->
+					<StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="0">
+						<Border Width="120" Height="120" CornerRadius="60"
+								Background="White" HorizontalAlignment="Center"
+								Padding="4" Cursor="Hand">
+							<Border CornerRadius="56" ClipToBounds="True"
+									Background="{Binding AvatarBackgroundHex, Converter={StaticResource StringToBrush}}">
+								<StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+									<!-- Head -->
+									<Border Width="44" Height="44" CornerRadius="22"
+											HorizontalAlignment="Center"
+											Background="{Binding AvatarSkinHex, Converter={StaticResource StringToBrush}}">
+										<!-- Hair -->
+										<Border Width="44" Height="20" CornerRadius="22,22,0,0"
+												VerticalAlignment="Top" Opacity="0.9"
+												Background="{Binding AvatarHairHex, Converter={StaticResource StringToBrush}}"/>
+									</Border>
+									<!-- Eyes -->
+									<Canvas Width="44" Height="0" Margin="0,-20,0,0"
+											HorizontalAlignment="Center">
+										<Border Width="6" Height="6" CornerRadius="3"
+												Background="#37474F" Canvas.Left="12" Canvas.Top="0"/>
+										<Border Width="6" Height="6" CornerRadius="3"
+												Background="#37474F" Canvas.Left="26" Canvas.Top="0"/>
+									</Canvas>
+									<!-- Body -->
+									<Border Width="52" Height="28" CornerRadius="8,8,0,0"
+											HorizontalAlignment="Center" Margin="0,4,0,0"
+											Background="{Binding AvatarClothingHex, Converter={StaticResource StringToBrush}}"/>
+								</StackPanel>
+							</Border>
+						</Border>
 					</StackPanel>
 				</Grid>
-			</shad:Card>
+			</Border>
 
-			<!-- Achievements -->
-			<shad:Card Grid.Row="2" Margin="0,0,0,24">
-				<shad:Card.Header>
-					<StackPanel>
-						<shad:CardTitle>Achievements</shad:CardTitle>
-						<shad:CardDescription>Recent awards and badges</shad:CardDescription>
-					</StackPanel>
-				</shad:Card.Header>
-				<WrapPanel Margin="0,16">
-					<shad:Badge Classes="Outline" Margin="0,0,8,8">Early Bird</shad:Badge>
-					<shad:Badge Classes="Outline" Margin="0,0,8,8">Task Master</shad:Badge>
-					<shad:Badge Classes="Outline" Margin="0,0,8,8">7 Day Streak</shad:Badge>
-					<shad:Badge Classes="Outline" Margin="0,0,8,8">Focus Guru</shad:Badge>
-				</WrapPanel>
-			</shad:Card>
-
-			<!-- Actions -->
-			<StackPanel Grid.Row="3" Spacing="12">
-				<Button Content="Edit Profile" Classes="Outline" HorizontalAlignment="Stretch"/>
-				<Button Content="Account Settings" Classes="Ghost" HorizontalAlignment="Stretch"/>
-				<Button Content="Log Out" Classes="Destructive" HorizontalAlignment="Stretch" Command="{Binding LogoutCommand}"/>
+			<!-- Profile Info -->
+			<StackPanel Margin="24,16,24,0" Spacing="4" HorizontalAlignment="Center">
+				<TextBlock Text="{Binding Name}" FontSize="24" FontWeight="Bold"
+						   HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Foreground}"/>
+				<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+					<TextBlock Text="{Binding Username}" Opacity="0.6" FontSize="14"
+							   Foreground="{DynamicResource Brush.Foreground}"
+							   IsVisible="{Binding Username, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+					<TextBlock Text="•" Opacity="0.4" FontSize="14"
+							   Foreground="{DynamicResource Brush.Foreground}"
+							   IsVisible="{Binding Username, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+					<TextBlock Text="{Binding JoinedDateText}" Opacity="0.5" FontSize="14"
+							   Foreground="{DynamicResource Brush.Foreground}"/>
+				</StackPanel>
+				<TextBlock Text="{Binding Bio}" FontSize="13" Opacity="0.6"
+						   HorizontalAlignment="Center" TextWrapping="Wrap"
+						   Foreground="{DynamicResource Brush.Foreground}" Margin="0,4,0,0"
+						   IsVisible="{Binding Bio, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+				<shad:Badge Classes="Secondary" HorizontalAlignment="Center" Margin="0,8,0,0">
+					<TextBlock Text="{Binding Level}" FontSize="12"/>
+				</shad:Badge>
 			</StackPanel>
 
-		</Grid>
+			<!-- Stats Row (Duolingo-style) -->
+			<Border Margin="16,20,16,0" CornerRadius="16" Padding="16,12"
+					BorderThickness="1" BorderBrush="{DynamicResource OutlineColor}">
+				<Grid ColumnDefinitions="*,Auto,*,Auto,*">
+					<StackPanel Grid.Column="0" Spacing="2" HorizontalAlignment="Center">
+						<TextBlock Text="{Binding StreakDays}" FontSize="22" FontWeight="Bold"
+								   HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Foreground}"/>
+						<TextBlock Text="Day Streak" FontSize="11" Opacity="0.5"
+								   HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Foreground}"/>
+					</StackPanel>
+					<Border Grid.Column="1" Width="1" Background="{DynamicResource OutlineColor}" Margin="0,4"/>
+					<StackPanel Grid.Column="2" Spacing="2" HorizontalAlignment="Center">
+						<TextBlock Text="{Binding TasksCompleted}" FontSize="22" FontWeight="Bold"
+								   HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Foreground}"/>
+						<TextBlock Text="Tasks Done" FontSize="11" Opacity="0.5"
+								   HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Foreground}"/>
+					</StackPanel>
+					<Border Grid.Column="3" Width="1" Background="{DynamicResource OutlineColor}" Margin="0,4"/>
+					<StackPanel Grid.Column="4" Spacing="2" HorizontalAlignment="Center">
+						<TextBlock Text="{Binding FocusHours}" FontSize="22" FontWeight="Bold"
+								   HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Foreground}"/>
+						<TextBlock Text="Focus Hrs" FontSize="11" Opacity="0.5"
+								   HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Foreground}"/>
+					</StackPanel>
+				</Grid>
+			</Border>
+
+			<!-- Edit Profile Button -->
+			<Button Margin="16,16,16,0" HorizontalAlignment="Stretch"
+					HorizontalContentAlignment="Center" Padding="0,12"
+					CornerRadius="12" Classes="Outline"
+					Command="{Binding EditProfileCommand}" Cursor="Hand">
+				<StackPanel Orientation="Horizontal" Spacing="8">
+					<PathIcon Data="{x:Static shad:Icons.Marker}" Width="16" Height="16"
+								  Foreground="{DynamicResource Brush.Foreground}"/>
+					<TextBlock Text="Edit Profile" FontWeight="SemiBold" FontSize="14"/>
+				</StackPanel>
+			</Button>
+
+			<!-- Overview Section -->
+			<TextBlock Text="Overview" FontSize="18" FontWeight="Bold" Margin="24,24,24,12"
+					   Foreground="{DynamicResource Brush.Foreground}"/>
+
+			<!-- Overview Cards -->
+			<Grid ColumnDefinitions="*,*" Margin="16,0,16,0" RowDefinitions="Auto,Auto">
+				<Border Grid.Column="0" Grid.Row="0" Margin="4" Padding="16,14" CornerRadius="12"
+						BorderThickness="1" BorderBrush="{DynamicResource OutlineColor}">
+					<StackPanel Spacing="4">
+						<TextBlock Text="🔥" FontSize="22"/>
+						<TextBlock Text="{Binding StreakDays}" FontSize="20" FontWeight="Bold"
+								   Foreground="{DynamicResource Brush.Foreground}"/>
+						<TextBlock Text="Day Streak" FontSize="12" Opacity="0.5"
+								   Foreground="{DynamicResource Brush.Foreground}"/>
+					</StackPanel>
+				</Border>
+				<Border Grid.Column="1" Grid.Row="0" Margin="4" Padding="16,14" CornerRadius="12"
+						BorderThickness="1" BorderBrush="{DynamicResource OutlineColor}">
+					<StackPanel Spacing="4">
+						<TextBlock Text="✅" FontSize="22"/>
+						<TextBlock Text="{Binding TasksCompleted}" FontSize="20" FontWeight="Bold"
+								   Foreground="{DynamicResource Brush.Foreground}"/>
+						<TextBlock Text="Tasks Completed" FontSize="12" Opacity="0.5"
+								   Foreground="{DynamicResource Brush.Foreground}"/>
+					</StackPanel>
+				</Border>
+				<Border Grid.Column="0" Grid.Row="1" Margin="4" Padding="16,14" CornerRadius="12"
+						BorderThickness="1" BorderBrush="{DynamicResource OutlineColor}">
+					<StackPanel Spacing="4">
+						<TextBlock Text="🎯" FontSize="22"/>
+						<TextBlock Text="{Binding TotalBlocksCreated}" FontSize="20" FontWeight="Bold"
+								   Foreground="{DynamicResource Brush.Foreground}"/>
+						<TextBlock Text="Blocks Created" FontSize="12" Opacity="0.5"
+								   Foreground="{DynamicResource Brush.Foreground}"/>
+					</StackPanel>
+				</Border>
+				<Border Grid.Column="1" Grid.Row="1" Margin="4" Padding="16,14" CornerRadius="12"
+						BorderThickness="1" BorderBrush="{DynamicResource OutlineColor}">
+					<StackPanel Spacing="4">
+						<TextBlock Text="🏅" FontSize="22"/>
+						<TextBlock Text="{Binding AchievementsUnlocked}" FontSize="20" FontWeight="Bold"
+								   Foreground="{DynamicResource Brush.Foreground}"/>
+						<TextBlock Text="Achievements" FontSize="12" Opacity="0.5"
+								   Foreground="{DynamicResource Brush.Foreground}"/>
+					</StackPanel>
+				</Border>
+			</Grid>
+
+			<!-- Actions -->
+			<StackPanel Margin="16,24,16,32" Spacing="8">
+				<Button Content="Log Out" Classes="Destructive" HorizontalAlignment="Stretch"
+						HorizontalContentAlignment="Center" Padding="0,14"
+						CornerRadius="12" FontWeight="SemiBold"
+						Command="{Binding LogoutCommand}"/>
+			</StackPanel>
+
+		</StackPanel>
 	</ScrollViewer>
 </UserControl>

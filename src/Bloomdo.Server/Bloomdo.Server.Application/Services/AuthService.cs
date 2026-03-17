@@ -1,4 +1,5 @@
 using Bloomdo.Shared.DTOs.Auth;
+using Bloomdo.Shared.DTOs.Profile;
 using Bloomdo.Shared.Enums;
 using Bloomdo.Server.Domain.Entities;
 using Bloomdo.Server.Domain.Exceptions;
@@ -197,12 +198,45 @@ public class AuthService : IAuthService
             Email = account.Email,
             FirstName = account.FirstName,
             LastName = account.LastName,
+            Username = account.Username,
+            Bio = account.Bio,
+            Avatar = DeserializeAvatar(account.AvatarJson),
             Roles = roles.ToList(),
             Permissions = permissions.ToList(),
             IsEmailConfirmed = account.IsEmailConfirmed,
             LastLoginAt = account.LastLoginAt,
             CreatedAt = account.CreatedAt
         };
+    }
+
+    public async Task<AccountProfileResponse> UpdateProfileAsync(Guid accountId, UpdateProfileRequest request, CancellationToken cancellationToken = default)
+    {
+        var account = await _accountRepository.GetByIdAsync(accountId, cancellationToken)
+            ?? throw new AccountNotFoundException(accountId);
+
+        if (request.FirstName != null) account.FirstName = request.FirstName;
+        if (request.LastName != null) account.LastName = request.LastName;
+        if (request.Username != null) account.Username = request.Username;
+        if (request.Bio != null) account.Bio = request.Bio;
+        if (request.Avatar != null) account.AvatarJson = System.Text.Json.JsonSerializer.Serialize(request.Avatar);
+
+        await _accountRepository.UpdateAsync(account, cancellationToken);
+
+        return await GetProfileAsync(accountId, cancellationToken);
+    }
+
+    public Task<ProfileStatsResponse> GetProfileStatsAsync(Guid accountId, CancellationToken cancellationToken = default)
+    {
+        // Placeholder — real values should be computed from domain data
+        return Task.FromResult(new ProfileStatsResponse
+        {
+            StreakDays = 0,
+            TasksCompleted = 0,
+            FocusHours = 0,
+            TotalBlocksCreated = 0,
+            AchievementsUnlocked = 0,
+            JoinedAt = DateTime.UtcNow
+        });
     }
 
     private async Task<AuthResponse> GenerateAuthResponseAsync(Account account, string ipAddress, CancellationToken cancellationToken)
@@ -243,5 +277,18 @@ public class AuthService : IAuthService
             .Select(ar => (UserRole)ar.RoleId)
             .OrderBy(r => r)
             .ToList();
+    }
+
+    private static AvatarConfig? DeserializeAvatar(string? json)
+    {
+        if (string.IsNullOrEmpty(json)) return null;
+        try
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<AvatarConfig>(json);
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

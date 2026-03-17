@@ -164,6 +164,21 @@ public static class DependencyContainer
 #endif
             return handler;
         });
+
+        services.AddHttpClient<IProfileApiService, ProfileApiService>(client =>
+        {
+            client.BaseAddress = new Uri(apiBaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(30);
+        })
+        .AddHttpMessageHandler<AuthHeaderHandler>()
+        .ConfigurePrimaryHttpMessageHandler(() =>
+        {
+            var handler = new HttpClientHandler();
+#if DEBUG
+            handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+#endif
+            return handler;
+        });
     }
 
     private static void RegisterViewModels(IServiceCollection services)
@@ -205,6 +220,20 @@ public static class DependencyContainer
             var statsApiService = sp.GetRequiredService<IStatsApiService>();
             return new StatsViewModel(appUsageService, statsApiService);
         });
-        services.AddTransient<ProfileViewModel>();
+        services.AddTransient<ProfileViewModel>(sp => new ProfileViewModel(
+            sp.GetRequiredService<IAccessTokenManager>(),
+            sp.GetRequiredService<INavigationService>(),
+            sp.GetRequiredService<IProfileApiService>()));
+
+        services.AddTransient<AvatarEditorViewModel>(sp => new AvatarEditorViewModel(
+            sp.GetRequiredService<INavigationService>(),
+            sp.GetRequiredService<IAccessTokenManager>(),
+            sp.GetRequiredService<IProfileApiService>()));
+
+        services.AddTransient<ProfileEditorViewModel>(sp => new ProfileEditorViewModel(
+            sp.GetRequiredService<INavigationService>(),
+            sp.GetRequiredService<IAccessTokenManager>(),
+            sp.GetRequiredService<IProfileApiService>(),
+            sp.GetRequiredService<AvatarEditorViewModel>()));
     }
 }

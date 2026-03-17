@@ -7,6 +7,13 @@ public class Account : BaseEntity
 
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
+    public string? Username { get; set; }
+    public string? Bio { get; set; }
+
+    /// <summary>
+    /// Serialized JSON avatar configuration.
+    /// </summary>
+    public string? AvatarJson { get; set; }
 
     public bool IsEmailConfirmed { get; set; }
     public DateTime? LastLoginAt { get; set; }
