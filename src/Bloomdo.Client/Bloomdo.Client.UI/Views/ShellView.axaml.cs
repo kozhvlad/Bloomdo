@@ -17,4 +17,12 @@ public partial class ShellView : UserControl
             toastHost.Manager = manager;
         }
     }
+
+    public void SetDialogManager(DialogManager manager)
+    {
+        if (this.FindControl<DialogHost>("DialogHostControl") is { } dialogHost)
+        {
+            dialogHost.Manager = manager;
+        }
+    }
 }

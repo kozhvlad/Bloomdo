@@ -10,6 +10,7 @@ using Bloomdo.Client.Infrastructure.DatabaseContexts;
 using Bloomdo.Client.Infrastructure.Middleware;
 using Bloomdo.Client.Infrastructure.Services;
 using Bloomdo.Client.UI.Services;
+using Bloomdo.Client.UI.Dialogs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using ShadUI;
@@ -75,7 +76,17 @@ public static class DependencyContainer
         services.AddSingleton<ToastManager>();
         services.AddSingleton<IToastService, ToastService>();
 
-        // NavigationService requires ShellViewModel, use factory to avoid circular dependency
+        // Dialog system
+        services.AddSingleton(sp =>
+        {
+            var manager = new DialogManager();
+            return manager;
+        });
+        services.AddSingleton<ITimerDialogService>(sp =>
+            new TimerDialogService(sp.GetRequiredService<ShellViewModel>()));
+        services.AddSingleton<IConfirmDialogService, ConfirmDialogService>();
+
+        // NavigationService
         services.AddSingleton<INavigationService>(sp =>
         {
             var shellViewModel = sp.GetRequiredService<ShellViewModel>();
@@ -208,7 +219,10 @@ public static class DependencyContainer
             sp.GetRequiredService<IDailyActivityApiService>(),
             sp.GetRequiredService<IGroupCompletionStore>(),
             sp.GetRequiredService<IBlockRuleStore>(),
-            sp.GetRequiredService<IBlockApiService>()));
+            sp.GetRequiredService<IBlockApiService>(),
+            sp.GetRequiredService<INavigationService>(),
+            sp.GetRequiredService<ITimerDialogService>(),
+            sp.GetRequiredService<IConfirmDialogService>()));
         services.AddTransient<BlocksViewModel>(sp => new BlocksViewModel(
             sp.GetRequiredService<IBlockApiService>(),
             sp.GetService<IInstalledAppsService>(),
@@ -240,5 +254,15 @@ public static class DependencyContainer
             sp.GetRequiredService<INavigationService>(),
             sp.GetRequiredService<IAccessTokenManager>(),
             sp.GetRequiredService<IProfileApiService>()));
+
+        services.AddTransient<GroupEditorViewModel>(sp => new GroupEditorViewModel(
+            sp.GetRequiredService<IDailyActivityApiService>(),
+            sp.GetRequiredService<INavigationService>(),
+            sp.GetRequiredService<IToastService>()));
+
+        services.AddTransient<TaskEditorViewModel>(sp => new TaskEditorViewModel(
+            sp.GetRequiredService<IDailyActivityApiService>(),
+            sp.GetRequiredService<INavigationService>(),
+            sp.GetRequiredService<IToastService>()));
     }
 }

@@ -2,7 +2,6 @@
 			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-			 xmlns:sys="clr-namespace:System;assembly=System.Runtime"
 			 xmlns:mainComponents1="clr-namespace:Bloomdo.Client.Application.ViewModels.MainComponents;assembly=Bloomdo.Client.Application"
 			 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
 			 x:DataType="mainComponents1:MainViewModel"
@@ -66,10 +65,8 @@
 				<!-- Home Tab -->
 				<Button Grid.Column="0" 
 						Classes="TabButton"
-						Command="{Binding SelectTabCommand}">
-					<Button.CommandParameter>
-						<sys:Int32>0</sys:Int32>
-					</Button.CommandParameter>
+						Command="{Binding SelectTabCommand}"
+						CommandParameter="0">
 					<StackPanel Spacing="4" HorizontalAlignment="Center">
 						<PathIcon Data="{StaticResource home_regular}"
 								  Classes.Active="{Binding IsHomeSelected}"
@@ -83,10 +80,8 @@
 				<!-- Blocks Tab -->
 				<Button Grid.Column="1" 
 						Classes="TabButton"
-						Command="{Binding SelectTabCommand}">
-					<Button.CommandParameter>
-						<sys:Int32>1</sys:Int32>
-					</Button.CommandParameter>
+						Command="{Binding SelectTabCommand}"
+						CommandParameter="1">
 					<StackPanel Spacing="4" HorizontalAlignment="Center">
 						<PathIcon Data="{StaticResource blocks_regular}"
 								  Classes.Active="{Binding IsBlocksSelected}"
@@ -100,10 +95,8 @@
 				<!-- Stats Tab -->
 				<Button Grid.Column="2" 
 						Classes="TabButton"
-						Command="{Binding SelectTabCommand}">
-					<Button.CommandParameter>
-						<sys:Int32>2</sys:Int32>
-					</Button.CommandParameter>
+						Command="{Binding SelectTabCommand}"
+						CommandParameter="2">
 					<StackPanel Spacing="4" HorizontalAlignment="Center">
 						<PathIcon Data="{StaticResource stats_regular}"
 								  Classes.Active="{Binding IsStatsSelected}"
@@ -117,10 +110,8 @@
 				<!-- Profile Tab -->
 				<Button Grid.Column="3" 
 						Classes="TabButton"
-						Command="{Binding SelectTabCommand}">
-					<Button.CommandParameter>
-						<sys:Int32>3</sys:Int32>
-					</Button.CommandParameter>
+						Command="{Binding SelectTabCommand}"
+						CommandParameter="3">
 					<StackPanel Spacing="4" HorizontalAlignment="Center">
 						<PathIcon Data="{StaticResource profile_regular}"
 								  Classes.Active="{Binding IsProfileSelected}"

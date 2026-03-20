@@ -3,6 +3,7 @@ using Bloomdo.Client.Core.Interfaces;
 using Bloomdo.Client.Application.ViewModels.MainComponents;
 using Bloomdo.Client.Application.ViewModels.OnbordingComponents;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 
 namespace Bloomdo.Client.Application.ViewModels;
 
@@ -18,6 +19,26 @@ public partial class ShellViewModel : ObservableObject
 
     [ObservableProperty]
     private IPage _currentViewModel = null!;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsOverlayOpen))]
+    private ObservableObject? _overlayContent;
+
+    public bool IsOverlayOpen => OverlayContent is not null;
+
+    /// <summary>
+    /// Action invoked when the overlay is dismissed (background tap or close).
+    /// </summary>
+    public Action? OnOverlayClosed { get; set; }
+
+    [RelayCommand]
+    private void CloseOverlay()
+    {
+        OverlayContent = null;
+        var callback = OnOverlayClosed;
+        OnOverlayClosed = null;
+        callback?.Invoke();
+    }
 
     public ShellViewModel(
         IAccessTokenManager tokenManager,

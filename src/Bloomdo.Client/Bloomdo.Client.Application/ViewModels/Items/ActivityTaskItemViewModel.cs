@@ -1,3 +1,4 @@
+using Bloomdo.Shared.DTOs.Activities;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Bloomdo.Client.Application.ViewModels.Items;
@@ -14,7 +15,16 @@ public partial class ActivityTaskItemViewModel : ObservableObject
     private string? _description;
 
     [ObservableProperty]
+    private ActivityItemType _taskType;
+
+    [ObservableProperty]
     private int? _durationMinutes;
+
+    [ObservableProperty]
+    private int? _targetCount;
+
+    [ObservableProperty]
+    private int _currentCount;
 
     [ObservableProperty]
     private string _icon = string.Empty;
@@ -57,16 +67,27 @@ public partial class ActivityTaskItemViewModel : ObservableObject
     [ObservableProperty]
     private int _timerRemainingSeconds;
 
+    // Computed — type checks
+    public bool IsTimerType => TaskType == ActivityItemType.Timer;
+    public bool IsCountType => TaskType == ActivityItemType.Count;
+
     public string FirstLetter =>
         string.IsNullOrEmpty(Title) ? "?" : Title[..1].ToUpperInvariant();
 
     public string DurationLabel =>
         DurationMinutes.HasValue ? $"{DurationMinutes} min" : string.Empty;
 
-    public bool HasDuration => DurationMinutes.HasValue;
+    public bool HasDuration => IsTimerType && DurationMinutes.HasValue;
     public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
     public bool HasStreak => CurrentStreak > 0;
     public string StreakText => CurrentStreak > 0 ? $"x{CurrentStreak}" : string.Empty;
+
+    // Count-type computed
+    public string CountProgressText => $"{CurrentCount}/{TargetCount ?? 0}";
+    public bool IsCountComplete => IsCountType && TargetCount.HasValue && CurrentCount >= TargetCount.Value;
+    public double CountFraction => IsCountType && TargetCount is > 0
+        ? Math.Min(1.0, (double)CurrentCount / TargetCount.Value)
+        : 0;
 
     public string TimerDisplayText
     {
@@ -83,7 +104,9 @@ public partial class ActivityTaskItemViewModel : ObservableObject
         get
         {
             var parts = new List<string>();
-            if (DurationMinutes.HasValue)
+            if (IsCountType && TargetCount.HasValue)
+                parts.Add($"{CurrentCount}/{TargetCount} done");
+            else if (DurationMinutes.HasValue)
                 parts.Add($"{DurationMinutes} min");
             if (!string.IsNullOrWhiteSpace(Description))
                 parts.Add(Description);
@@ -100,12 +123,29 @@ public partial class ActivityTaskItemViewModel : ObservableObject
         IsEditing = true;
     }
 
+    public void RefreshCountProperties()
+    {
+        OnPropertyChanged(nameof(CountProgressText));
+        OnPropertyChanged(nameof(IsCountComplete));
+        OnPropertyChanged(nameof(CountFraction));
+        OnPropertyChanged(nameof(Subtitle));
+    }
+
     partial void OnTitleChanged(string value) => OnPropertyChanged(nameof(FirstLetter));
     partial void OnTimerRemainingSecondsChanged(int value) => OnPropertyChanged(nameof(TimerDisplayText));
+    partial void OnTaskTypeChanged(ActivityItemType value)
+    {
+        OnPropertyChanged(nameof(IsTimerType));
+        OnPropertyChanged(nameof(IsCountType));
+        OnPropertyChanged(nameof(HasDuration));
+        OnPropertyChanged(nameof(Subtitle));
+    }
     partial void OnDurationMinutesChanged(int? value)
     {
         OnPropertyChanged(nameof(HasDuration));
         OnPropertyChanged(nameof(DurationLabel));
         OnPropertyChanged(nameof(Subtitle));
     }
+    partial void OnTargetCountChanged(int? value) => RefreshCountProperties();
+    partial void OnCurrentCountChanged(int value) => RefreshCountProperties();
 }

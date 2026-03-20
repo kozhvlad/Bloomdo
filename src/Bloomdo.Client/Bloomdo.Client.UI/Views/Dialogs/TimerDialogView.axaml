@@ -1,0 +1,212 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:system="clr-namespace:System;assembly=System.Runtime"
+             xmlns:shad="clr-namespace:ShadUI;assembly=ShadUI"
+             xmlns:converters="clr-namespace:Bloomdo.Client.UI.Converters"
+             xmlns:vm="clr-namespace:Bloomdo.Client.Application.ViewModels;assembly=Bloomdo.Client.Application"
+             mc:Ignorable="d" d:DesignWidth="360" d:DesignHeight="520"
+             x:DataType="vm:TimerDialogViewModel"
+             x:Class="Bloomdo.Client.UI.Dialogs.TimerDialogView">
+
+    <UserControl.Resources>
+        <converters:BlockTypeColorConverter x:Key="ColorConverter"/>
+    </UserControl.Resources>
+
+    <Border Background="#1A1A2E"
+            CornerRadius="24" Padding="20,20,20,24" MinWidth="320" MaxWidth="360">
+        <StackPanel Spacing="16" HorizontalAlignment="Center">
+
+            <!-- Close button -->
+            <Button Classes="Ghost" Padding="0"
+                    HorizontalAlignment="Right" Margin="0,-8,-8,0"
+                    Width="36" Height="36"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    Command="{Binding CloseCommand}">
+                <PathIcon Data="{x:Static shad:Icons.Cross}" Width="14" Height="14"
+                          Foreground="#EFEFEF" Opacity="0.5"/>
+            </Button>
+
+            <!-- Task info header -->
+            <StackPanel HorizontalAlignment="Center" Spacing="4" Margin="0,-12,0,0">
+                <TextBlock Text="{Binding TaskTitle}"
+                           FontSize="20" FontWeight="Bold"
+                           Foreground="White"
+                           HorizontalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" MaxWidth="280"/>
+                <TextBlock Text="{Binding SubtitleText}"
+                           FontSize="12" Opacity="0.5"
+                           Foreground="White"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- Streak badge -->
+            <Border IsVisible="{Binding HasStreak}"
+                    Background="#33FF9800" CornerRadius="12" Padding="10,4"
+                    HorizontalAlignment="Center">
+                <TextBlock Text="{Binding StreakText}"
+                           FontSize="14" FontWeight="Bold"
+                           Foreground="#FF9800"
+                           HorizontalAlignment="Center"/>
+            </Border>
+
+            <!-- Timer ring area -->
+            <Grid Width="220" Height="220" HorizontalAlignment="Center" Margin="0,4">
+                <!-- Outer track ring -->
+                <Border Width="220" Height="220" CornerRadius="110"
+                        Background="#22FFFFFF"/>
+                <!-- Inner ring accent -->
+                <Border Width="200" Height="200" CornerRadius="100"
+                        Background="{Binding TaskColor, Converter={StaticResource ColorConverter}}"
+                        Opacity="0.15"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <!-- Center area -->
+                <Border Width="170" Height="170" CornerRadius="85"
+                        Background="#1A1A2E"
+                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="4">
+                        <TextBlock Text="{Binding TaskIcon}"
+                                   FontFamily="{StaticResource EmojiFont}"
+                                   FontSize="28"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="{Binding TimerDisplay}"
+                                   FontSize="42" FontWeight="Bold"
+                                   Foreground="White"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="{Binding ProgressPercent}"
+                                   FontSize="11" Opacity="0.4"
+                                   Foreground="White"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Minus button (left) -->
+                <Button Classes="Ghost" Padding="0"
+                        Width="44" Height="44"
+                        HorizontalAlignment="Left" VerticalAlignment="Center"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        IsVisible="{Binding !IsRunning}"
+                        Command="{Binding AdjustTimeCommand}">
+                    <Button.CommandParameter>
+                        <system:Int32>-300</system:Int32>
+                    </Button.CommandParameter>
+                    <Border Width="40" Height="40" CornerRadius="20"
+                            Background="#33FF9800">
+                        <PathIcon Data="{x:Static shad:Icons.Minus}" Width="14" Height="14"
+                                  Foreground="#FF9800"/>
+                    </Border>
+                </Button>
+
+                <!-- Plus button (right) -->
+                <Button Classes="Ghost" Padding="0"
+                        Width="44" Height="44"
+                        HorizontalAlignment="Right" VerticalAlignment="Center"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        IsVisible="{Binding !IsRunning}"
+                        Command="{Binding AdjustTimeCommand}">
+                    <Button.CommandParameter>
+                        <system:Int32>300</system:Int32>
+                    </Button.CommandParameter>
+                    <Border Width="40" Height="40" CornerRadius="20"
+                            Background="#33FF9800">
+                        <PathIcon Data="{x:Static shad:Icons.Cross}" Width="14" Height="14"
+                                  Foreground="#FF9800">
+                            <PathIcon.RenderTransform>
+                                <RotateTransform Angle="45"/>
+                            </PathIcon.RenderTransform>
+                        </PathIcon>
+                    </Border>
+                </Button>
+            </Grid>
+
+            <!-- Control buttons row -->
+            <Grid ColumnDefinitions="Auto,8,Auto,8,Auto,*,Auto" HorizontalAlignment="Stretch"
+                  IsVisible="{Binding HasStarted}" Margin="0,4,0,0">
+                <!-- Skip/Fast forward -->
+                <Button Grid.Column="0" Classes="Ghost" Padding="0"
+                        Width="42" Height="42"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Command="{Binding AddTimeCommand}">
+                    <Button.CommandParameter>
+                        <system:Int32>30</system:Int32>
+                    </Button.CommandParameter>
+                    <Border Width="38" Height="38" CornerRadius="19"
+                            Background="#22FFFFFF">
+                        <TextBlock Text="⏩"
+                                   FontFamily="{StaticResource EmojiFont}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </Button>
+
+                <!-- Stop -->
+                <Button Grid.Column="2" Classes="Ghost" Padding="0"
+                        Width="42" Height="42"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Command="{Binding StopCommand}">
+                    <Border Width="38" Height="38" CornerRadius="19"
+                            Background="#33EF5350">
+                        <PathIcon Data="{x:Static shad:Icons.Cross}" Width="14" Height="14"
+                                  Foreground="#EF5350"/>
+                    </Border>
+                </Button>
+
+                <!-- Reset -->
+                <Button Grid.Column="4" Classes="Ghost" Padding="0"
+                        Width="42" Height="42"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Command="{Binding ResetTimerCommand}">
+                    <Border Width="38" Height="38" CornerRadius="19"
+                            Background="#22FFFFFF">
+                        <TextBlock Text="↩" FontSize="18"
+                                   Foreground="#EFEFEF"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                </Button>
+
+                <!-- +30 minutes -->
+                <Button Grid.Column="6" Classes="Ghost" Padding="0"
+                        Height="38"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Command="{Binding AddTimeCommand}">
+                    <Button.CommandParameter>
+                        <system:Int32>30</system:Int32>
+                    </Button.CommandParameter>
+                    <Border CornerRadius="19" Padding="14,0"
+                            Background="#33FF9800" Height="38">
+                        <TextBlock Text="+30 minutes"
+                                   FontSize="13" FontWeight="SemiBold"
+                                   Foreground="#FF9800"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                </Button>
+            </Grid>
+
+            <!-- Start / Play-Pause button -->
+            <Button Classes="Ghost" Padding="0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    VerticalContentAlignment="Center"
+                    Command="{Binding PlayPauseCommand}"
+                    Margin="0,4,0,0">
+                <Border CornerRadius="16" Padding="0,14" Height="52"
+                        Background="#FF9800"
+                        HorizontalAlignment="Stretch"
+                        MinWidth="280">
+                    <TextBlock Text="{Binding StartButtonText}"
+                               FontSize="16" FontWeight="Bold"
+                               Foreground="White"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+            </Button>
+
+        </StackPanel>
+    </Border>
+</UserControl>

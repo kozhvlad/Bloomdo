@@ -29,6 +29,7 @@ public partial class App : Avalonia.Application
         var serviceProvider = DependencyContainer.ConfigureServices();
         var shellViewModel = serviceProvider.GetRequiredService<ShellViewModel>();
         var toastManager = serviceProvider.GetRequiredService<ToastManager>();
+        var dialogManager = serviceProvider.GetRequiredService<DialogManager>();
 
         Current!.RequestedThemeVariant = ThemeVariant.Dark;
 
@@ -41,6 +42,7 @@ public partial class App : Avalonia.Application
                 DataContext = shellViewModel
             };
             mainWindow.SetToastManager(toastManager);
+            mainWindow.SetDialogManager(dialogManager);
             desktop.MainWindow = mainWindow;
         }
         else if (ApplicationLifetime is ISingleViewApplicationLifetime singleViewPlatform)
@@ -50,6 +52,7 @@ public partial class App : Avalonia.Application
                 DataContext = shellViewModel
             };
             shellView.SetToastManager(toastManager);
+            shellView.SetDialogManager(dialogManager);
             singleViewPlatform.MainView = shellView;
         }
 

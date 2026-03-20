@@ -3,6 +3,7 @@ using Avalonia.Controls.Templates;
 using Bloomdo.Client.Application.ViewModels;
 using Bloomdo.Client.Application.ViewModels.MainComponents;
 using Bloomdo.Client.Application.ViewModels.OnbordingComponents;
+using Bloomdo.Client.UI.Dialogs;
 using Bloomdo.Client.UI.MainComponents;
 using Bloomdo.Client.UI.OnbordingComponents;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -65,6 +66,15 @@ public class ViewLocator : IDataTemplate
 
             case SettingsViewModel:
                 return new SettingsView();
+
+            case GroupEditorViewModel:
+                return new GroupEditorView();
+
+            case TaskEditorViewModel:
+                return new TaskEditorView();
+
+            case TimerDialogViewModel:
+                return new TimerDialogView();
 
             default:
                 var message = data is null

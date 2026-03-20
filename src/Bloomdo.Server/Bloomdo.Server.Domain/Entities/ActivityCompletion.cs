@@ -6,6 +6,7 @@ public class ActivityCompletion : BaseEntity
     public Guid AccountId { get; set; }
     public DateOnly Date { get; set; }
     public DateTime CompletedAtUtc { get; set; }
+    public int? CountValue { get; set; }
     public string? Note { get; set; }
 
     public ActivityItem ActivityItem { get; set; } = null!;

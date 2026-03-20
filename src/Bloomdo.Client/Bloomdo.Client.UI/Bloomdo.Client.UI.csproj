@@ -14,7 +14,6 @@
 		<PackageReference Include="Avalonia.Themes.Fluent" />
 		<PackageReference Include="AvaloniaUI.DiagnosticsSupport" />
 		<PackageReference Include="CommunityToolkit.Mvvm" />
-		<PackageReference Include="ShadUI" />
 
 	</ItemGroup>
 
@@ -22,6 +21,7 @@
 		<ProjectReference Include="..\Bloomdo.Client.Application\Bloomdo.Client.Application.csproj" />
 		<ProjectReference Include="..\Bloomdo.Client.Core\Bloomdo.Client.Core.csproj" />
 		<ProjectReference Include="..\Bloomdo.Client.Domain\Bloomdo.Client.Domain.csproj" />
+		<ProjectReference Include="..\..\..\..\shad-ui\src\ShadUI\ShadUI.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

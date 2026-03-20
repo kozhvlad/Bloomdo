@@ -13,7 +13,9 @@ public partial class HomeViewModel : PageViewModel
     private readonly IGroupCompletionStore? _groupCompletionStore;
     private readonly IBlockRuleStore? _blockRuleStore;
     private readonly IBlockApiService? _blockApiService;
-    private CancellationTokenSource? _timerCts;
+    private readonly INavigationService? _navigationService;
+    private readonly ITimerDialogService? _timerDialogService;
+    private readonly IConfirmDialogService? _confirmDialogService;
 
     [ObservableProperty]
     private string _welcomeMessage = "Welcome to Bloomdo!";
@@ -58,12 +60,18 @@ public partial class HomeViewModel : PageViewModel
         IDailyActivityApiService? activityApi = null,
         IGroupCompletionStore? groupCompletionStore = null,
         IBlockRuleStore? blockRuleStore = null,
-        IBlockApiService? blockApiService = null)
+        IBlockApiService? blockApiService = null,
+        INavigationService? navigationService = null,
+        ITimerDialogService? timerDialogService = null,
+        IConfirmDialogService? confirmDialogService = null)
     {
         _activityApi = activityApi;
         _groupCompletionStore = groupCompletionStore;
         _blockRuleStore = blockRuleStore;
         _blockApiService = blockApiService;
+        _navigationService = navigationService;
+        _timerDialogService = timerDialogService;
+        _confirmDialogService = confirmDialogService;
     }
 
     public override void OnAppearing()
@@ -103,7 +111,10 @@ public partial class HomeViewModel : PageViewModel
                         Id = item.Id,
                         Title = item.Title,
                         Description = item.Description,
+                        TaskType = item.TaskType,
                         DurationMinutes = item.DurationMinutes,
+                        TargetCount = item.TargetCount,
+                        CurrentCount = item.CurrentCount,
                         Icon = item.Icon,
                         Color = item.Color,
                         CurrentStreak = item.CurrentStreak,
@@ -152,9 +163,6 @@ public partial class HomeViewModel : PageViewModel
                 task.IsCompleted = !task.IsCompleted;
                 task.CompletedAtUtc = task.IsCompleted ? DateTime.UtcNow : null;
 
-                if (task.IsCompleted && task.IsTimerRunning)
-                    StopTimer(task);
-
                 RecalculateProgress();
                 await SyncGroupCompletionAsync();
             }
@@ -170,16 +178,7 @@ public partial class HomeViewModel : PageViewModel
     [RelayCommand]
     private void ShowAddGroup()
     {
-        IsAddingGroup = true;
-        NewGroupTitle = string.Empty;
-        NewGroupColor = AvailableColors[new Random().Next(AvailableColors.Length)];
-    }
-
-    [RelayCommand]
-    private void CancelAddGroup()
-    {
-        IsAddingGroup = false;
-        NewGroupTitle = string.Empty;
+        _navigationService?.NavigateTo<GroupEditorViewModel>(vm => vm.ConfigureForCreate());
     }
 
     [RelayCommand]
@@ -213,12 +212,17 @@ public partial class HomeViewModel : PageViewModel
     }
 
     [RelayCommand]
-    private void SelectGroupColor(string color) => NewGroupColor = color;
-
-    [RelayCommand]
     private async Task DeleteGroup(ActivityGroupItemViewModel? group)
     {
         if (group is null || _activityApi is null) return;
+
+        if (_confirmDialogService is not null)
+        {
+            var confirmed = await _confirmDialogService.ConfirmAsync(
+                "Delete Group",
+                $"Delete \"{group.Title}\" and all its tasks? This action cannot be undone.");
+            if (!confirmed) return;
+        }
 
         var deleted = await _activityApi.DeleteGroupAsync(group.Id);
         if (deleted)
@@ -233,8 +237,7 @@ public partial class HomeViewModel : PageViewModel
     private void StartEditGroup(ActivityGroupItemViewModel? group)
     {
         if (group is null) return;
-        group.EditTitle = group.Title;
-        group.IsEditing = true;
+        _navigationService?.NavigateTo<GroupEditorViewModel>(vm => vm.ConfigureForEdit(group));
     }
 
     [RelayCommand]
@@ -271,9 +274,7 @@ public partial class HomeViewModel : PageViewModel
     private void ShowAddItem(ActivityGroupItemViewModel? group)
     {
         if (group is null) return;
-        group.ResetNewItemForm();
-        group.NewItemColor = AvailableColors[new Random().Next(AvailableColors.Length)];
-        group.IsAddingItem = true;
+        _navigationService?.NavigateTo<TaskEditorViewModel>(vm => vm.ConfigureForCreate(group.Id, group.Color));
     }
 
     [RelayCommand]
@@ -335,7 +336,9 @@ public partial class HomeViewModel : PageViewModel
                 Id = result.Id,
                 Title = result.Title,
                 Description = result.Description,
+                TaskType = result.TaskType,
                 DurationMinutes = result.DurationMinutes,
+                TargetCount = result.TargetCount,
                 Icon = result.Icon,
                 Color = result.Color,
                 CurrentStreak = 0,
@@ -353,6 +356,14 @@ public partial class HomeViewModel : PageViewModel
     private async Task DeleteItem(ActivityTaskItemViewModel? task)
     {
         if (task is null || _activityApi is null) return;
+
+        if (_confirmDialogService is not null)
+        {
+            var confirmed = await _confirmDialogService.ConfirmAsync(
+                "Delete Task",
+                $"Delete \"{task.Title}\"? This action cannot be undone.");
+            if (!confirmed) return;
+        }
 
         var deleted = await _activityApi.DeleteItemAsync(task.Id);
         if (deleted)
@@ -375,69 +386,7 @@ public partial class HomeViewModel : PageViewModel
     private void StartEditItem(ActivityTaskItemViewModel? task)
     {
         if (task is null) return;
-        task.StartEdit();
-    }
-
-    [RelayCommand]
-    private void CancelEditItem(ActivityTaskItemViewModel? task)
-    {
-        if (task is null) return;
-        task.IsEditing = false;
-    }
-
-    [RelayCommand]
-    private void IncrementEditDuration(ActivityTaskItemViewModel? task)
-    {
-        if (task is null) return;
-        task.EditDurationMinutes = Math.Min((task.EditDurationMinutes ?? 0) + 5, 480);
-    }
-
-    [RelayCommand]
-    private void DecrementEditDuration(ActivityTaskItemViewModel? task)
-    {
-        if (task is null) return;
-        task.EditDurationMinutes = Math.Max((task.EditDurationMinutes ?? 10) - 5, 5);
-    }
-
-    [RelayCommand]
-    private void SelectEditColor(string? color)
-    {
-        if (color is null) return;
-        foreach (var group in Groups)
-        {
-            foreach (var task in group.Tasks)
-            {
-                if (task.IsEditing)
-                {
-                    task.EditColor = color;
-                    return;
-                }
-            }
-        }
-    }
-
-    [RelayCommand]
-    private async Task ConfirmEditItem(ActivityTaskItemViewModel? task)
-    {
-        if (task is null || string.IsNullOrWhiteSpace(task.EditTitle) || _activityApi is null) return;
-
-        var request = new UpdateActivityItemRequest
-        {
-            Title = task.EditTitle.Trim(),
-            Description = string.IsNullOrWhiteSpace(task.EditDescription) ? null : task.EditDescription.Trim(),
-            DurationMinutes = task.EditDurationMinutes,
-            Color = task.EditColor
-        };
-
-        var result = await _activityApi.UpdateItemAsync(task.Id, request);
-        if (result is not null)
-        {
-            task.Title = result.Title;
-            task.Description = result.Description;
-            task.DurationMinutes = result.DurationMinutes;
-            task.Color = result.Color;
-            task.IsEditing = false;
-        }
+        _navigationService?.NavigateTo<TaskEditorViewModel>(vm => vm.ConfigureForEdit(task));
     }
 
     // --- Timer ---
@@ -445,54 +394,87 @@ public partial class HomeViewModel : PageViewModel
     [RelayCommand]
     private void StartTimer(ActivityTaskItemViewModel? task)
     {
-        if (task is null || !task.HasDuration || task.IsTimerRunning) return;
+        if (task is null || !task.HasDuration) return;
 
-        StopActiveTimer();
-        task.IsTimerRunning = true;
-        task.TimerRemainingSeconds = (task.DurationMinutes ?? 0) * 60;
+        _timerDialogService?.ShowTimer(
+            task.Title,
+            string.IsNullOrEmpty(task.Icon) ? "⏰" : task.Icon,
+            string.IsNullOrEmpty(task.Color) ? "#7E57C2" : task.Color,
+            task.DurationMinutes ?? 0,
+            task.CurrentStreak,
+            async () =>
+            {
+                if (!task.IsCompleted)
+                    await ToggleTask(task);
+            });
+    }
 
-        _timerCts = new CancellationTokenSource();
-        _ = RunTimerAsync(task, _timerCts.Token);
+    // --- Count increment/decrement ---
+
+    [RelayCommand]
+    private async Task IncrementCount(ActivityTaskItemViewModel? task)
+    {
+        if (task is null || !task.IsCountType || _activityApi is null || task.IsToggling) return;
+
+        task.IsToggling = true;
+        try
+        {
+            var newCount = task.CurrentCount + 1;
+            var request = new ToggleCompletionRequest
+            {
+                ActivityItemId = task.Id,
+                Date = DateOnly.FromDateTime(DateTime.UtcNow),
+                CountValue = newCount
+            };
+
+            var result = await _activityApi.ToggleCompletionAsync(request);
+            if (result)
+            {
+                task.CurrentCount = newCount;
+                task.IsCompleted = task.TargetCount.HasValue && newCount >= task.TargetCount.Value;
+                task.CompletedAtUtc = task.IsCompleted ? DateTime.UtcNow : null;
+                task.RefreshCountProperties();
+                RecalculateProgress();
+                await SyncGroupCompletionAsync();
+            }
+        }
+        finally
+        {
+            task.IsToggling = false;
+        }
     }
 
     [RelayCommand]
-    private void StopTimer(ActivityTaskItemViewModel? task)
+    private async Task DecrementCount(ActivityTaskItemViewModel? task)
     {
-        if (task is null) return;
-        task.IsTimerRunning = false;
-        _timerCts?.Cancel();
-        _timerCts = null;
-    }
+        if (task is null || !task.IsCountType || task.CurrentCount <= 0 || _activityApi is null || task.IsToggling) return;
 
-    private async Task RunTimerAsync(ActivityTaskItemViewModel task, CancellationToken ct)
-    {
+        task.IsToggling = true;
         try
         {
-            while (task.TimerRemainingSeconds > 0 && !ct.IsCancellationRequested)
+            var newCount = task.CurrentCount - 1;
+            var request = new ToggleCompletionRequest
             {
-                await Task.Delay(1000, ct);
-                task.TimerRemainingSeconds--;
-            }
+                ActivityItemId = task.Id,
+                Date = DateOnly.FromDateTime(DateTime.UtcNow),
+                CountValue = newCount
+            };
 
-            if (!ct.IsCancellationRequested && !task.IsCompleted)
+            var result = await _activityApi.ToggleCompletionAsync(request);
+            if (result)
             {
-                await ToggleTask(task);
+                task.CurrentCount = newCount;
+                task.IsCompleted = task.TargetCount.HasValue && newCount >= task.TargetCount.Value;
+                task.CompletedAtUtc = task.IsCompleted ? DateTime.UtcNow : null;
+                task.RefreshCountProperties();
+                RecalculateProgress();
+                await SyncGroupCompletionAsync();
             }
         }
-        catch (OperationCanceledException) { }
         finally
         {
-            task.IsTimerRunning = false;
+            task.IsToggling = false;
         }
-    }
-
-    private void StopActiveTimer()
-    {
-        _timerCts?.Cancel();
-        _timerCts = null;
-        foreach (var g in Groups)
-            foreach (var t in g.Tasks)
-                t.IsTimerRunning = false;
     }
 
     // --- Helpers ---

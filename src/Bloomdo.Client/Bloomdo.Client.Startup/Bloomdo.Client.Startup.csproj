@@ -19,12 +19,12 @@
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Http" />
-    <PackageReference Include="ShadUI" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Bloomdo.Client.Application\Bloomdo.Client.Application.csproj" />
     <ProjectReference Include="..\Bloomdo.Client.Infrastructure\Bloomdo.Client.Infrastructure.csproj" />
     <ProjectReference Include="..\Bloomdo.Client.UI\Bloomdo.Client.UI.csproj" />
+    <ProjectReference Include="..\..\..\..\shad-ui\src\ShadUI\ShadUI.csproj" />
   </ItemGroup>
 </Project>

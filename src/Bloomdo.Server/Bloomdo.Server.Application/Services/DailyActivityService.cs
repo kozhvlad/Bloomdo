@@ -94,7 +94,9 @@ public class DailyActivityService(
             ActivityGroupId = group.Id,
             Title = request.Title,
             Description = request.Description,
+            TaskType = (int)request.TaskType,
             DurationMinutes = request.DurationMinutes,
+            TargetCount = request.TargetCount,
             Icon = request.Icon,
             Color = request.Color,
             SortOrder = maxOrder + 1,
@@ -116,7 +118,9 @@ public class DailyActivityService(
 
         if (request.Title is not null) item.Title = request.Title;
         if (request.Description is not null) item.Description = request.Description;
+        if (request.TaskType.HasValue) item.TaskType = (int)request.TaskType.Value;
         if (request.DurationMinutes.HasValue) item.DurationMinutes = request.DurationMinutes;
+        if (request.TargetCount.HasValue) item.TargetCount = request.TargetCount;
         if (request.Icon is not null) item.Icon = request.Icon;
         if (request.Color is not null) item.Color = request.Color;
         if (request.SortOrder.HasValue) item.SortOrder = request.SortOrder.Value;
@@ -167,17 +171,27 @@ public class DailyActivityService(
             foreach (var item in items)
             {
                 var itemStreak = await CalculateItemStreakAsync(accountId, item.Id, date, ct);
+                var completion = completions.FirstOrDefault(c => c.ActivityItemId == item.Id);
+                var isCountType = item.TaskType == (int)ActivityItemType.Count;
+                var currentCount = completion?.CountValue ?? 0;
+                var isCompleted = isCountType
+                    ? (item.TargetCount.HasValue && currentCount >= item.TargetCount.Value)
+                    : completionSet.Contains(item.Id);
+
                 dailyItems.Add(new DailyActivityItemDto
                 {
                     Id = item.Id,
                     Title = item.Title,
                     Description = item.Description,
+                    TaskType = (ActivityItemType)item.TaskType,
                     DurationMinutes = item.DurationMinutes,
+                    TargetCount = item.TargetCount,
+                    CurrentCount = currentCount,
                     Icon = item.Icon,
                     Color = item.Color,
                     CurrentStreak = itemStreak,
-                    IsCompleted = completionSet.Contains(item.Id),
-                    CompletedAtUtc = completions.FirstOrDefault(c => c.ActivityItemId == item.Id)?.CompletedAtUtc
+                    IsCompleted = isCompleted,
+                    CompletedAtUtc = completion?.CompletedAtUtc
                 });
             }
 
@@ -214,7 +228,16 @@ public class DailyActivityService(
 
         if (existing is not null)
         {
-            await completionRepo.DeleteAsync(existing, ct);
+            if (request.CountValue.HasValue)
+            {
+                existing.CountValue = request.CountValue.Value;
+                existing.CompletedAtUtc = DateTime.UtcNow;
+                await completionRepo.UpdateAsync(existing, ct);
+            }
+            else
+            {
+                await completionRepo.DeleteAsync(existing, ct);
+            }
         }
         else
         {
@@ -224,6 +247,7 @@ public class DailyActivityService(
                 AccountId = accountId,
                 Date = request.Date,
                 CompletedAtUtc = DateTime.UtcNow,
+                CountValue = request.CountValue,
                 Note = request.Note
             };
             await completionRepo.AddAsync(completion, ct);
@@ -280,7 +304,9 @@ public class DailyActivityService(
         ActivityGroupId = item.ActivityGroupId,
         Title = item.Title,
         Description = item.Description,
+        TaskType = (ActivityItemType)item.TaskType,
         DurationMinutes = item.DurationMinutes,
+        TargetCount = item.TargetCount,
         Icon = item.Icon,
         Color = item.Color,
         SortOrder = item.SortOrder,

@@ -33,14 +33,13 @@
 								   Opacity="0.5"/>
 					</StackPanel>
 					<Button Grid.Column="1" Padding="0"
-							Width="40" Height="40"
-							VerticalAlignment="Top"
-							HorizontalContentAlignment="Center"
-							VerticalContentAlignment="Center"
-							CornerRadius="20"
-							Background="#66BB6A"
-							Command="{Binding ShowAddGroupCommand}"
-							IsVisible="{Binding !IsAddingGroup}">
+								Width="40" Height="40"
+								VerticalAlignment="Top"
+								HorizontalContentAlignment="Center"
+								VerticalContentAlignment="Center"
+								CornerRadius="20"
+								Background="#66BB6A"
+								Command="{Binding ShowAddGroupCommand}">
 						<PathIcon Data="{x:Static shad:Icons.Cross}" Width="16" Height="16"
 								  Foreground="White">
 							<PathIcon.RenderTransform>
@@ -107,13 +106,14 @@
 								<StackPanel>
 									<!-- Group Header -->
 									<Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" Margin="14,10">
-										<!-- First letter badge -->
+										<!-- Group icon badge -->
 										<Border Grid.Column="0" Width="36" Height="36"
 												CornerRadius="18"
 												Background="{Binding Color, Converter={StaticResource GroupColorConverter}}"
 												VerticalAlignment="Center" Margin="0,0,10,0">
-											<TextBlock Text="{Binding FirstLetter}" FontSize="17" FontWeight="Bold"
-													   Foreground="White"
+											<TextBlock Text="{Binding Icon}"
+													   FontFamily="{StaticResource EmojiFont}"
+													   FontSize="18"
 													   HorizontalAlignment="Center" VerticalAlignment="Center"/>
 										</Border>
 
@@ -195,7 +195,6 @@
 													<StackPanel Spacing="4">
 														<!-- Swipe-to-delete+edit wrapper -->
 														<controls:SwipeRevealPanel Margin="0,2"
-															IsVisible="{Binding !IsEditing}"
 															ActionCommand="{Binding ((mainComponents1:HomeViewModel)DataContext).DeleteItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
 															ActionCommandParameter="{Binding}"
 															EditCommand="{Binding ((mainComponents1:HomeViewModel)DataContext).StartEditItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -205,13 +204,14 @@
 																	Background="{Binding Color, Converter={StaticResource GroupColorConverter}}"
 																	Opacity="{Binding IsCompleted, Converter={StaticResource CompletedToOpacity}}">
 																<Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
-																	<!-- First letter circle -->
+																	<!-- Task icon circle -->
 																	<Border Grid.Column="0"
 																			Width="34" Height="34" CornerRadius="17"
 																			Background="#33FFFFFF"
 																			VerticalAlignment="Center" Margin="0,0,10,0">
-																		<TextBlock Text="{Binding FirstLetter}" FontSize="15" FontWeight="Bold"
-																				   Foreground="White"
+																		<TextBlock Text="{Binding Icon}"
+																				   FontFamily="{StaticResource EmojiFont}"
+																				   FontSize="16"
 																				   HorizontalAlignment="Center" VerticalAlignment="Center"/>
 																	</Border>
 
@@ -236,32 +236,62 @@
 																				   Foreground="White"/>
 																	</Border>
 
-																	<!-- Timer button (only if has duration and not completed) -->
+																	<!-- Timer button (only for timer type with duration) -->
 																	<Panel Grid.Column="3" VerticalAlignment="Center" Margin="2,0">
-																		<!-- Start timer -->
 																		<Button Classes="Ghost" Padding="2"
-																				IsVisible="{Binding !IsTimerRunning}"
+																				IsVisible="{Binding HasDuration}"
 																				Command="{Binding ((mainComponents1:HomeViewModel)DataContext).StartTimerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
 																				CommandParameter="{Binding}">
-																			<Border Width="24" Height="24" CornerRadius="12"
-																					Background="#33FFFFFF"
-																					IsVisible="{Binding HasDuration}">
-																				<PathIcon Data="{x:Static shad:Icons.ChevronRight}" Width="10" Height="10"
-																						  Foreground="White"/>
+																			<Border Width="28" Height="28" CornerRadius="14"
+																					Background="#33FFFFFF">
+																				<TextBlock Text="⏱️"
+																						   FontFamily="{StaticResource EmojiFont}"
+																						   FontSize="14"
+																						   HorizontalAlignment="Center"
+																						   VerticalAlignment="Center"/>
 																			</Border>
 																		</Button>
-																		<!-- Timer running display -->
-																		<Button Classes="Ghost" Padding="2"
-																				IsVisible="{Binding IsTimerRunning}"
-																				Command="{Binding ((mainComponents1:HomeViewModel)DataContext).StopTimerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-																				CommandParameter="{Binding}">
-																			<Border CornerRadius="8" Padding="4,2"
-																					Background="#33000000">
-																				<TextBlock Text="{Binding TimerDisplayText}"
-																						   FontSize="10" FontWeight="Bold"
-																						   Foreground="White"/>
+																		<!-- Count type controls -->
+																		<StackPanel Orientation="Horizontal" Spacing="2"
+																					IsVisible="{Binding IsCountType}"
+																					VerticalAlignment="Center">
+																			<Button Classes="Ghost" Padding="0"
+																					Width="22" Height="22"
+																					HorizontalContentAlignment="Center"
+																					VerticalContentAlignment="Center"
+																					Command="{Binding ((mainComponents1:HomeViewModel)DataContext).DecrementCountCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+																					CommandParameter="{Binding}">
+																				<Border Width="20" Height="20" CornerRadius="10"
+																						Background="#33FFFFFF">
+																					<PathIcon Data="{x:Static shad:Icons.Minus}" Width="8" Height="8"
+																							  Foreground="White"/>
+																				</Border>
+																			</Button>
+																			<Border CornerRadius="6" Padding="4,1"
+																					Background="#33000000" MinWidth="32"
+																					VerticalAlignment="Center">
+																				<TextBlock Text="{Binding CountProgressText}"
+																						   FontSize="9" FontWeight="Bold"
+																						   Foreground="White"
+																						   HorizontalAlignment="Center"/>
 																			</Border>
-																		</Button>
+																			<Button Classes="Ghost" Padding="0"
+																					Width="22" Height="22"
+																					HorizontalContentAlignment="Center"
+																					VerticalContentAlignment="Center"
+																					Command="{Binding ((mainComponents1:HomeViewModel)DataContext).IncrementCountCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+																					CommandParameter="{Binding}">
+																				<Border Width="20" Height="20" CornerRadius="10"
+																						Background="#33FFFFFF">
+																					<PathIcon Data="{x:Static shad:Icons.Cross}" Width="8" Height="8"
+																							  Foreground="White">
+																						<PathIcon.RenderTransform>
+																							<RotateTransform Angle="45"/>
+																						</PathIcon.RenderTransform>
+																					</PathIcon>
+																				</Border>
+																			</Button>
+																		</StackPanel>
 																	</Panel>
 
 																	<!-- Completion toggle -->
@@ -284,109 +314,6 @@
 																</Grid>
 															</Border>
 														</controls:SwipeRevealPanel>
-
-														<!-- Inline edit form (appears when editing) -->
-														<Border IsVisible="{Binding IsEditing}"
-																Background="{DynamicResource Brush.Card}"
-																CornerRadius="12" Padding="12" Margin="0,2"
-																BorderBrush="#33FFFFFF" BorderThickness="1">
-															<StackPanel Spacing="8">
-																<TextBlock Text="Edit Activity"
-																		   FontSize="14" FontWeight="SemiBold"
-																		   Foreground="#EFEFEF"/>
-
-																<TextBox Text="{Binding EditTitle}"
-																		 Watermark="Activity name..."
-																		 FontSize="13"/>
-
-																<TextBox Text="{Binding EditDescription}"
-																		 Watermark="Description (optional)"
-																		 FontSize="12"/>
-
-																<!-- Duration stepper -->
-																<Grid ColumnDefinitions="Auto,Auto,Auto,Auto">
-																	<TextBlock Text="Duration:"
-																			   FontSize="12" VerticalAlignment="Center"
-																			   Foreground="#EFEFEF"
-																			   Opacity="0.6" Margin="0,0,8,0"/>
-																	<Button Grid.Column="1" Classes="Ghost" Padding="6"
-																			Width="32" Height="32"
-																			HorizontalContentAlignment="Center"
-																			VerticalContentAlignment="Center"
-																			Command="{Binding ((mainComponents1:HomeViewModel)DataContext).DecrementEditDurationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-																			CommandParameter="{Binding}">
-																		<PathIcon Data="{x:Static shad:Icons.Minus}" Width="10" Height="10"
-																				  Foreground="#EFEFEF"/>
-																	</Button>
-																	<Border Grid.Column="2" CornerRadius="6" Padding="10,4"
-																			Background="#15FFFFFF" MinWidth="50"
-																			HorizontalAlignment="Center">
-																		<TextBlock Text="{Binding EditDurationMinutes, StringFormat='{}{0} min'}"
-																				   FontSize="13" FontWeight="SemiBold"
-																				   Foreground="#EFEFEF"
-																				   HorizontalAlignment="Center"/>
-																	</Border>
-																	<Button Grid.Column="3" Classes="Ghost" Padding="6"
-																			Width="32" Height="32"
-																			HorizontalContentAlignment="Center"
-																			VerticalContentAlignment="Center"
-																			Command="{Binding ((mainComponents1:HomeViewModel)DataContext).IncrementEditDurationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-																			CommandParameter="{Binding}">
-																		<PathIcon Data="{x:Static shad:Icons.Cross}" Width="10" Height="10"
-																				  Foreground="#EFEFEF">
-																			<PathIcon.RenderTransform>
-																				<RotateTransform Angle="45"/>
-																			</PathIcon.RenderTransform>
-																		</PathIcon>
-																	</Button>
-																</Grid>
-
-																<!-- Color picker -->
-																<StackPanel Spacing="3">
-																	<TextBlock Text="Color" FontSize="11" Opacity="0.5"
-																			   Foreground="#EFEFEF"/>
-																	<ItemsControl ItemsSource="{Binding ((mainComponents1:HomeViewModel)DataContext).AvailableColors, RelativeSource={RelativeSource AncestorType=UserControl}}">
-																		<ItemsControl.ItemsPanel>
-																			<ItemsPanelTemplate>
-																				<WrapPanel/>
-																			</ItemsPanelTemplate>
-																		</ItemsControl.ItemsPanel>
-																		<ItemsControl.ItemTemplate>
-																			<DataTemplate x:DataType="x:String">
-																				<Button Classes="Ghost" Padding="2" Margin="2"
-																						Width="28" Height="28"
-																						Command="{Binding ((mainComponents1:HomeViewModel)DataContext).SelectEditColorCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-																						CommandParameter="{Binding}">
-																					<Border Width="22" Height="22" CornerRadius="11"
-																							Background="{Binding Converter={StaticResource GroupColorConverter}}"/>
-																				</Button>
-																			</DataTemplate>
-																		</ItemsControl.ItemTemplate>
-																	</ItemsControl>
-																</StackPanel>
-
-																<!-- Actions -->
-																<Grid ColumnDefinitions="*,*" Margin="0,2,0,0">
-																	<Button Grid.Column="0" Classes="Ghost" Padding="8"
-																			HorizontalAlignment="Stretch"
-																			HorizontalContentAlignment="Center"
-																			Command="{Binding ((mainComponents1:HomeViewModel)DataContext).CancelEditItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-																			CommandParameter="{Binding}">
-																		<TextBlock Text="Cancel" FontSize="13"
-																				   Foreground="#EFEFEF" Opacity="0.5"/>
-																	</Button>
-																	<Button Grid.Column="1" Padding="8"
-																			HorizontalAlignment="Stretch"
-																			HorizontalContentAlignment="Center"
-																			Background="#66BB6A" CornerRadius="8"
-																			Command="{Binding ((mainComponents1:HomeViewModel)DataContext).ConfirmEditItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-																			CommandParameter="{Binding}">
-																		<TextBlock Text="Save" FontSize="13" FontWeight="SemiBold"
-																				   Foreground="White"/>
-																	</Button>
-																</Grid>
-															</StackPanel>
-														</Border>
 													</StackPanel>
 												</DataTemplate>
 											</ItemsControl.ItemTemplate>
@@ -498,9 +425,9 @@
 														<Grid ColumnDefinitions="Auto,*">
 															<Border Width="28" Height="28" CornerRadius="14"
 																	Background="#33FFFFFF" Margin="0,0,8,0">
-																<TextBlock Text="{Binding NewItemTitle, FallbackValue='?', Converter={x:Static converters:FirstLetterConverter.Instance}}"
-																		   FontSize="13" FontWeight="Bold"
-																		   Foreground="White"
+																<TextBlock Text="{Binding NewItemIcon, FallbackValue='✨'}"
+																		   FontFamily="{StaticResource EmojiFont}"
+																		   FontSize="13"
 																		   HorizontalAlignment="Center" VerticalAlignment="Center"/>
 															</Border>
 															<TextBlock Grid.Column="1"
@@ -540,79 +467,7 @@
 					</ItemsControl.ItemTemplate>
 				</ItemsControl>
 
-				<!-- Add Group Form -->
-				<shad:Card IsVisible="{Binding IsAddingGroup}" Padding="14"
-						   Background="{DynamicResource Brush.Card}">
-					<StackPanel Spacing="10">
-						<TextBlock Text="New Activity Group"
-								   FontSize="15" FontWeight="SemiBold"
-								   Foreground="#EFEFEF"/>
-
-						<TextBox Text="{Binding NewGroupTitle}"
-								 Watermark="Group name (e.g. Study, Sport...)"
-								 FontSize="13"/>
-
-						<!-- Color picker for group -->
-						<StackPanel Spacing="3">
-							<TextBlock Text="Color" FontSize="11" Opacity="0.5"
-									   Foreground="#EFEFEF"/>
-							<ItemsControl ItemsSource="{Binding AvailableColors}">
-								<ItemsControl.ItemsPanel>
-									<ItemsPanelTemplate>
-										<WrapPanel/>
-									</ItemsPanelTemplate>
-								</ItemsControl.ItemsPanel>
-								<ItemsControl.ItemTemplate>
-									<DataTemplate x:DataType="x:String">
-										<Button Classes="Ghost" Padding="2" Margin="2"
-												Width="28" Height="28"
-												Command="{Binding ((mainComponents1:HomeViewModel)DataContext).SelectGroupColorCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-												CommandParameter="{Binding}">
-											<Border Width="22" Height="22" CornerRadius="11"
-													Background="{Binding Converter={StaticResource GroupColorConverter}}"/>
-										</Button>
-									</DataTemplate>
-								</ItemsControl.ItemTemplate>
-							</ItemsControl>
-						</StackPanel>
-
-						<!-- Preview -->
-						<Border CornerRadius="10" Padding="10,8"
-								Background="{Binding NewGroupColor, Converter={StaticResource GroupColorConverter}}">
-							<StackPanel Orientation="Horizontal" Spacing="8">
-								<Border Width="32" Height="32" CornerRadius="16" Background="#33FFFFFF">
-									<TextBlock Text="{Binding NewGroupTitle, FallbackValue='?', Converter={x:Static converters:FirstLetterConverter.Instance}}"
-											   FontSize="15" FontWeight="Bold"
-											   Foreground="White"
-											   HorizontalAlignment="Center" VerticalAlignment="Center"/>
-								</Border>
-								<TextBlock Text="{Binding NewGroupTitle, FallbackValue='Group preview'}"
-										   FontSize="15" FontWeight="SemiBold"
-										   Foreground="White" VerticalAlignment="Center"/>
-							</StackPanel>
-						</Border>
-
-						<Grid ColumnDefinitions="*,*" Margin="0,2,0,0">
-							<Button Grid.Column="0" Classes="Ghost" Padding="8"
-									HorizontalAlignment="Stretch"
-									HorizontalContentAlignment="Center"
-									Command="{Binding CancelAddGroupCommand}">
-								<TextBlock Text="Cancel" FontSize="13"
-										   Foreground="#EFEFEF" Opacity="0.5"/>
-							</Button>
-							<Button Grid.Column="1" Padding="8"
-									HorizontalAlignment="Stretch"
-									HorizontalContentAlignment="Center"
-									Background="#66BB6A" CornerRadius="8"
-									Command="{Binding ConfirmAddGroupCommand}">
-								<TextBlock Text="Create" FontSize="13" FontWeight="SemiBold"
-										   Foreground="White"/>
-							</Button>
-						</Grid>
-					</StackPanel>
-				</shad:Card>
-
-			</StackPanel>
+				</StackPanel>
 		</ScrollViewer>
 	</Grid>
 </UserControl>

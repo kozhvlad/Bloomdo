@@ -6,7 +6,9 @@ public class ActivityItemResponse
     public Guid ActivityGroupId { get; set; }
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
+    public ActivityItemType TaskType { get; set; }
     public int? DurationMinutes { get; set; }
+    public int? TargetCount { get; set; }
     public string Icon { get; set; } = string.Empty;
     public string Color { get; set; } = string.Empty;
     public int SortOrder { get; set; }

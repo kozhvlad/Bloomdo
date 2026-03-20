@@ -11,7 +11,27 @@
 
 	<Panel>
 		<ContentControl Content="{Binding CurrentViewModel, Mode=OneWay}" />
+		<shad:DialogHost x:Name="DialogHostControl" />
 		<shad:ToastHost x:Name="ToastHostControl" />
+
+		<!-- Custom dialog overlay (works on Android without Window) -->
+		<Panel IsVisible="{Binding IsOverlayOpen}">
+			<Button Background="#CC000000"
+					HorizontalAlignment="Stretch"
+					VerticalAlignment="Stretch"
+					HorizontalContentAlignment="Stretch"
+					VerticalContentAlignment="Stretch"
+					Padding="0" BorderThickness="0"
+					CornerRadius="0"
+					Command="{Binding CloseOverlayCommand}">
+				<Panel/>
+			</Button>
+			<ContentControl Content="{Binding OverlayContent}"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Center"
+							MaxWidth="400"
+							Margin="20"/>
+		</Panel>
 	</Panel>
 
 </UserControl>

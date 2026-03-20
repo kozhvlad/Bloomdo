@@ -55,8 +55,9 @@ public partial class MainViewModel : PageViewModel
     }
 
     [RelayCommand]
-    private void SelectTab(int index)
+    private void SelectTab(string? indexStr)
     {
-        SelectedTabIndex = index;
+        if (int.TryParse(indexStr, out var index))
+            SelectedTabIndex = index;
     }
 }
