@@ -1,0 +1,243 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:shad="clr-namespace:ShadUI;assembly=ShadUI"
+             xmlns:vm="clr-namespace:Bloomdo.Client.Application.ViewModels;assembly=Bloomdo.Client.Application"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="900"
+             x:DataType="vm:AccountEditorViewModel"
+             x:Class="Bloomdo.Client.UI.AccountEditorView">
+
+    <Grid RowDefinitions="Auto,*" Background="{DynamicResource GhostColor}">
+
+        <!-- Header -->
+        <Grid Margin="16,12,16,0" ColumnDefinitions="Auto,*,Auto">
+            <Button Command="{Binding CancelCommand}" Background="Transparent"
+                    BorderThickness="0" Padding="8" Cursor="Hand">
+                <PathIcon Data="{StaticResource arrow_left_regular}" Width="20" Height="20"
+                          Foreground="{DynamicResource ForegroundColor}"/>
+            </Button>
+            <TextBlock Grid.Column="1" Text="Edit Profile" FontSize="20" FontWeight="Bold"
+                       VerticalAlignment="Center" Margin="12,0,0,0"
+                       Foreground="{DynamicResource ForegroundColor}"/>
+        </Grid>
+
+        <!-- Content -->
+        <ScrollViewer Grid.Row="1" Margin="0,12,0,0">
+            <StackPanel Margin="16,0,16,32" Spacing="24">
+
+                <!-- Personal Info Section -->
+                <StackPanel Spacing="0">
+                    <TextBlock Text="Personal Info" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ForegroundColor}" Opacity="0.5"
+                               Margin="4,0,0,8"/>
+                    <Border CornerRadius="12"
+                            BorderThickness="1" BorderBrush="{DynamicResource OutlineColor}"
+                            ClipToBounds="True">
+                        <StackPanel>
+                            <!-- First Name -->
+                            <Border Padding="16,10">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="First Name" FontSize="12" Opacity="0.5"
+                                               Foreground="{DynamicResource ForegroundColor}"/>
+                                    <TextBox Text="{Binding FirstName}"
+                                             Watermark="First name"
+                                             FontSize="15" BorderThickness="0"
+                                             Padding="0,4" Background="Transparent"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Height="1" Background="{DynamicResource OutlineColor}" Margin="16,0"/>
+
+                            <!-- Last Name -->
+                            <Border Padding="16,10">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Last Name" FontSize="12" Opacity="0.5"
+                                               Foreground="{DynamicResource ForegroundColor}"/>
+                                    <TextBox Text="{Binding LastName}"
+                                             Watermark="Last name"
+                                             FontSize="15" BorderThickness="0"
+                                             Padding="0,4" Background="Transparent"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Height="1" Background="{DynamicResource OutlineColor}" Margin="16,0"/>
+
+                            <!-- Username -->
+                            <Border Padding="16,10">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Username" FontSize="12" Opacity="0.5"
+                                               Foreground="{DynamicResource ForegroundColor}"/>
+                                    <TextBox Text="{Binding Username}"
+                                             Watermark="@username"
+                                             FontSize="15" BorderThickness="0"
+                                             Padding="0,4" Background="Transparent"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Height="1" Background="{DynamicResource OutlineColor}" Margin="16,0"/>
+
+                            <!-- Bio -->
+                            <Border Padding="16,10">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Bio" FontSize="12" Opacity="0.5"
+                                               Foreground="{DynamicResource ForegroundColor}"/>
+                                    <TextBox Text="{Binding Bio}"
+                                             Watermark="Tell us about yourself..."
+                                             FontSize="15" BorderThickness="0"
+                                             Padding="0,4" Background="Transparent"
+                                             AcceptsReturn="True"
+                                             TextWrapping="Wrap"
+                                             MaxHeight="100"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Height="1" Background="{DynamicResource OutlineColor}" Margin="16,0"/>
+
+                            <!-- Email (read-only) -->
+                            <Border Padding="16,10">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Email" FontSize="12" Opacity="0.5"
+                                               Foreground="{DynamicResource ForegroundColor}"/>
+                                    <TextBlock Text="{Binding Email}" FontSize="15"
+                                               Foreground="{DynamicResource ForegroundColor}" Opacity="0.7"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Error message -->
+                    <TextBlock Text="{Binding ErrorMessage}" FontSize="12"
+                               Foreground="#EF5350" Margin="4,6,0,0"
+                               IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+                    <!-- Save Profile Button -->
+                    <Button Command="{Binding SaveProfileCommand}"
+                            Margin="0,12,0,0"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Padding="0,12" Height="48"
+                            CornerRadius="12" Classes="Primary"
+                            Cursor="Hand"
+                            IsEnabled="{Binding !IsSaving}">
+                        <TextBlock Text="Save Changes" FontWeight="SemiBold" FontSize="14"
+                                   VerticalAlignment="Center" Foreground="White"/>
+                    </Button>
+                </StackPanel>
+
+                <!-- Avatar Section -->
+                <StackPanel Spacing="0">
+                    <TextBlock Text="Appearance" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ForegroundColor}" Opacity="0.5"
+                               Margin="4,0,0,8"/>
+                    <Border CornerRadius="12"
+                            BorderThickness="1" BorderBrush="{DynamicResource OutlineColor}"
+                            ClipToBounds="True">
+                        <Button Command="{Binding EditAvatarCommand}"
+                                Background="Transparent" BorderThickness="0"
+                                Padding="16,14" Cursor="Hand"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Stretch">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Data="{StaticResource profile_regular}" Width="18" Height="18"
+                                          Foreground="{DynamicResource ForegroundColor}" Opacity="0.7"
+                                          VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="Edit Avatar" FontSize="15" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource ForegroundColor}"/>
+                                    <TextBlock Text="Customize your look" FontSize="12" Opacity="0.5"
+                                               Foreground="{DynamicResource ForegroundColor}"/>
+                                </StackPanel>
+                                <PathIcon Grid.Column="2"
+                                          Data="{x:Static shad:Icons.ChevronRight}"
+                                          Width="14" Height="14"
+                                          Foreground="{DynamicResource ForegroundColor}" Opacity="0.4"
+                                          VerticalAlignment="Center"/>
+                            </Grid>
+                        </Button>
+                    </Border>
+                </StackPanel>
+
+                <!-- Security Section -->
+                <StackPanel Spacing="0">
+                    <TextBlock Text="Security" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ForegroundColor}" Opacity="0.5"
+                               Margin="4,0,0,8"/>
+                    <Border CornerRadius="12"
+                            BorderThickness="1" BorderBrush="{DynamicResource OutlineColor}"
+                            ClipToBounds="True">
+                        <StackPanel>
+                            <!-- Current Password -->
+                            <Border Padding="16,10">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Current Password" FontSize="12" Opacity="0.5"
+                                               Foreground="{DynamicResource ForegroundColor}"/>
+                                    <TextBox Text="{Binding CurrentPassword}"
+                                             PasswordChar="•"
+                                             Watermark="Enter current password"
+                                             FontSize="15" BorderThickness="0"
+                                             Padding="0,4" Background="Transparent"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Height="1" Background="{DynamicResource OutlineColor}" Margin="16,0"/>
+
+                            <!-- New Password -->
+                            <Border Padding="16,10">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="New Password" FontSize="12" Opacity="0.5"
+                                               Foreground="{DynamicResource ForegroundColor}"/>
+                                    <TextBox Text="{Binding NewPassword}"
+                                             PasswordChar="•"
+                                             Watermark="Enter new password"
+                                             FontSize="15" BorderThickness="0"
+                                             Padding="0,4" Background="Transparent"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Height="1" Background="{DynamicResource OutlineColor}" Margin="16,0"/>
+
+                            <!-- Confirm New Password -->
+                            <Border Padding="16,10">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Confirm New Password" FontSize="12" Opacity="0.5"
+                                               Foreground="{DynamicResource ForegroundColor}"/>
+                                    <TextBox Text="{Binding ConfirmNewPassword}"
+                                             PasswordChar="•"
+                                             Watermark="Re-enter new password"
+                                             FontSize="15" BorderThickness="0"
+                                             Padding="0,4" Background="Transparent"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Password Error -->
+                    <TextBlock Text="{Binding PasswordErrorMessage}" FontSize="12"
+                               Foreground="#EF5350" Margin="4,6,0,0"
+                               IsVisible="{Binding PasswordErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+                    <!-- Change Password Button -->
+                    <Button Command="{Binding ChangePasswordCommand}"
+                            Margin="0,12,0,0"
+                            Background="Transparent" BorderThickness="1"
+                            BorderBrush="{DynamicResource OutlineColor}"
+                            CornerRadius="12" Padding="0,12"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Cursor="Hand">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <PathIcon Data="{x:Static shad:Icons.Settings}" Width="16" Height="16"
+                                      Foreground="{DynamicResource ForegroundColor}"/>
+                            <TextBlock Text="Change Password" FontWeight="SemiBold" FontSize="14"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource ForegroundColor}"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
+
+    </Grid>
+</UserControl>

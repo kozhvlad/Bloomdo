@@ -508,13 +508,6 @@ BorderThickness="1" BorderBrush="{DynamicResource OutlineColor}" ClipToBounds="T
 </Border>
 </Grid>
 <StackPanel Margin="16,24,16,32" Spacing="8">
-<Button Classes="Destructive" HorizontalAlignment="Stretch"
-HorizontalContentAlignment="Center" Padding="0,14" Height="52"
-CornerRadius="12" Cursor="Hand"
-Command="{Binding LogoutCommand}">
-<TextBlock Text="Log Out" FontWeight="SemiBold" FontSize="14"
-  HorizontalAlignment="Center" VerticalAlignment="Center"/>
-</Button>
 </StackPanel>
 </StackPanel>
 </ScrollViewer>

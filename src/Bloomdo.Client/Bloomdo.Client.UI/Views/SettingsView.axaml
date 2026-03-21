@@ -4,82 +4,151 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:shad="clr-namespace:ShadUI;assembly=ShadUI"
              xmlns:vm="clr-namespace:Bloomdo.Client.Application.ViewModels;assembly=Bloomdo.Client.Application"
-             xmlns:converters="clr-namespace:Bloomdo.Client.UI.Converters"
              mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="800"
              x:DataType="vm:SettingsViewModel"
              x:Class="Bloomdo.Client.UI.SettingsView">
 
-    <UserControl.Resources>
-        <converters:IntEqualConverter x:Key="IntEquals"/>
-    </UserControl.Resources>
-
-    <Grid RowDefinitions="Auto,*,Auto" Background="{DynamicResource GhostColor}">
+    <Grid RowDefinitions="Auto,*" Background="{DynamicResource GhostColor}">
 
         <!-- Header -->
-        <Grid Margin="8,8,8,0" ColumnDefinitions="Auto,*,Auto">
-            <Button Grid.Column="0" Command="{Binding CancelCommand}" Background="Transparent"
-                    BorderThickness="0" Padding="8" Cursor="Hand">
-                <PathIcon Data="{StaticResource arrow_left_regular}" Width="20" Height="20"
-                          Foreground="{DynamicResource ForegroundColor}"/>
-            </Button>
-            <TextBlock Grid.Column="1" Text="Settings" FontSize="20" FontWeight="Bold"
-                       HorizontalAlignment="Center" VerticalAlignment="Center"
+        <Grid Margin="16,12,16,0" ColumnDefinitions="*,Auto">
+            <TextBlock Text="Settings" FontSize="20" FontWeight="Bold"
+                       VerticalAlignment="Center"
                        Foreground="{DynamicResource ForegroundColor}"/>
+            <Button Grid.Column="1" Command="{Binding DoneCommand}"
+                    Background="Transparent" BorderThickness="0"
+                    Padding="8" Cursor="Hand">
+                <TextBlock Text="DONE" FontSize="15" FontWeight="Bold"
+                           Foreground="#42A5F5"/>
+            </Button>
         </Grid>
 
         <!-- Content -->
-        <ScrollViewer Grid.Row="1">
-            <StackPanel Margin="20,16,20,24" Spacing="16">
+        <ScrollViewer Grid.Row="1" Margin="0,12,0,0">
+            <StackPanel Margin="16,0,16,32" Spacing="24">
 
-                <!-- Account Information -->
-                <shad:Card Padding="0">
-                    <StackPanel Margin="16" Spacing="12">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <PathIcon Data="{x:Static shad:Icons.Settings}" Width="18" Height="18"
-                                      Foreground="{DynamicResource ForegroundColor}"/>
-                            <TextBlock Text="Account Information" FontWeight="SemiBold" FontSize="16"
-                                       Foreground="{DynamicResource ForegroundColor}" VerticalAlignment="Center"/>
+                <!-- Account Section -->
+                <StackPanel Spacing="0">
+                    <TextBlock Text="Account" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ForegroundColor}" Opacity="0.5"
+                               Margin="4,0,0,8"/>
+                    <Border CornerRadius="12"
+                            BorderThickness="1" BorderBrush="{DynamicResource OutlineColor}"
+                            ClipToBounds="True">
+                        <StackPanel>
+                            <!-- Profile -->
+                            <Button Command="{Binding GoToProfileCommand}"
+                                    Background="Transparent" BorderThickness="0"
+                                    Padding="16,14" Cursor="Hand"
+                                    HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Stretch">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="Profile" FontSize="15" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource ForegroundColor}"
+                                               VerticalAlignment="Center"/>
+                                    <PathIcon Grid.Column="1"
+                                              Data="{x:Static shad:Icons.ChevronRight}"
+                                              Width="14" Height="14"
+                                              Foreground="{DynamicResource ForegroundColor}" Opacity="0.4"/>
+                                </Grid>
+                            </Button>
+
+                            <Border Height="1" Background="{DynamicResource OutlineColor}" Margin="16,0"/>
+
+                            <!-- Notifications -->
+                            <Border Padding="16,14">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="Notifications" FontSize="15" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource ForegroundColor}"
+                                               VerticalAlignment="Center"/>
+                                    <ToggleSwitch Grid.Column="1"
+                                                  IsChecked="{Binding NotificationsEnabled}"
+                                                  OnContent="" OffContent=""
+                                                  VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+
+                            <Border Height="1" Background="{DynamicResource OutlineColor}" Margin="16,0"/>
+
+                            <!-- Dark Theme -->
+                            <Border Padding="16,14">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="Dark Theme" FontSize="15" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource ForegroundColor}"
+                                               VerticalAlignment="Center"/>
+                                    <ToggleSwitch Grid.Column="1"
+                                                  IsChecked="{Binding IsDarkTheme}"
+                                                  OnContent="" OffContent=""
+                                                  VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
                         </StackPanel>
-                        <Border Height="1" Background="{DynamicResource OutlineColor}" Margin="0,4,0,4"/>
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="First Name" FontSize="12" Opacity="0.6"
-                                       Foreground="{DynamicResource ForegroundColor}"/>
-                            <TextBox Text="{Binding FirstName, Mode=TwoWay}" Watermark="First name"/>
+                    </Border>
+                </StackPanel>
+
+                <!-- Support Section -->
+                <StackPanel Spacing="0">
+                    <TextBlock Text="Support" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ForegroundColor}" Opacity="0.5"
+                               Margin="4,0,0,8"/>
+                    <Border CornerRadius="12"
+                            BorderThickness="1" BorderBrush="{DynamicResource OutlineColor}"
+                            ClipToBounds="True">
+                        <StackPanel>
+                            <!-- Help Center -->
+                            <Button Command="{Binding OpenHelpCenterCommand}"
+                                    Background="Transparent" BorderThickness="0"
+                                    Padding="16,14" Cursor="Hand"
+                                    HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Stretch">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="Help Center" FontSize="15" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource ForegroundColor}"
+                                               VerticalAlignment="Center"/>
+                                    <PathIcon Grid.Column="1"
+                                              Data="{x:Static shad:Icons.ChevronRight}"
+                                              Width="14" Height="14"
+                                              Foreground="{DynamicResource ForegroundColor}" Opacity="0.4"/>
+                                </Grid>
+                            </Button>
+
+                            <Border Height="1" Background="{DynamicResource OutlineColor}" Margin="16,0"/>
+
+                            <!-- Feedback -->
+                            <Button Command="{Binding OpenFeedbackCommand}"
+                                    Background="Transparent" BorderThickness="0"
+                                    Padding="16,14" Cursor="Hand"
+                                    HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Stretch">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <TextBlock Text="Feedback" FontSize="15" FontWeight="SemiBold"
+                                               Foreground="{DynamicResource ForegroundColor}"
+                                               VerticalAlignment="Center"/>
+                                    <PathIcon Grid.Column="1"
+                                              Data="{x:Static shad:Icons.ChevronRight}"
+                                              Width="14" Height="14"
+                                              Foreground="{DynamicResource ForegroundColor}" Opacity="0.4"/>
+                                </Grid>
+                            </Button>
                         </StackPanel>
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="Last Name" FontSize="12" Opacity="0.6"
-                                       Foreground="{DynamicResource ForegroundColor}"/>
-                            <TextBox Text="{Binding LastName, Mode=TwoWay}" Watermark="Last name"/>
-                        </StackPanel>
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="Username" FontSize="12" Opacity="0.6"
-                                       Foreground="{DynamicResource ForegroundColor}"/>
-                            <TextBox Text="{Binding Username, Mode=TwoWay}" Watermark="username"/>
-                        </StackPanel>
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="Bio" FontSize="12" Opacity="0.6"
-                                       Foreground="{DynamicResource ForegroundColor}"/>
-                            <TextBox Text="{Binding Bio, Mode=TwoWay}"
-                                     Watermark="Tell us about yourself..."
-                                     AcceptsReturn="True" TextWrapping="Wrap" MinHeight="80"/>
-                        </StackPanel>
-                    </StackPanel>
-                </shad:Card>
+                    </Border>
+                </StackPanel>
+
+                <!-- Sign Out -->
+                <Button Command="{Binding LogoutCommand}"
+                        Background="Transparent" BorderThickness="1"
+                        BorderBrush="#EF5350"
+                        CornerRadius="12" Padding="0,14"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        Cursor="Hand">
+                    <TextBlock Text="SIGN OUT" FontSize="15" FontWeight="Bold"
+                               Foreground="#EF5350"
+                               HorizontalAlignment="Center"/>
+                </Button>
 
             </StackPanel>
         </ScrollViewer>
-
-        <!-- Save/Error -->
-        <StackPanel Grid.Row="2" Margin="20,8,20,12" Spacing="8">
-            <TextBlock Text="{Binding ErrorMessage}"
-                       IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                       Foreground="#EF5350" FontSize="13" HorizontalAlignment="Center"/>
-            <Button Content="Save Changes" Command="{Binding SaveCommand}"
-                    IsEnabled="{Binding !IsSaving}"
-                    HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                    Padding="0,14" Background="#2E7D32" Foreground="White"
-                    FontWeight="SemiBold" FontSize="16" CornerRadius="12"/>
-        </StackPanel>
 
     </Grid>
 </UserControl>

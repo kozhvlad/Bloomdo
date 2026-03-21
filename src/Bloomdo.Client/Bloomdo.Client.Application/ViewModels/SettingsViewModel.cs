@@ -1,6 +1,5 @@
 using Bloomdo.Client.Application.ViewModels.MainComponents;
 using Bloomdo.Client.Core.Interfaces;
-using Bloomdo.Shared.DTOs.Profile;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -10,94 +9,66 @@ public partial class SettingsViewModel : PageViewModel
 {
     private readonly INavigationService _navigationService;
     private readonly IAccessTokenManager _tokenManager;
-    private readonly IProfileApiService _profileApiService;
+    private readonly IThemeService _themeService;
+    private readonly IToastService _toastService;
 
-    [ObservableProperty] private int _selectedTab;
-    [ObservableProperty] private string _firstName = string.Empty;
-    [ObservableProperty] private string _lastName = string.Empty;
-    [ObservableProperty] private string _username = string.Empty;
-    [ObservableProperty] private string _bio = string.Empty;
-    [ObservableProperty] private string _errorMessage = string.Empty;
-    [ObservableProperty] private bool _isSaving;
+    [ObservableProperty]
+    private bool _isDarkTheme;
+
+    [ObservableProperty]
+    private bool _notificationsEnabled = true;
 
     public SettingsViewModel(
         INavigationService navigationService,
         IAccessTokenManager tokenManager,
-        IProfileApiService profileApiService)
+        IThemeService themeService,
+        IToastService toastService)
     {
         _navigationService = navigationService;
         _tokenManager = tokenManager;
-        _profileApiService = profileApiService;
+        _themeService = themeService;
+        _toastService = toastService;
     }
 
     public override void OnAppearing()
     {
         base.OnAppearing();
-        Initialize();
+        IsDarkTheme = _themeService.IsDarkTheme;
     }
 
-    private void Initialize()
+    partial void OnIsDarkThemeChanged(bool value)
     {
-        var user = _tokenManager.CurrentUser;
-        if (user != null)
-        {
-            FirstName = user.FirstName ?? string.Empty;
-            LastName = user.LastName ?? string.Empty;
-            Username = user.Username ?? string.Empty;
-            Bio = user.Bio ?? string.Empty;
-        }
+        _themeService.SetDarkTheme(value);
     }
 
     [RelayCommand]
-    private async Task SaveAsync()
-    {
-        if (IsSaving) return;
-
-        ErrorMessage = string.Empty;
-
-        if (string.IsNullOrWhiteSpace(FirstName))
-        {
-            ErrorMessage = "First name is required.";
-            return;
-        }
-
-        IsSaving = true;
-
-        try
-        {
-            var request = new UpdateProfileRequest
-            {
-                FirstName = FirstName.Trim(),
-                LastName = LastName.Trim(),
-                Username = Username.Trim(),
-                Bio = Bio.Trim()
-            };
-
-            var result = await _profileApiService.UpdateProfileAsync(request);
-
-            if (result != null)
-            {
-                _navigationService.NavigateTo<MainViewModel>(vm => vm.SelectedTabIndex = 3);
-            }
-            else
-            {
-                ErrorMessage = "Failed to update profile. Please try again.";
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Save settings failed: {ex.Message}");
-            ErrorMessage = "An error occurred while saving.";
-        }
-        finally
-        {
-            IsSaving = false;
-        }
-    }
-
-    [RelayCommand]
-    private void Cancel()
+    private void Done()
     {
         _navigationService.NavigateTo<MainViewModel>(vm => vm.SelectedTabIndex = 3);
+    }
+
+    [RelayCommand]
+    private void GoToProfile()
+    {
+        _navigationService.NavigateTo<AccountEditorViewModel>();
+    }
+
+    [RelayCommand]
+    private void OpenHelpCenter()
+    {
+        _toastService.ShowInfo("Help Center coming soon!");
+    }
+
+    [RelayCommand]
+    private void OpenFeedback()
+    {
+        _toastService.ShowInfo("Feedback coming soon!");
+    }
+
+    [RelayCommand]
+    private async Task LogoutAsync()
+    {
+        await _tokenManager.LogoutAsync();
+        _navigationService.NavigateTo<LoginViewModel>();
     }
 }

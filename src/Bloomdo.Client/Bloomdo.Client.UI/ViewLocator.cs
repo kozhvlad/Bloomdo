@@ -64,6 +64,9 @@ public class ViewLocator : IDataTemplate
             case ProfileEditorViewModel:
                 return new ProfileEditorView();
 
+            case AccountEditorViewModel:
+                return new AccountEditorView();
+
             case SettingsViewModel:
                 return new SettingsView();
 

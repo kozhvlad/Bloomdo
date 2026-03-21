@@ -5,6 +5,7 @@ using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
 using Bloomdo.Client.Application.ViewModels;
+using Bloomdo.Client.Core.Interfaces;
 using Bloomdo.Client.UI;
 using Microsoft.Extensions.DependencyInjection;
 using ShadUI;
@@ -31,7 +32,8 @@ public partial class App : Avalonia.Application
         var toastManager = serviceProvider.GetRequiredService<ToastManager>();
         var dialogManager = serviceProvider.GetRequiredService<DialogManager>();
 
-        Current!.RequestedThemeVariant = ThemeVariant.Dark;
+        var themeService = serviceProvider.GetRequiredService<IThemeService>();
+        Current!.RequestedThemeVariant = themeService.IsDarkTheme ? ThemeVariant.Dark : ThemeVariant.Light;
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {

@@ -86,6 +86,9 @@ public static class DependencyContainer
             new TimerDialogService(sp.GetRequiredService<ShellViewModel>()));
         services.AddSingleton<IConfirmDialogService, ConfirmDialogService>();
 
+        // Theme service
+        services.AddSingleton<IThemeService, ThemeService>();
+
         // NavigationService
         services.AddSingleton<INavigationService>(sp =>
         {
@@ -253,7 +256,14 @@ public static class DependencyContainer
         services.AddTransient<SettingsViewModel>(sp => new SettingsViewModel(
             sp.GetRequiredService<INavigationService>(),
             sp.GetRequiredService<IAccessTokenManager>(),
-            sp.GetRequiredService<IProfileApiService>()));
+            sp.GetRequiredService<IThemeService>(),
+            sp.GetRequiredService<IToastService>()));
+
+        services.AddTransient<AccountEditorViewModel>(sp => new AccountEditorViewModel(
+            sp.GetRequiredService<INavigationService>(),
+            sp.GetRequiredService<IAccessTokenManager>(),
+            sp.GetRequiredService<IProfileApiService>(),
+            sp.GetRequiredService<IToastService>()));
 
         services.AddTransient<GroupEditorViewModel>(sp => new GroupEditorViewModel(
             sp.GetRequiredService<IDailyActivityApiService>(),
