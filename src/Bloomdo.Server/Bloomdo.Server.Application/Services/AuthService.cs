@@ -13,6 +13,9 @@ public class AuthService : IAuthService
     private readonly IAccountRepository _accountRepository;
     private readonly IRepository<RefreshToken> _refreshTokenRepository;
     private readonly IRolePermissionRepository _rolePermissionRepository;
+    private readonly IRepository<ActivityCompletion> _completionRepository;
+    private readonly IRepository<BlockRule> _blockRuleRepository;
+    private readonly IRepository<AccountAchievement> _achievementRepository;
     private readonly IJwtService _jwtService;
     private readonly IAuthSettings _authSettings;
 
@@ -20,12 +23,18 @@ public class AuthService : IAuthService
         IAccountRepository accountRepository,
         IRepository<RefreshToken> refreshTokenRepository,
         IRolePermissionRepository rolePermissionRepository,
+        IRepository<ActivityCompletion> completionRepository,
+        IRepository<BlockRule> blockRuleRepository,
+        IRepository<AccountAchievement> achievementRepository,
         IJwtService jwtService,
         IAuthSettings authSettings)
     {
         _accountRepository = accountRepository;
         _refreshTokenRepository = refreshTokenRepository;
         _rolePermissionRepository = rolePermissionRepository;
+        _completionRepository = completionRepository;
+        _blockRuleRepository = blockRuleRepository;
+        _achievementRepository = achievementRepository;
         _jwtService = jwtService;
         _authSettings = authSettings;
     }
@@ -37,10 +46,17 @@ public class AuthService : IAuthService
             throw new EmailAlreadyExistsException(request.Email);
         }
 
+        var normalizedUsername = request.Username.Trim().ToLowerInvariant();
+        if (await _accountRepository.UsernameExistsAsync(normalizedUsername, cancellationToken: cancellationToken))
+        {
+            throw new UsernameAlreadyExistsException(normalizedUsername);
+        }
+
         var account = new Account
         {
             Email = request.Email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            Username = normalizedUsername,
             FirstName = request.FirstName,
             LastName = request.LastName,
             IsEmailConfirmed = false,
@@ -216,7 +232,15 @@ public class AuthService : IAuthService
 
         if (request.FirstName != null) account.FirstName = request.FirstName;
         if (request.LastName != null) account.LastName = request.LastName;
-        if (request.Username != null) account.Username = request.Username;
+        if (request.Username != null)
+        {
+            var normalizedUsername = request.Username.Trim().ToLowerInvariant();
+            if (await _accountRepository.UsernameExistsAsync(normalizedUsername, accountId, cancellationToken))
+            {
+                throw new UsernameAlreadyExistsException(normalizedUsername);
+            }
+            account.Username = normalizedUsername;
+        }
         if (request.Bio != null) account.Bio = request.Bio;
         if (request.Avatar != null) account.AvatarJson = System.Text.Json.JsonSerializer.Serialize(request.Avatar);
 
@@ -225,18 +249,65 @@ public class AuthService : IAuthService
         return await GetProfileAsync(accountId, cancellationToken);
     }
 
-    public Task<ProfileStatsResponse> GetProfileStatsAsync(Guid accountId, CancellationToken cancellationToken = default)
+    public async Task<ProfileStatsResponse> GetProfileStatsAsync(Guid accountId, CancellationToken cancellationToken = default)
     {
-        // Placeholder — real values should be computed from domain data
-        return Task.FromResult(new ProfileStatsResponse
+        var account = await _accountRepository.GetByIdAsync(accountId, cancellationToken)
+                      ?? throw new AccountNotFoundException(accountId);
+
+        // Tasks completed (total activity completions)
+        var completions = await _completionRepository.FindAsync(c => c.AccountId == accountId, cancellationToken);
+        var completionList = completions.ToList();
+        var tasksCompleted = completionList.Count;
+
+        // Streak: consecutive days with ≥1 completion ending today or yesterday
+        var streakDays = 0;
+        if (completionList.Count > 0)
         {
-            StreakDays = 0,
-            TasksCompleted = 0,
-            FocusHours = 0,
-            TotalBlocksCreated = 0,
-            AchievementsUnlocked = 0,
-            JoinedAt = DateTime.UtcNow
-        });
+            var distinctDates = completionList
+                .Select(c => c.Date)
+                .Distinct()
+                .OrderByDescending(d => d)
+                .ToList();
+
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var checkDate = distinctDates.Contains(today) ? today : today.AddDays(-1);
+
+            foreach (var date in distinctDates)
+            {
+                if (date == checkDate)
+                {
+                    streakDays++;
+                    checkDate = checkDate.AddDays(-1);
+                }
+                else if (date < checkDate)
+                {
+                    break;
+                }
+            }
+        }
+
+        // Blocks created
+        var blocks = await _blockRuleRepository.FindAsync(b => b.AccountId == accountId, cancellationToken);
+        var totalBlocksCreated = blocks.Count();
+
+        // Achievements unlocked
+        var achievements = await _achievementRepository.FindAsync(a => a.AccountId == accountId, cancellationToken);
+        var achievementsUnlocked = achievements.Count();
+
+        // Focus hours: sum of all focus-mode block rules' duration in hours (completed + configured)
+        var focusHours = blocks
+            .Where(b => b.FocusDurationMinutes.HasValue)
+            .Sum(b => b.FocusDurationMinutes!.Value) / 60;
+
+        return new ProfileStatsResponse
+        {
+            StreakDays = streakDays,
+            TasksCompleted = tasksCompleted,
+            FocusHours = focusHours,
+            TotalBlocksCreated = totalBlocksCreated,
+            AchievementsUnlocked = achievementsUnlocked,
+            JoinedAt = account.CreatedAt
+        };
     }
 
     private async Task<AuthResponse> GenerateAuthResponseAsync(Account account, string ipAddress, CancellationToken cancellationToken)

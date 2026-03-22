@@ -10,6 +10,7 @@ public partial class RegisterViewModel : PageViewModel
     private readonly IAccessTokenManager _tokenManager;
     private readonly INavigationService _navigationService;
     private readonly IToastService _toastService;
+    private readonly IPreferencesService _preferencesService;
 
     [ObservableProperty]
     private string _email = string.Empty;
@@ -27,6 +28,9 @@ public partial class RegisterViewModel : PageViewModel
     private string _lastName = string.Empty;
 
     [ObservableProperty]
+    private string _username = string.Empty;
+
+    [ObservableProperty]
     private string? _errorMessage;
 
     [ObservableProperty]
@@ -35,11 +39,28 @@ public partial class RegisterViewModel : PageViewModel
     public RegisterViewModel(
         IAccessTokenManager tokenManager, 
         INavigationService navigationService,
-        IToastService toastService)
+        IToastService toastService,
+        IPreferencesService preferencesService)
     {
         _tokenManager = tokenManager;
         _navigationService = navigationService;
         _toastService = toastService;
+        _preferencesService = preferencesService;
+    }
+
+    public override void OnAppearing()
+    {
+        base.OnAppearing();
+
+        // Pre-fill from onboarding data
+        var onboardingName = _preferencesService.Get("Onboarding_Name", string.Empty);
+        var onboardingTag = _preferencesService.Get("Onboarding_Tag", string.Empty);
+
+        if (!string.IsNullOrWhiteSpace(onboardingName) && string.IsNullOrWhiteSpace(FirstName))
+            FirstName = onboardingName;
+
+        if (!string.IsNullOrWhiteSpace(onboardingTag) && string.IsNullOrWhiteSpace(Username))
+            Username = onboardingTag;
     }
 
     [RelayCommand]
@@ -49,6 +70,13 @@ public partial class RegisterViewModel : PageViewModel
         {
             ErrorMessage = "Email and password are required";
             _toastService.ShowWarning("Validation", "Email and password are required");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(Username) || Username.Trim().Length < 3)
+        {
+            ErrorMessage = "A unique @tag (at least 3 characters) is required";
+            _toastService.ShowWarning("Validation", "@tag is required");
             return;
         }
 
@@ -71,9 +99,12 @@ public partial class RegisterViewModel : PageViewModel
 
         try
         {
+            var tag = Username.Trim().TrimStart('@').ToLowerInvariant();
+
             var success = await _tokenManager.RegisterAsync(
-                Email, 
-                Password, 
+                Email,
+                Password,
+                tag,
                 string.IsNullOrWhiteSpace(FirstName) ? null : FirstName,
                 string.IsNullOrWhiteSpace(LastName) ? null : LastName
             );

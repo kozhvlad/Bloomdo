@@ -70,6 +70,9 @@ public partial class ActivityTaskItemViewModel : ObservableObject
     // Computed — type checks
     public bool IsTimerType => TaskType == ActivityItemType.Timer;
     public bool IsCountType => TaskType == ActivityItemType.Count;
+    public bool IsStepsType => TaskType == ActivityItemType.Steps;
+    public bool IsCheckboxType => TaskType == ActivityItemType.Checkbox;
+    public bool IsCountBasedType => IsCountType || IsStepsType;
 
     public string FirstLetter =>
         string.IsNullOrEmpty(Title) ? "?" : Title[..1].ToUpperInvariant();
@@ -84,10 +87,13 @@ public partial class ActivityTaskItemViewModel : ObservableObject
 
     // Count-type computed
     public string CountProgressText => $"{CurrentCount}/{TargetCount ?? 0}";
-    public bool IsCountComplete => IsCountType && TargetCount.HasValue && CurrentCount >= TargetCount.Value;
-    public double CountFraction => IsCountType && TargetCount is > 0
+    public bool IsCountComplete => IsCountBasedType && TargetCount.HasValue && CurrentCount >= TargetCount.Value;
+    public double CountFraction => IsCountBasedType && TargetCount is > 0
         ? Math.Min(1.0, (double)CurrentCount / TargetCount.Value)
         : 0;
+
+    // Steps-type computed
+    public string StepsProgressText => $"{CurrentCount}/{TargetCount ?? 0}";
 
     public string TimerDisplayText
     {
@@ -106,6 +112,10 @@ public partial class ActivityTaskItemViewModel : ObservableObject
             var parts = new List<string>();
             if (IsCountType && TargetCount.HasValue)
                 parts.Add($"{CurrentCount}/{TargetCount} done");
+            else if (IsStepsType && TargetCount.HasValue)
+                parts.Add($"{CurrentCount}/{TargetCount} steps");
+            else if (IsCheckboxType)
+                parts.Add(IsCompleted ? "Done" : "Tap to complete");
             else if (DurationMinutes.HasValue)
                 parts.Add($"{DurationMinutes} min");
             if (!string.IsNullOrWhiteSpace(Description))
@@ -126,6 +136,7 @@ public partial class ActivityTaskItemViewModel : ObservableObject
     public void RefreshCountProperties()
     {
         OnPropertyChanged(nameof(CountProgressText));
+        OnPropertyChanged(nameof(StepsProgressText));
         OnPropertyChanged(nameof(IsCountComplete));
         OnPropertyChanged(nameof(CountFraction));
         OnPropertyChanged(nameof(Subtitle));
@@ -137,6 +148,9 @@ public partial class ActivityTaskItemViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(IsTimerType));
         OnPropertyChanged(nameof(IsCountType));
+        OnPropertyChanged(nameof(IsStepsType));
+        OnPropertyChanged(nameof(IsCheckboxType));
+        OnPropertyChanged(nameof(IsCountBasedType));
         OnPropertyChanged(nameof(HasDuration));
         OnPropertyChanged(nameof(Subtitle));
     }

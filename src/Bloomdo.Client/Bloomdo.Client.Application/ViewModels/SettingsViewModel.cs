@@ -11,6 +11,7 @@ public partial class SettingsViewModel : PageViewModel
     private readonly IAccessTokenManager _tokenManager;
     private readonly IThemeService _themeService;
     private readonly IToastService _toastService;
+    private readonly IPreferencesService _preferencesService;
 
     [ObservableProperty]
     private bool _isDarkTheme;
@@ -22,12 +23,14 @@ public partial class SettingsViewModel : PageViewModel
         INavigationService navigationService,
         IAccessTokenManager tokenManager,
         IThemeService themeService,
-        IToastService toastService)
+        IToastService toastService,
+        IPreferencesService preferencesService)
     {
         _navigationService = navigationService;
         _tokenManager = tokenManager;
         _themeService = themeService;
         _toastService = toastService;
+        _preferencesService = preferencesService;
     }
 
     public override void OnAppearing()
@@ -63,6 +66,13 @@ public partial class SettingsViewModel : PageViewModel
     private void OpenFeedback()
     {
         _toastService.ShowInfo("Feedback coming soon!");
+    }
+
+    [RelayCommand]
+    private void ResetOnboarding()
+    {
+        _preferencesService.Set("OnboardingCompleted", false);
+        _toastService.ShowSuccess("Onboarding reset! Restart the app to see it.");
     }
 
     [RelayCommand]

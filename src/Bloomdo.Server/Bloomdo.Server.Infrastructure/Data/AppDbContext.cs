@@ -60,6 +60,12 @@ public class AppDbContext : DbContext
 
             entity.Property(e => e.FirstName).HasMaxLength(100);
             entity.Property(e => e.LastName).HasMaxLength(100);
+            entity.Property(e => e.Username).HasMaxLength(20);
+            entity.Property(e => e.Bio).HasMaxLength(500);
+
+            entity.HasIndex(e => e.Username)
+                .IsUnique()
+                .HasFilter("\"Username\" IS NOT NULL AND \"IsDeleted\" = false");
 
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);

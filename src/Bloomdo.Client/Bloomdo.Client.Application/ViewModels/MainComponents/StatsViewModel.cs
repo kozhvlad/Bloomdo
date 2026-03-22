@@ -13,6 +13,7 @@ public partial class StatsViewModel : PageViewModel
 {
 	private readonly IAppUsageService? _appUsageService;
 	private readonly IStatsApiService? _statsApiService;
+	private readonly IAppIconProvider? _appIconProvider;
 	private CancellationTokenSource? _cancellationTokenSource;
 
 	// Calendar data from server, keyed by DateOnly
@@ -98,10 +99,11 @@ public partial class StatsViewModel : PageViewModel
 	public string CurrentMonthTitle => CurrentMonth.ToString("MMMM yyyy", CultureInfo.CurrentCulture);
 	public string WeekRangeTitle => $"{CurrentWeekStart:MMM d} - {CurrentWeekStart.AddDays(6):MMM d}";
 
-	public StatsViewModel(IAppUsageService? appUsageService = null, IStatsApiService? statsApiService = null)
+	public StatsViewModel(IAppUsageService? appUsageService = null, IStatsApiService? statsApiService = null, IAppIconProvider? appIconProvider = null)
 	{
 		_appUsageService = appUsageService;
 		_statsApiService = statsApiService;
+		_appIconProvider = appIconProvider;
 		CurrentWeekStart = GetWeekStart(DateOnly.FromDateTime(DateTime.Today));
 		InitializeWeeklyChart();
 		LoadMonthCalendar();
@@ -295,8 +297,8 @@ public partial class StatsViewModel : PageViewModel
 			var totalTime = sortedUsage.Aggregate(TimeSpan.Zero, (acc, x) => acc + x.ForegroundTime);
 			ScreenTimeToday = FormatDuration(totalTime);
 
-			UpdateAppCollection(AllAppsUsage, sortedUsage);
-			UpdateAppCollection(MostUsedApps, sortedUsage.Take(3).ToList());
+			UpdateAppCollection(AllAppsUsage, sortedUsage, _appIconProvider);
+			UpdateAppCollection(MostUsedApps, sortedUsage.Take(3).ToList(), _appIconProvider);
 
 			// Sync to server periodically (every 5 minutes handled by separate sync logic)
 		}
@@ -306,7 +308,7 @@ public partial class StatsViewModel : PageViewModel
 		}
 	}
 
-	private static void UpdateAppCollection(ObservableCollection<MostUsedAppViewModel> collection, List<AppUsageInfo> source)
+	private static void UpdateAppCollection(ObservableCollection<MostUsedAppViewModel> collection, List<AppUsageInfo> source, IAppIconProvider? iconProvider = null)
 	{
 		var sourceNames = source.Select(x => string.IsNullOrWhiteSpace(x.AppLabel) ? x.PackageName : x.AppLabel!).ToHashSet();
 
@@ -321,12 +323,15 @@ public partial class StatsViewModel : PageViewModel
 			var app = source[i];
 			var name = string.IsNullOrWhiteSpace(app.AppLabel) ? app.PackageName : app.AppLabel!;
 			var duration = FormatDuration(app.ForegroundTime);
+			var iconBytes = iconProvider?.GetIcon(app.PackageName);
 
 			var existing = collection.FirstOrDefault(x => x.Name == name);
 			if (existing is not null)
 			{
 				if (existing.Duration != duration)
 					existing.Duration = duration;
+				if (existing.IconBytes is null && iconBytes is not null)
+					existing.IconBytes = iconBytes;
 
 				var oldIndex = collection.IndexOf(existing);
 				if (oldIndex != i)
@@ -334,10 +339,11 @@ public partial class StatsViewModel : PageViewModel
 			}
 			else
 			{
+				var vm = new MostUsedAppViewModel(name, duration, iconBytes);
 				if (i < collection.Count)
-					collection.Insert(i, new MostUsedAppViewModel(name, duration));
+					collection.Insert(i, vm);
 				else
-					collection.Add(new MostUsedAppViewModel(name, duration));
+					collection.Add(vm);
 			}
 		}
 
@@ -441,7 +447,7 @@ public partial class StatsViewModel : PageViewModel
 			foreach (var app in AllAppsUsage)
 			{
 				var percent = totalSeconds > 0 ? (double)app.TotalSeconds / totalSeconds * 100 : 0;
-				SelectedDayApps.Add(new MostUsedAppViewModel(app.Name, app.Duration, app.TotalSeconds, percent));
+				SelectedDayApps.Add(new MostUsedAppViewModel(app.Name, app.Duration, app.TotalSeconds, percent, app.IconBytes));
 			}
 
 			// GoalMet for today: try server, but don't block if unavailable
@@ -479,7 +485,8 @@ public partial class StatsViewModel : PageViewModel
 				var name = string.IsNullOrWhiteSpace(app.AppLabel) ? app.PackageName : app.AppLabel;
 				var duration = FormatDuration(TimeSpan.FromSeconds(app.ForegroundSeconds));
 				var percent = totalSeconds > 0 ? (double)app.ForegroundSeconds / totalSeconds * 100 : 0;
-				SelectedDayApps.Add(new MostUsedAppViewModel(name, duration, app.ForegroundSeconds, percent));
+				var iconBytes = _appIconProvider?.GetIcon(app.PackageName);
+				SelectedDayApps.Add(new MostUsedAppViewModel(name, duration, app.ForegroundSeconds, percent, iconBytes));
 			}
 		}
 		catch (Exception ex)
@@ -634,7 +641,8 @@ public partial class StatsViewModel : PageViewModel
 							var name = string.IsNullOrWhiteSpace(app.AppLabel) ? app.PackageName : app.AppLabel;
 							var duration = FormatDuration(TimeSpan.FromSeconds(app.ForegroundSeconds));
 							var percent = totalAppSeconds > 0 ? (double)app.ForegroundSeconds / totalAppSeconds * 100 : 0;
-							WeeklyTopApps.Add(new MostUsedAppViewModel(name, duration, app.ForegroundSeconds, percent));
+							var iconBytes = _appIconProvider?.GetIcon(app.PackageName);
+							WeeklyTopApps.Add(new MostUsedAppViewModel(name, duration, app.ForegroundSeconds, percent, iconBytes));
 						}
 					}
 					catch (Exception ex)

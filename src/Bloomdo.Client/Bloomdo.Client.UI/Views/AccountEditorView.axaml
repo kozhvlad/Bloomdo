@@ -63,13 +63,17 @@
 
                             <Border Height="1" Background="{DynamicResource OutlineColor}" Margin="16,0"/>
 
-                            <!-- Username -->
+                            <!-- Username (@tag) -->
                             <Border Padding="16,10">
                                 <StackPanel Spacing="4">
-                                    <TextBlock Text="Username" FontSize="12" Opacity="0.5"
-                                               Foreground="{DynamicResource ForegroundColor}"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <TextBlock Text="@Tag" FontSize="12" Opacity="0.5"
+                                                   Foreground="{DynamicResource ForegroundColor}"/>
+                                        <TextBlock Text="(required)" FontSize="11"
+                                                   Foreground="#EF5350" Opacity="0.8"/>
+                                    </StackPanel>
                                     <TextBox Text="{Binding Username}"
-                                             Watermark="@username"
+                                             Watermark="your_unique_tag"
                                              FontSize="15" BorderThickness="0"
                                              Padding="0,4" Background="Transparent"/>
                                 </StackPanel>
@@ -121,7 +125,7 @@
                             Cursor="Hand"
                             IsEnabled="{Binding !IsSaving}">
                         <TextBlock Text="Save Changes" FontWeight="SemiBold" FontSize="14"
-                                   VerticalAlignment="Center" Foreground="White"/>
+                                   VerticalAlignment="Center" Foreground="Black"/>
                     </Button>
                 </StackPanel>
 

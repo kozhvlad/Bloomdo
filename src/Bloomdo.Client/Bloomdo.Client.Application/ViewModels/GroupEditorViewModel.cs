@@ -58,6 +58,7 @@ public partial class GroupEditorViewModel : PageViewModel
     private string? _newTaskDescription;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NewTaskPreviewSubtitle))]
     private int _newTaskDurationMinutes = 30;
 
     [ObservableProperty]
@@ -67,9 +68,11 @@ public partial class GroupEditorViewModel : PageViewModel
     private string _newTaskColor = "#7E57C2";
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NewTaskPreviewSubtitle))]
     private ActivityItemType _newTaskType = ActivityItemType.Timer;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NewTaskPreviewSubtitle))]
     private int _newTaskTargetCount = 8;
 
     [ObservableProperty]
@@ -77,6 +80,17 @@ public partial class GroupEditorViewModel : PageViewModel
 
     public bool IsNewTaskTimer => NewTaskType == ActivityItemType.Timer;
     public bool IsNewTaskCount => NewTaskType == ActivityItemType.Count;
+    public bool IsNewTaskSteps => NewTaskType == ActivityItemType.Steps;
+    public bool IsNewTaskCheckbox => NewTaskType == ActivityItemType.Checkbox;
+
+    public string NewTaskPreviewSubtitle => NewTaskType switch
+    {
+        ActivityItemType.Timer => $"{NewTaskDurationMinutes} min",
+        ActivityItemType.Count => $"0 / {NewTaskTargetCount}",
+        ActivityItemType.Steps => $"0 / {NewTaskTargetCount} steps",
+        ActivityItemType.Checkbox => "Tap to complete",
+        _ => string.Empty
+    };
 
     // --- Computed ---
 
@@ -195,9 +209,21 @@ public partial class GroupEditorViewModel : PageViewModel
     [RelayCommand]
     private void SelectNewTaskType(string type)
     {
-        NewTaskType = type == "Count" ? ActivityItemType.Count : ActivityItemType.Timer;
+        NewTaskType = type switch
+        {
+            "Count" => ActivityItemType.Count,
+            "Steps" => ActivityItemType.Steps,
+            "Checkbox" => ActivityItemType.Checkbox,
+            _ => ActivityItemType.Timer
+        };
+        if (NewTaskType == ActivityItemType.Steps)
+            NewTaskTargetCount = 10000;
+        else if (NewTaskType == ActivityItemType.Count)
+            NewTaskTargetCount = 8;
         OnPropertyChanged(nameof(IsNewTaskTimer));
         OnPropertyChanged(nameof(IsNewTaskCount));
+        OnPropertyChanged(nameof(IsNewTaskSteps));
+        OnPropertyChanged(nameof(IsNewTaskCheckbox));
     }
 
     [RelayCommand]
@@ -205,6 +231,12 @@ public partial class GroupEditorViewModel : PageViewModel
 
     [RelayCommand]
     private void DecrementTargetCount() => NewTaskTargetCount = Math.Max(NewTaskTargetCount - 1, 1);
+
+    [RelayCommand]
+    private void IncrementTargetSteps() => NewTaskTargetCount = Math.Min(NewTaskTargetCount + 1000, 100000);
+
+    [RelayCommand]
+    private void DecrementTargetSteps() => NewTaskTargetCount = Math.Max(NewTaskTargetCount - 1000, 1000);
 
     // --- Color ---
 
@@ -244,6 +276,8 @@ public partial class GroupEditorViewModel : PageViewModel
         IsTaskEmojiPickerOpen = false;
         OnPropertyChanged(nameof(IsNewTaskTimer));
         OnPropertyChanged(nameof(IsNewTaskCount));
+        OnPropertyChanged(nameof(IsNewTaskSteps));
+        OnPropertyChanged(nameof(IsNewTaskCheckbox));
     }
 
     [RelayCommand]
@@ -267,7 +301,7 @@ public partial class GroupEditorViewModel : PageViewModel
                 Description = string.IsNullOrWhiteSpace(NewTaskDescription) ? null : NewTaskDescription.Trim(),
                 TaskType = NewTaskType,
                 DurationMinutes = IsNewTaskTimer ? NewTaskDurationMinutes : null,
-                TargetCount = IsNewTaskCount ? NewTaskTargetCount : null,
+                TargetCount = (IsNewTaskCount || IsNewTaskSteps) ? NewTaskTargetCount : null,
                 Icon = NewTaskIcon,
                 Color = NewTaskColor
             };
@@ -297,7 +331,7 @@ public partial class GroupEditorViewModel : PageViewModel
                 Description = string.IsNullOrWhiteSpace(NewTaskDescription) ? null : NewTaskDescription.Trim(),
                 TaskType = NewTaskType,
                 DurationMinutes = IsNewTaskTimer ? NewTaskDurationMinutes : null,
-                TargetCount = IsNewTaskCount ? NewTaskTargetCount : null,
+                TargetCount = (IsNewTaskCount || IsNewTaskSteps) ? NewTaskTargetCount : null,
                 Icon = NewTaskIcon,
                 Color = NewTaskColor
             });
@@ -326,7 +360,8 @@ public partial class GroupEditorViewModel : PageViewModel
     private void EditTask(ActivityTaskItemViewModel? task)
     {
         if (task is null) return;
-        _navigationService.NavigateTo<TaskEditorViewModel>(vm => vm.ConfigureForEdit(task));
+        _navigationService.NavigateTo<TaskEditorViewModel>(vm =>
+            vm.ConfigureForEdit(task, () => _navigationService.NavigateTo<GroupEditorViewModel>()));
     }
 
     // --- Save / Cancel ---
@@ -372,7 +407,7 @@ public partial class GroupEditorViewModel : PageViewModel
                             Description = task.Description,
                             TaskType = task.TaskType,
                             DurationMinutes = task.IsTimerType ? task.DurationMinutes : null,
-                            TargetCount = task.IsCountType ? task.TargetCount : null,
+                            TargetCount = (task.IsCountType || task.IsStepsType) ? task.TargetCount : null,
                             Icon = task.Icon,
                             Color = task.Color
                         };

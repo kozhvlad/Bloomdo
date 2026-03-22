@@ -67,6 +67,13 @@
                             shad:ControlAssist.Label="Last Name" />
                     </Grid>
 
+                    <!-- Username Tag -->
+                    <TextBox
+                        IsEnabled="{Binding !IsLoading}"
+                        Text="{Binding Username, Mode=TwoWay}"
+                        Watermark="your_unique_tag"
+                        shad:ControlAssist.Label="@Tag (required)" />
+
                     <!-- Email Input -->
                     <TextBox
                         Classes="Clearable"

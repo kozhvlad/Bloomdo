@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using Bloomdo.Client.Core;
 using Bloomdo.Client.Core.Interfaces;
 using Bloomdo.Client.Application.ViewModels.MainComponents;
 using Bloomdo.Client.Application.ViewModels.OnbordingComponents;
@@ -66,6 +67,14 @@ public partial class ShellViewModel : ObservableObject
             return;
         }
 
+        // Dev shortcut — skip auth
+        if (AppConfig.SkipAuthentication)
+        {
+            Debug.WriteLine("SkipAuthentication enabled, navigating to MainViewModel");
+            _navigationService.NavigateTo<MainViewModel>();
+            return;
+        }
+
         try
         {
             await _tokenManager.InitializeAsync();
@@ -129,7 +138,15 @@ public partial class ShellViewModel : ObservableObject
 
     private bool IsOnboardingCompleted()
     {
+        if (AppConfig.ForceShowOnboarding)
+            return false;
+
         return _preferencesService.Get(OnboardingCompletedKey, false);
+    }
+
+    public void ResetOnboarding()
+    {
+        _preferencesService.Set(OnboardingCompletedKey, false);
     }
 }
 

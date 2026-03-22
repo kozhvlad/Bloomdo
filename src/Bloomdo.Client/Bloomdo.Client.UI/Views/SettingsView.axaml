@@ -134,6 +134,32 @@
                     </Border>
                 </StackPanel>
 
+                <!-- Developer Section -->
+                <StackPanel Spacing="0">
+                    <TextBlock Text="Developer" FontSize="13" FontWeight="SemiBold"
+                               Foreground="{DynamicResource ForegroundColor}" Opacity="0.5"
+                               Margin="4,0,0,8"/>
+                    <Border CornerRadius="12"
+                            BorderThickness="1" BorderBrush="{DynamicResource OutlineColor}"
+                            ClipToBounds="True">
+                        <Button Command="{Binding ResetOnboardingCommand}"
+                                Background="Transparent" BorderThickness="0"
+                                Padding="16,14" Cursor="Hand"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Stretch">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="Reset Onboarding" FontSize="15" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource ForegroundColor}"
+                                           VerticalAlignment="Center"/>
+                                <PathIcon Grid.Column="1"
+                                          Data="{x:Static shad:Icons.ChevronRight}"
+                                          Width="14" Height="14"
+                                          Foreground="{DynamicResource ForegroundColor}" Opacity="0.4"/>
+                            </Grid>
+                        </Button>
+                    </Border>
+                </StackPanel>
+
                 <!-- Sign Out -->
                 <Button Command="{Binding LogoutCommand}"
                         Background="Transparent" BorderThickness="1"

@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Bloomdo.Server.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260317150749_Profile")]
-    partial class Profile
+    [Migration("20260321111846_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -37,7 +37,8 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Bio")
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -86,13 +87,18 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Username")
-                        .HasColumnType("text");
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
                         .IsUnique()
                         .HasFilter("\"IsDeleted\" = false");
+
+                    b.HasIndex("Username")
+                        .IsUnique()
+                        .HasFilter("\"Username\" IS NOT NULL AND \"IsDeleted\" = false");
 
                     b.ToTable("Accounts");
                 });
@@ -326,6 +332,9 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                     b.Property<DateTime>("CompletedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("CountValue")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -484,6 +493,12 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                         .HasDefaultValue(false);
 
                     b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("TargetCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TaskType")
                         .HasColumnType("integer");
 
                     b.Property<string>("Title")

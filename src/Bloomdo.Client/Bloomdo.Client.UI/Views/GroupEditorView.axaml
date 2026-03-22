@@ -300,8 +300,8 @@
                                 <StackPanel Spacing="4">
                                     <TextBlock Text="Type" FontSize="11" Opacity="0.5"
                                                Foreground="#EFEFEF"/>
-                                    <Grid ColumnDefinitions="*,6,*">
-                                        <Button Grid.Column="0" Padding="6"
+                                    <Grid ColumnDefinitions="*,6,*" RowDefinitions="Auto,6,Auto">
+                                        <Button Grid.Column="0" Grid.Row="0" Padding="6"
                                                 HorizontalAlignment="Stretch"
                                                 HorizontalContentAlignment="Center"
                                                 CornerRadius="8"
@@ -313,7 +313,7 @@
                                                            Foreground="White" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Button>
-                                        <Button Grid.Column="2" Padding="6"
+                                        <Button Grid.Column="2" Grid.Row="0" Padding="6"
                                                 HorizontalAlignment="Stretch"
                                                 HorizontalContentAlignment="Center"
                                                 CornerRadius="8"
@@ -322,6 +322,30 @@
                                             <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
                                                 <TextBlock Text="🔢" FontFamily="{StaticResource EmojiFont}" FontSize="14" VerticalAlignment="Center"/>
                                                 <TextBlock Text="Count" FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="White" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Grid.Column="0" Grid.Row="2" Padding="6"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Center"
+                                                CornerRadius="8"
+                                                Command="{Binding SelectNewTaskTypeCommand}"
+                                                CommandParameter="Steps">
+                                            <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
+                                                <TextBlock Text="🚶" FontFamily="{StaticResource EmojiFont}" FontSize="14" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Steps" FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="White" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Grid.Column="2" Grid.Row="2" Padding="6"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Center"
+                                                CornerRadius="8"
+                                                Command="{Binding SelectNewTaskTypeCommand}"
+                                                CommandParameter="Checkbox">
+                                            <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
+                                                <TextBlock Text="✅" FontFamily="{StaticResource EmojiFont}" FontSize="14" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Checkbox" FontSize="11" FontWeight="SemiBold"
                                                            Foreground="White" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Button>
@@ -402,6 +426,43 @@
                                     </Button>
                                 </Grid>
 
+                                <!-- Target Steps (Steps type) -->
+                                <Grid ColumnDefinitions="Auto,Auto,Auto,Auto"
+                                      IsVisible="{Binding IsNewTaskSteps}">
+                                    <TextBlock Text="Goal:" FontSize="12"
+                                               VerticalAlignment="Center"
+                                               Foreground="#EFEFEF" Opacity="0.6"
+                                               Margin="0,0,8,0"/>
+                                    <Button Grid.Column="1" Classes="Ghost" Padding="6"
+                                            Width="32" Height="32"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            Command="{Binding DecrementTargetStepsCommand}">
+                                        <PathIcon Data="{x:Static shad:Icons.Minus}" Width="10" Height="10"
+                                                  Foreground="#EFEFEF"/>
+                                    </Button>
+                                    <Border Grid.Column="2" CornerRadius="6" Padding="10,4"
+                                            Background="#15FFFFFF" MinWidth="70"
+                                            HorizontalAlignment="Center">
+                                        <TextBlock Text="{Binding NewTaskTargetCount, StringFormat='{}{0} steps'}"
+                                                   FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="#EFEFEF"
+                                                   HorizontalAlignment="Center"/>
+                                    </Border>
+                                    <Button Grid.Column="3" Classes="Ghost" Padding="6"
+                                            Width="32" Height="32"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            Command="{Binding IncrementTargetStepsCommand}">
+                                        <PathIcon Data="{x:Static shad:Icons.Cross}" Width="10" Height="10"
+                                                  Foreground="#EFEFEF">
+                                            <PathIcon.RenderTransform>
+                                                <RotateTransform Angle="45"/>
+                                            </PathIcon.RenderTransform>
+                                        </PathIcon>
+                                    </Button>
+                                </Grid>
+
                                 <!-- Task color -->
                                 <StackPanel Spacing="4">
                                     <TextBlock Text="Color" FontSize="11" Opacity="0.5"
@@ -442,7 +503,7 @@
                                                        FontSize="13" FontWeight="SemiBold"
                                                        Foreground="White"/>
                                             <TextBlock FontSize="10" Foreground="White" Opacity="0.7"
-                                                       Text="{Binding NewTaskDurationMinutes, StringFormat='{}{0} min'}"/>
+                                                       Text="{Binding NewTaskPreviewSubtitle}"/>
                                         </StackPanel>
                                     </Grid>
                                 </Border>

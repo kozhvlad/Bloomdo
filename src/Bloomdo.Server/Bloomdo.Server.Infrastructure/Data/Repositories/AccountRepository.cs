@@ -28,4 +28,12 @@ public class AccountRepository : Repository<Account>, IAccountRepository
     {
         return await _dbSet.AnyAsync(a => a.Email == email, cancellationToken);
     }
+
+    public async Task<bool> UsernameExistsAsync(string username, Guid? excludeAccountId = null, CancellationToken cancellationToken = default)
+    {
+        var query = _dbSet.Where(a => a.Username == username);
+        if (excludeAccountId.HasValue)
+            query = query.Where(a => a.Id != excludeAccountId.Value);
+        return await query.AnyAsync(cancellationToken);
+    }
 }

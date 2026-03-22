@@ -381,7 +381,7 @@ Background="{Binding AvatarHeadwearHex, Converter={StaticResource StringToBrush}
 <TextBlock Text="{Binding Username}" Opacity="0.6" FontSize="14"
    Foreground="{DynamicResource ForegroundColor}"
    IsVisible="{Binding Username, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
-<TextBlock Text="В·" Opacity="0.4" FontSize="14"
+<TextBlock Text="·" Opacity="0.4" FontSize="14"
    Foreground="{DynamicResource ForegroundColor}"
    IsVisible="{Binding Username, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
 <TextBlock Text="{Binding JoinedDateText}" Opacity="0.5" FontSize="14"

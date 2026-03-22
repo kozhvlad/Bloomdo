@@ -14,6 +14,7 @@ public partial class BlocksViewModel : PageViewModel
     private readonly IInstalledAppsService? _installedAppsService;
     private readonly IBlockRuleStore? _blockRuleStore;
     private readonly IDailyActivityApiService? _activityApiService;
+    private readonly IAppIconProvider? _appIconProvider;
     private List<BlockRuleResponse> _cachedRules = [];
 
     [ObservableProperty]
@@ -37,12 +38,14 @@ public partial class BlocksViewModel : PageViewModel
         IBlockApiService? blockApiService = null,
         IInstalledAppsService? installedAppsService = null,
         IBlockRuleStore? blockRuleStore = null,
-        IDailyActivityApiService? activityApiService = null)
+        IDailyActivityApiService? activityApiService = null,
+        IAppIconProvider? appIconProvider = null)
     {
         _blockApiService = blockApiService;
         _installedAppsService = installedAppsService;
         _blockRuleStore = blockRuleStore;
         _activityApiService = activityApiService;
+        _appIconProvider = appIconProvider;
     }
 
     public override void OnAppearing()
@@ -145,7 +148,7 @@ public partial class BlocksViewModel : PageViewModel
         var cached = _cachedRules.FirstOrDefault(r => r.Id == item.Id);
         if (cached is null) return;
 
-        var editor = new BlockEditorViewModel(_blockApiService, _installedAppsService, _activityApiService);
+        var editor = new BlockEditorViewModel(_blockApiService, _installedAppsService, _activityApiService, _appIconProvider);
         editor.Configure(cached.Type, cached.Title);
         editor.Saved += OnBlockSaved;
         editor.Cancelled += OnEditorCancelled;
@@ -154,7 +157,7 @@ public partial class BlocksViewModel : PageViewModel
 
     private void OpenEditor(BlockType type, string defaultTitle)
     {
-        var editor = new BlockEditorViewModel(_blockApiService, _installedAppsService, _activityApiService);
+        var editor = new BlockEditorViewModel(_blockApiService, _installedAppsService, _activityApiService, _appIconProvider);
         editor.Configure(type, defaultTitle);
         editor.Saved += OnBlockSaved;
         editor.Cancelled += OnEditorCancelled;

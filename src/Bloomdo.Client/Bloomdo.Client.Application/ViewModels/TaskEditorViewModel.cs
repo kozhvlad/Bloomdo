@@ -14,6 +14,7 @@ public partial class TaskEditorViewModel : PageViewModel
 
     private Guid? _editingTaskId;
     private Guid _parentGroupId;
+    private Action? _onComplete;
 
     [ObservableProperty]
     private bool _isEditMode;
@@ -53,12 +54,21 @@ public partial class TaskEditorViewModel : PageViewModel
 
     public bool IsTimerType => SelectedTaskType == ActivityItemType.Timer;
     public bool IsCountType => SelectedTaskType == ActivityItemType.Count;
+    public bool IsStepsType => SelectedTaskType == ActivityItemType.Steps;
+    public bool IsCheckboxType => SelectedTaskType == ActivityItemType.Checkbox;
 
     public string PreviewTitle => string.IsNullOrWhiteSpace(TaskTitle) ? "Task Preview" : TaskTitle;
     public string PreviewIcon => string.IsNullOrWhiteSpace(TaskIcon) ? "✨" : TaskIcon;
     public string FirstLetter => string.IsNullOrEmpty(TaskTitle) ? "?" : TaskTitle[..1].ToUpperInvariant();
     public string DurationLabel => $"{TaskDurationMinutes} min";
-    public string PreviewSubtitle => IsTimerType ? $"{TaskDurationMinutes} min" : $"0/{TaskTargetCount}";
+    public string PreviewSubtitle => SelectedTaskType switch
+    {
+        ActivityItemType.Timer => $"{TaskDurationMinutes} min",
+        ActivityItemType.Count => $"0/{TaskTargetCount}",
+        ActivityItemType.Steps => $"0/{TaskTargetCount} steps",
+        ActivityItemType.Checkbox => "Tap to complete",
+        _ => string.Empty
+    };
 
     public static string[] AvailableColors { get; } =
         ["#7E57C2", "#42A5F5", "#66BB6A", "#FF9800", "#EF5350", "#26C6DA", "#AB47BC", "#5C6BC0", "#EC407A", "#8D6E63",
@@ -92,6 +102,7 @@ public partial class TaskEditorViewModel : PageViewModel
 
     public void ConfigureForCreate(Guid groupId, string groupColor = "#7E57C2")
     {
+        _onComplete = null;
         _editingTaskId = null;
         _parentGroupId = groupId;
         IsEditMode = false;
@@ -106,8 +117,9 @@ public partial class TaskEditorViewModel : PageViewModel
         IsEmojiPickerOpen = false;
     }
 
-    public void ConfigureForEdit(ActivityTaskItemViewModel task)
+    public void ConfigureForEdit(ActivityTaskItemViewModel task, Action? onComplete = null)
     {
+        _onComplete = onComplete;
         _editingTaskId = task.Id;
         IsEditMode = true;
         PageTitle = "Edit Task";
@@ -124,7 +136,13 @@ public partial class TaskEditorViewModel : PageViewModel
     [RelayCommand]
     private void SelectTaskType(string type)
     {
-        SelectedTaskType = type == "Count" ? ActivityItemType.Count : ActivityItemType.Timer;
+        SelectedTaskType = type switch
+        {
+            "Count" => ActivityItemType.Count,
+            "Steps" => ActivityItemType.Steps,
+            "Checkbox" => ActivityItemType.Checkbox,
+            _ => ActivityItemType.Timer
+        };
     }
 
     [RelayCommand]
@@ -152,6 +170,12 @@ public partial class TaskEditorViewModel : PageViewModel
     [RelayCommand]
     private void DecrementTargetCount() => TaskTargetCount = Math.Max(TaskTargetCount - 1, 1);
 
+    [RelayCommand]
+    private void IncrementTargetSteps() => TaskTargetCount = Math.Min(TaskTargetCount + 1000, 100000);
+
+    [RelayCommand]
+    private void DecrementTargetSteps() => TaskTargetCount = Math.Max(TaskTargetCount - 1000, 1000);
+
     partial void OnTaskDurationMinutesChanged(int value)
     {
         OnPropertyChanged(nameof(DurationLabel));
@@ -164,7 +188,15 @@ public partial class TaskEditorViewModel : PageViewModel
     {
         OnPropertyChanged(nameof(IsTimerType));
         OnPropertyChanged(nameof(IsCountType));
+        OnPropertyChanged(nameof(IsStepsType));
+        OnPropertyChanged(nameof(IsCheckboxType));
         OnPropertyChanged(nameof(PreviewSubtitle));
+
+        // Set sensible defaults when switching types
+        if (value == ActivityItemType.Steps && TaskTargetCount < 1000)
+            TaskTargetCount = 10000;
+        else if (value == ActivityItemType.Count && TaskTargetCount > 100)
+            TaskTargetCount = 8;
     }
 
     [RelayCommand]
@@ -183,7 +215,7 @@ public partial class TaskEditorViewModel : PageViewModel
                     Description = string.IsNullOrWhiteSpace(TaskDescription) ? null : TaskDescription.Trim(),
                     TaskType = SelectedTaskType,
                     DurationMinutes = IsTimerType ? TaskDurationMinutes : null,
-                    TargetCount = IsCountType ? TaskTargetCount : null,
+                    TargetCount = (IsCountType || IsStepsType) ? TaskTargetCount : null,
                     Icon = TaskIcon,
                     Color = TaskColor
                 };
@@ -200,7 +232,7 @@ public partial class TaskEditorViewModel : PageViewModel
                     Description = string.IsNullOrWhiteSpace(TaskDescription) ? null : TaskDescription.Trim(),
                     TaskType = SelectedTaskType,
                     DurationMinutes = IsTimerType ? TaskDurationMinutes : null,
-                    TargetCount = IsCountType ? TaskTargetCount : null,
+                    TargetCount = (IsCountType || IsStepsType) ? TaskTargetCount : null,
                     Icon = TaskIcon,
                     Color = TaskColor
                 };
@@ -209,7 +241,10 @@ public partial class TaskEditorViewModel : PageViewModel
                 _toastService?.ShowSuccess("Task created!");
             }
 
-            _navigationService.NavigateTo<MainComponents.MainViewModel>();
+            if (_onComplete is not null)
+                _onComplete();
+            else
+                _navigationService.NavigateTo<MainComponents.MainViewModel>();
         }
         finally
         {
@@ -220,6 +255,9 @@ public partial class TaskEditorViewModel : PageViewModel
     [RelayCommand]
     private void Cancel()
     {
-        _navigationService.NavigateTo<MainComponents.MainViewModel>();
+        if (_onComplete is not null)
+            _onComplete();
+        else
+            _navigationService.NavigateTo<MainComponents.MainViewModel>();
     }
 }

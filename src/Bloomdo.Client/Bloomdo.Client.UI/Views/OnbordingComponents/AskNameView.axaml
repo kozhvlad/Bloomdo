@@ -12,13 +12,41 @@
 
     <Grid RowDefinitions="*,Auto" Background="{DynamicResource Brush.Background}" Margin="0">
         <!-- Content -->
-        <StackPanel Grid.Row="0" Spacing="12" VerticalAlignment="Center">
-            <TextBlock Text="What`s your name?" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource Brush.Foreground}"/>
-            <TextBox Text="{Binding Name, Mode=TwoWay}" Watermark="Enter your name"/>
-            <TextBlock Text="Name can`t be empty" Foreground="{DynamicResource Brush.Error}" IsVisible="{Binding IsInvalid}"/>
+        <StackPanel Grid.Row="0" Spacing="20" VerticalAlignment="Center">
+            <TextBlock Text="Create your identity" FontSize="24" FontWeight="Bold"
+                       Foreground="{DynamicResource Brush.Foreground}"/>
+            <TextBlock Text="Your name and unique @tag will help friends find you."
+                       FontSize="14" Opacity="0.6" TextWrapping="Wrap"
+                       Foreground="{DynamicResource Brush.Foreground}"/>
+
+            <!-- Name -->
+            <StackPanel Spacing="6">
+                <TextBlock Text="Your name" FontSize="13" FontWeight="SemiBold"
+                           Foreground="{DynamicResource Brush.Foreground}" Opacity="0.7"/>
+                <TextBox Text="{Binding Name, Mode=TwoWay}" Watermark="Enter your name"/>
+                <TextBlock Text="{Binding NameError}" Foreground="{DynamicResource Brush.Error}"
+                           FontSize="12"
+                           IsVisible="{Binding NameError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+            </StackPanel>
+
+            <!-- Tag -->
+            <StackPanel Spacing="6">
+                <TextBlock Text="Choose your @tag" FontSize="13" FontWeight="SemiBold"
+                           Foreground="{DynamicResource Brush.Foreground}" Opacity="0.7"/>
+                <TextBox Text="{Binding Tag, Mode=TwoWay}" Watermark="e.g. john_doe"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="{Binding TagPreview}" FontSize="14" FontWeight="Bold"
+                               Foreground="{DynamicResource Brush.Foreground}" Opacity="0.5"
+                               IsVisible="{Binding Tag, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                </StackPanel>
+                <TextBlock Text="{Binding TagError}" Foreground="{DynamicResource Brush.Error}"
+                           FontSize="12"
+                           IsVisible="{Binding TagError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+            </StackPanel>
         </StackPanel>
 
         <!-- Next button -->
-        <Button Grid.Row="1" Classes="Primary" Height="48" Margin="0,24,0,0" Command="{Binding ContinueCommand}" IsEnabled="{Binding IsValid}">Next</Button>
+        <Button Grid.Row="1" Classes="Primary" Height="48" Margin="0,24,0,0"
+                Command="{Binding ContinueCommand}" IsEnabled="{Binding IsValid}">Next</Button>
     </Grid>
 </UserControl>

@@ -61,7 +61,7 @@ public class AccessTokenManager : IAccessTokenManager
         }
     }
 
-    public async Task<bool> RegisterAsync(string email, string password, string? firstName, string? lastName)
+    public async Task<bool> RegisterAsync(string email, string password, string username, string? firstName, string? lastName)
     {
         try
         {
@@ -69,6 +69,7 @@ public class AccessTokenManager : IAccessTokenManager
             {
                 Email = email,
                 Password = password,
+                Username = username,
                 FirstName = firstName,
                 LastName = lastName
             };

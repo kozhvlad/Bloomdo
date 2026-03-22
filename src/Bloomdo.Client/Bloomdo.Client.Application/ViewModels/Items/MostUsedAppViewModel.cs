@@ -17,19 +17,26 @@ public partial class MostUsedAppViewModel : ObservableObject
     [ObservableProperty]
     private int _totalSeconds;
 
-    public string Icon => Name.Length > 0 ? Name[..1] : "?";
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasIcon))]
+    private byte[]? _iconBytes;
 
-    public MostUsedAppViewModel(string name, string duration)
+    public string Icon => Name.Length > 0 ? Name[..1] : "?";
+    public bool HasIcon => IconBytes is { Length: > 0 };
+
+    public MostUsedAppViewModel(string name, string duration, byte[]? iconBytes = null)
     {
         _name = name;
         _duration = duration;
+        _iconBytes = iconBytes;
     }
 
-    public MostUsedAppViewModel(string name, string duration, int totalSeconds, double usagePercent)
+    public MostUsedAppViewModel(string name, string duration, int totalSeconds, double usagePercent, byte[]? iconBytes = null)
     {
         _name = name;
         _duration = duration;
         _totalSeconds = totalSeconds;
         _usagePercent = usagePercent;
+        _iconBytes = iconBytes;
     }
 }

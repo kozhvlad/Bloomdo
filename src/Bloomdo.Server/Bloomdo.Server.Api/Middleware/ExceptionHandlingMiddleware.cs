@@ -65,6 +65,7 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
             InvalidRefreshTokenException => HttpStatusCode.Unauthorized,
             AccountNotFoundException => HttpStatusCode.NotFound,
             EmailAlreadyExistsException => HttpStatusCode.Conflict,
+            UsernameAlreadyExistsException => HttpStatusCode.Conflict,
             ForbiddenAccessException => HttpStatusCode.Forbidden,
             _ => HttpStatusCode.BadRequest
         };

@@ -34,7 +34,8 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Bio")
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -83,13 +84,18 @@ namespace Bloomdo.Server.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Username")
-                        .HasColumnType("text");
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
                         .IsUnique()
                         .HasFilter("\"IsDeleted\" = false");
+
+                    b.HasIndex("Username")
+                        .IsUnique()
+                        .HasFilter("\"Username\" IS NOT NULL AND \"IsDeleted\" = false");
 
                     b.ToTable("Accounts");
                 });

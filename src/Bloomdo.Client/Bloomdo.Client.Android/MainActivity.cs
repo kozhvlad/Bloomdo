@@ -29,6 +29,7 @@ public class MainActivity : AvaloniaMainActivity<App>
         {
             services.AddSingleton<IAppUsageService>(sp => new AndroidAppUsageService(global::Android.App.Application.Context));
             services.AddSingleton<IInstalledAppsService>(sp => new AndroidInstalledAppsService(global::Android.App.Application.Context));
+            services.AddSingleton<IAppIconProvider>(sp => new AndroidAppIconProvider(global::Android.App.Application.Context));
             services.AddSingleton<IBlockEnforcementService>(sp => new AndroidBlockEnforcementService(global::Android.App.Application.Context));
         };
 

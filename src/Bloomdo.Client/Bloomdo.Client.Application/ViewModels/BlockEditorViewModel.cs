@@ -13,6 +13,7 @@ public partial class BlockEditorViewModel : ObservableObject
     private readonly IBlockApiService? _blockApiService;
     private readonly IInstalledAppsService? _installedAppsService;
     private readonly IDailyActivityApiService? _activityApiService;
+    private readonly IAppIconProvider? _appIconProvider;
     private List<SelectableAppItem> _allApps = [];
 
     [ObservableProperty]
@@ -109,11 +110,13 @@ public partial class BlockEditorViewModel : ObservableObject
     public BlockEditorViewModel(
         IBlockApiService? blockApiService,
         IInstalledAppsService? installedAppsService,
-        IDailyActivityApiService? activityApiService = null)
+        IDailyActivityApiService? activityApiService = null,
+        IAppIconProvider? appIconProvider = null)
     {
         _blockApiService = blockApiService;
         _installedAppsService = installedAppsService;
         _activityApiService = activityApiService;
+        _appIconProvider = appIconProvider;
     }
 
     public void Configure(BlockType type, string defaultTitle)
@@ -249,7 +252,7 @@ public partial class BlockEditorViewModel : ObservableObject
             var apps = await _installedAppsService.GetInstalledAppsAsync();
             _allApps = apps
                 .OrderBy(a => a.AppLabel)
-                .Select(a => new SelectableAppItem(a.PackageName, a.AppLabel))
+                .Select(a => new SelectableAppItem(a.PackageName, a.AppLabel, iconBytes: _appIconProvider?.GetIcon(a.PackageName)))
                 .ToList();
 
             ApplyFilter();

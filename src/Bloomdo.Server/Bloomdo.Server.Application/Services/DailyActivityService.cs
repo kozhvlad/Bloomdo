@@ -173,8 +173,9 @@ public class DailyActivityService(
                 var itemStreak = await CalculateItemStreakAsync(accountId, item.Id, date, ct);
                 var completion = completions.FirstOrDefault(c => c.ActivityItemId == item.Id);
                 var isCountType = item.TaskType == (int)ActivityItemType.Count;
+                var isCountBasedType = isCountType || item.TaskType == (int)ActivityItemType.Steps;
                 var currentCount = completion?.CountValue ?? 0;
-                var isCompleted = isCountType
+                var isCompleted = isCountBasedType
                     ? (item.TargetCount.HasValue && currentCount >= item.TargetCount.Value)
                     : completionSet.Contains(item.Id);
 

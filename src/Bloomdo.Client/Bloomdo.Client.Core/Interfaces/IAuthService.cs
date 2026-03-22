@@ -18,7 +18,7 @@ public interface IAccessTokenManager
     event Action? SessionInvalidated;
 
     Task<bool> LoginAsync(string email, string password);
-    Task<bool> RegisterAsync(string email, string password, string? firstName, string? lastName);
+    Task<bool> RegisterAsync(string email, string password, string username, string? firstName, string? lastName);
     Task<bool> RefreshTokenAsync();
     Task LogoutAsync();
     Task InitializeAsync();

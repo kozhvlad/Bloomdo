@@ -230,12 +230,14 @@ public static class DependencyContainer
             sp.GetRequiredService<IBlockApiService>(),
             sp.GetService<IInstalledAppsService>(),
             sp.GetService<IBlockRuleStore>(),
-            sp.GetRequiredService<IDailyActivityApiService>()));
+            sp.GetRequiredService<IDailyActivityApiService>(),
+            sp.GetService<IAppIconProvider>()));
         services.AddTransient<StatsViewModel>(sp =>
         {
             var appUsageService = sp.GetService<IAppUsageService>();
             var statsApiService = sp.GetRequiredService<IStatsApiService>();
-            return new StatsViewModel(appUsageService, statsApiService);
+            var appIconProvider = sp.GetService<IAppIconProvider>();
+            return new StatsViewModel(appUsageService, statsApiService, appIconProvider);
         });
         services.AddTransient<ProfileViewModel>(sp => new ProfileViewModel(
             sp.GetRequiredService<IAccessTokenManager>(),
@@ -257,7 +259,8 @@ public static class DependencyContainer
             sp.GetRequiredService<INavigationService>(),
             sp.GetRequiredService<IAccessTokenManager>(),
             sp.GetRequiredService<IThemeService>(),
-            sp.GetRequiredService<IToastService>()));
+            sp.GetRequiredService<IToastService>(),
+            sp.GetRequiredService<IPreferencesService>()));
 
         services.AddTransient<AccountEditorViewModel>(sp => new AccountEditorViewModel(
             sp.GetRequiredService<INavigationService>(),
@@ -265,12 +268,12 @@ public static class DependencyContainer
             sp.GetRequiredService<IProfileApiService>(),
             sp.GetRequiredService<IToastService>()));
 
-        services.AddTransient<GroupEditorViewModel>(sp => new GroupEditorViewModel(
+        services.AddSingleton<GroupEditorViewModel>(sp => new GroupEditorViewModel(
             sp.GetRequiredService<IDailyActivityApiService>(),
             sp.GetRequiredService<INavigationService>(),
             sp.GetRequiredService<IToastService>()));
 
-        services.AddTransient<TaskEditorViewModel>(sp => new TaskEditorViewModel(
+        services.AddSingleton<TaskEditorViewModel>(sp => new TaskEditorViewModel(
             sp.GetRequiredService<IDailyActivityApiService>(),
             sp.GetRequiredService<INavigationService>(),
             sp.GetRequiredService<IToastService>()));

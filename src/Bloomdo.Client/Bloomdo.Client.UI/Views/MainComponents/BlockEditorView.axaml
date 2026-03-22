@@ -11,6 +11,8 @@
              x:Class="Bloomdo.Client.UI.MainComponents.BlockEditorView">
     <UserControl.Resources>
         <converters:BlockTypeColorConverter x:Key="BlockTypeColorConverter" />
+        <converters:BytesToBitmapConverter x:Key="BytesToBitmapConverter" />
+        <converters:FirstLetterConverter x:Key="FirstLetterConverter" />
     </UserControl.Resources>
     <Grid RowDefinitions="Auto,*,Auto" Background="{DynamicResource Brush.Background}">
         <Grid ColumnDefinitions="Auto,*" Margin="16,16,16,0">
@@ -131,9 +133,19 @@
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="items:SelectableAppItem">
                                     <Border Margin="0,0,0,4" Padding="12,10" CornerRadius="8" Cursor="Hand">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <TextBlock Text="{Binding AppLabel}" VerticalAlignment="Center" FontSize="14" Foreground="#B0BEC5"/>
-                                            <CheckBox Grid.Column="1" IsChecked="{Binding IsSelected}" VerticalAlignment="Center"/>
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Panel Grid.Column="0" Width="30" Height="30" Margin="0,0,10,0" VerticalAlignment="Center">
+                                                <Border CornerRadius="15" ClipToBounds="True" IsVisible="{Binding HasIcon}">
+                                                    <Image Source="{Binding IconBytes, Converter={StaticResource BytesToBitmapConverter}}" Width="30" Height="30" Stretch="UniformToFill" />
+                                                </Border>
+                                                <Border CornerRadius="15" Width="30" Height="30" Background="#2A2A2A" IsVisible="{Binding !HasIcon}">
+                                                    <TextBlock Text="{Binding AppLabel, Converter={StaticResource FirstLetterConverter}}"
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                               FontSize="14" FontWeight="SemiBold" Foreground="#B0BEC5" />
+                                                </Border>
+                                            </Panel>
+                                            <TextBlock Grid.Column="1" Text="{Binding AppLabel}" VerticalAlignment="Center" FontSize="14" Foreground="#B0BEC5"/>
+                                            <CheckBox Grid.Column="2" IsChecked="{Binding IsSelected}" VerticalAlignment="Center"/>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>

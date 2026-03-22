@@ -27,6 +27,7 @@
 		<converters:PercentToWidthConverter x:Key="PercentToWidthConverter" />
 		<converters:PercentToRemainingWidthConverter x:Key="PercentToRemainingWidthConverter" />
 		<converters:AppColorConverter x:Key="AppColorConverter" />
+		<converters:BytesToBitmapConverter x:Key="BytesToBitmapConverter" />
 	</UserControl.Resources>
 
 	<Grid Background="{DynamicResource Brush.Background}">
@@ -78,7 +79,12 @@
 									</ItemsControl.ItemsPanel>
 									<ItemsControl.ItemTemplate>
 										<DataTemplate>
-											<shadui:Avatar Width="30" Height="30" Fallback="{Binding Icon}" />
+											<Panel Width="30" Height="30">
+												<Border CornerRadius="15" ClipToBounds="True" IsVisible="{Binding HasIcon}">
+													<Image Source="{Binding IconBytes, Converter={StaticResource BytesToBitmapConverter}}" Width="30" Height="30" Stretch="UniformToFill" />
+												</Border>
+												<shadui:Avatar Width="30" Height="30" Fallback="{Binding Icon}" IsVisible="{Binding !HasIcon}" />
+											</Panel>
 										</DataTemplate>
 									</ItemsControl.ItemTemplate>
 								</ItemsControl>
@@ -291,7 +297,12 @@
 							<ItemsControl.ItemTemplate>
 								<DataTemplate x:DataType="items:MostUsedAppViewModel">
 									<Grid ColumnDefinitions="Auto,*,Auto" Margin="0,5">
-										<shadui:Avatar Grid.Column="0" Width="30" Height="30" Fallback="{Binding Icon}" Margin="0,0,10,0" />
+										<Panel Grid.Column="0" Width="30" Height="30" Margin="0,0,10,0">
+											<Border CornerRadius="15" ClipToBounds="True" IsVisible="{Binding HasIcon}">
+												<Image Source="{Binding IconBytes, Converter={StaticResource BytesToBitmapConverter}}" Width="30" Height="30" Stretch="UniformToFill" />
+											</Border>
+											<shadui:Avatar Width="30" Height="30" Fallback="{Binding Icon}" IsVisible="{Binding !HasIcon}" />
+										</Panel>
 										<StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
 											<TextBlock Text="{Binding Name}" FontSize="13" FontWeight="Medium" />
 											<!-- Usage bar -->
@@ -368,7 +379,12 @@
 							<ItemsControl.ItemTemplate>
 								<DataTemplate>
 									<Grid ColumnDefinitions="Auto,*,Auto" Margin="0,5">
-										<shadui:Avatar Grid.Column="0" Width="30" Height="30" Fallback="{Binding Icon}" Margin="0,0,10,0" />
+										<Panel Grid.Column="0" Width="30" Height="30" Margin="0,0,10,0">
+											<Border CornerRadius="15" ClipToBounds="True" IsVisible="{Binding HasIcon}">
+												<Image Source="{Binding IconBytes, Converter={StaticResource BytesToBitmapConverter}}" Width="30" Height="30" Stretch="UniformToFill" />
+											</Border>
+											<shadui:Avatar Width="30" Height="30" Fallback="{Binding Icon}" IsVisible="{Binding !HasIcon}" />
+										</Panel>
 										<TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" FontSize="13" />
 										<TextBlock Grid.Column="2" Text="{Binding Duration}" VerticalAlignment="Center" Opacity="0.6" FontSize="13" />
 									</Grid>
@@ -401,7 +417,12 @@
 							<ItemsControl.ItemTemplate>
 								<DataTemplate>
 									<Grid ColumnDefinitions="Auto,*,Auto" Margin="0,6">
-										<shadui:Avatar Grid.Column="0" Width="30" Height="30" Fallback="{Binding Icon}" Margin="0,0,10,0" />
+										<Panel Grid.Column="0" Width="30" Height="30" Margin="0,0,10,0">
+											<Border CornerRadius="15" ClipToBounds="True" IsVisible="{Binding HasIcon}">
+												<Image Source="{Binding IconBytes, Converter={StaticResource BytesToBitmapConverter}}" Width="30" Height="30" Stretch="UniformToFill" />
+											</Border>
+											<shadui:Avatar Width="30" Height="30" Fallback="{Binding Icon}" IsVisible="{Binding !HasIcon}" />
+										</Panel>
 										<TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" FontWeight="Medium" FontSize="13" />
 										<TextBlock Grid.Column="2" Text="{Binding Duration}" VerticalAlignment="Center" Opacity="0.6" FontSize="13" />
 									</Grid>

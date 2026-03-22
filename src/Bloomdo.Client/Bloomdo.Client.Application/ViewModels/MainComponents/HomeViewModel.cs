@@ -300,6 +300,27 @@ public partial class HomeViewModel : PageViewModel
     }
 
     [RelayCommand]
+    private void SelectNewItemTaskType(string? type)
+    {
+        if (type is null) return;
+        var taskType = type switch
+        {
+            "Count" => ActivityItemType.Count,
+            "Steps" => ActivityItemType.Steps,
+            "Checkbox" => ActivityItemType.Checkbox,
+            _ => ActivityItemType.Timer
+        };
+        foreach (var group in Groups)
+        {
+            if (group.IsAddingItem)
+            {
+                group.NewItemTaskType = taskType;
+                break;
+            }
+        }
+    }
+
+    [RelayCommand]
     private void IncrementNewItemDuration(ActivityGroupItemViewModel? group)
     {
         if (group is null) return;
@@ -314,6 +335,34 @@ public partial class HomeViewModel : PageViewModel
     }
 
     [RelayCommand]
+    private void IncrementNewItemTargetCount(ActivityGroupItemViewModel? group)
+    {
+        if (group is null) return;
+        group.NewItemTargetCount = Math.Min(group.NewItemTargetCount + 1, 999);
+    }
+
+    [RelayCommand]
+    private void DecrementNewItemTargetCount(ActivityGroupItemViewModel? group)
+    {
+        if (group is null) return;
+        group.NewItemTargetCount = Math.Max(group.NewItemTargetCount - 1, 1);
+    }
+
+    [RelayCommand]
+    private void IncrementNewItemTargetSteps(ActivityGroupItemViewModel? group)
+    {
+        if (group is null) return;
+        group.NewItemTargetCount = Math.Min(group.NewItemTargetCount + 1000, 100000);
+    }
+
+    [RelayCommand]
+    private void DecrementNewItemTargetSteps(ActivityGroupItemViewModel? group)
+    {
+        if (group is null) return;
+        group.NewItemTargetCount = Math.Max(group.NewItemTargetCount - 1000, 1000);
+    }
+
+    [RelayCommand]
     private async Task ConfirmAddItem(ActivityGroupItemViewModel? group)
     {
         if (group is null || string.IsNullOrWhiteSpace(group.NewItemTitle) || _activityApi is null) return;
@@ -323,7 +372,9 @@ public partial class HomeViewModel : PageViewModel
             ActivityGroupId = group.Id,
             Title = group.NewItemTitle.Trim(),
             Description = string.IsNullOrWhiteSpace(group.NewItemDescription) ? null : group.NewItemDescription.Trim(),
-            DurationMinutes = group.NewItemDurationMinutes,
+            TaskType = group.NewItemTaskType,
+            DurationMinutes = group.IsNewItemTimerType ? group.NewItemDurationMinutes : null,
+            TargetCount = (group.IsNewItemCountType || group.IsNewItemStepsType) ? group.NewItemTargetCount : null,
             Icon = group.NewItemIcon,
             Color = group.NewItemColor
         };
@@ -453,6 +504,74 @@ public partial class HomeViewModel : PageViewModel
         try
         {
             var newCount = task.CurrentCount - 1;
+            var request = new ToggleCompletionRequest
+            {
+                ActivityItemId = task.Id,
+                Date = DateOnly.FromDateTime(DateTime.UtcNow),
+                CountValue = newCount
+            };
+
+            var result = await _activityApi.ToggleCompletionAsync(request);
+            if (result)
+            {
+                task.CurrentCount = newCount;
+                task.IsCompleted = task.TargetCount.HasValue && newCount >= task.TargetCount.Value;
+                task.CompletedAtUtc = task.IsCompleted ? DateTime.UtcNow : null;
+                task.RefreshCountProperties();
+                RecalculateProgress();
+                await SyncGroupCompletionAsync();
+            }
+        }
+        finally
+        {
+            task.IsToggling = false;
+        }
+    }
+
+    // --- Steps increment/decrement ---
+
+    [RelayCommand]
+    private async Task IncrementSteps(ActivityTaskItemViewModel? task)
+    {
+        if (task is null || !task.IsStepsType || _activityApi is null || task.IsToggling) return;
+
+        task.IsToggling = true;
+        try
+        {
+            var newCount = task.CurrentCount + 1000;
+            var request = new ToggleCompletionRequest
+            {
+                ActivityItemId = task.Id,
+                Date = DateOnly.FromDateTime(DateTime.UtcNow),
+                CountValue = newCount
+            };
+
+            var result = await _activityApi.ToggleCompletionAsync(request);
+            if (result)
+            {
+                task.CurrentCount = newCount;
+                task.IsCompleted = task.TargetCount.HasValue && newCount >= task.TargetCount.Value;
+                task.CompletedAtUtc = task.IsCompleted ? DateTime.UtcNow : null;
+                task.RefreshCountProperties();
+                RecalculateProgress();
+                await SyncGroupCompletionAsync();
+            }
+        }
+        finally
+        {
+            task.IsToggling = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task DecrementSteps(ActivityTaskItemViewModel? task)
+    {
+        if (task is null || !task.IsStepsType || task.CurrentCount <= 0 || _activityApi is null || task.IsToggling) return;
+
+        task.IsToggling = true;
+        try
+        {
+            var newCount = Math.Max(task.CurrentCount - 1000, 0);
             var request = new ToggleCompletionRequest
             {
                 ActivityItemId = task.Id,

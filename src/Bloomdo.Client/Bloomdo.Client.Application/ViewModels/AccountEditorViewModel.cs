@@ -70,6 +70,15 @@ public partial class AccountEditorViewModel : PageViewModel
         if (IsSaving) return;
 
         ErrorMessage = string.Empty;
+
+        var trimmedTag = Username.Trim().TrimStart('@').ToLowerInvariant();
+
+        if (string.IsNullOrWhiteSpace(trimmedTag) || trimmedTag.Length < 3)
+        {
+            ErrorMessage = "@tag is required (at least 3 characters).";
+            return;
+        }
+
         IsSaving = true;
 
         try
@@ -78,7 +87,7 @@ public partial class AccountEditorViewModel : PageViewModel
             {
                 FirstName = FirstName.Trim(),
                 LastName = LastName.Trim(),
-                Username = string.IsNullOrWhiteSpace(Username) ? null : Username.Trim(),
+                Username = trimmedTag,
                 Bio = string.IsNullOrWhiteSpace(Bio) ? null : Bio.Trim(),
                 Avatar = _tokenManager.CurrentUser?.Avatar
             };
