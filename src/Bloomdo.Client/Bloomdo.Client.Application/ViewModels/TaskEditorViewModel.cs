@@ -11,6 +11,7 @@ public partial class TaskEditorViewModel : PageViewModel
     private readonly IDailyActivityApiService? _activityApi;
     private readonly INavigationService _navigationService;
     private readonly IToastService? _toastService;
+    private readonly ISubscriptionApiService? _subscriptionApiService;
 
     private Guid? _editingTaskId;
     private Guid _parentGroupId;
@@ -21,6 +22,12 @@ public partial class TaskEditorViewModel : PageViewModel
 
     [ObservableProperty]
     private string _pageTitle = "New Task";
+
+    [ObservableProperty]
+    private bool _canCustomizeEmoji = true;
+
+    [ObservableProperty]
+    private bool _canCustomizeColors = true;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(PreviewTitle))]
@@ -93,11 +100,33 @@ public partial class TaskEditorViewModel : PageViewModel
     public TaskEditorViewModel(
         IDailyActivityApiService? activityApi,
         INavigationService navigationService,
-        IToastService? toastService = null)
+        IToastService? toastService = null,
+        ISubscriptionApiService? subscriptionApiService = null)
     {
         _activityApi = activityApi;
         _navigationService = navigationService;
         _toastService = toastService;
+        _subscriptionApiService = subscriptionApiService;
+        _ = LoadCustomizationPermissionsAsync();
+    }
+
+    private async Task LoadCustomizationPermissionsAsync()
+    {
+        if (_subscriptionApiService is null) return;
+
+        try
+        {
+            var status = await _subscriptionApiService.GetStatusAsync();
+            if (status?.Limits is not null)
+            {
+                CanCustomizeEmoji = status.Limits.CanCustomizeEmoji;
+                CanCustomizeColors = status.Limits.CanCustomizeColors;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"LoadCustomizationPermissions error: {ex}");
+        }
     }
 
     public void ConfigureForCreate(Guid groupId, string groupColor = "#7E57C2")

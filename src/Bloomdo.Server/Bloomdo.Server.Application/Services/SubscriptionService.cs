@@ -1,5 +1,6 @@
 using Bloomdo.Server.Application.Interfaces;
 using Bloomdo.Server.Application.Settings;
+using Bloomdo.Server.Domain.Entities;
 using Bloomdo.Shared.Constants;
 using Bloomdo.Shared.DTOs.Subscription;
 using Bloomdo.Shared.Enums;
@@ -12,37 +13,107 @@ namespace Bloomdo.Server.Application.Services;
 public class SubscriptionService(
     ISubscriptionRepository subscriptionRepository,
     IAccountRepository accountRepository,
-    IStripeSettings stripeSettings) : ISubscriptionService
+    IStripeSettings stripeSettings,
+    IFreeLimitsSettings freeLimitsSettings,
+    IChatRepository chatRepository,
+    IRepository<BlockRule> blockRuleRepository,
+    IRepository<StreakFreeze> streakFreezeRepository) : ISubscriptionService
 {
     public async Task<SubscriptionStatusResponse> GetStatusAsync(Guid accountId, CancellationToken ct = default)
     {
         var subscription = await subscriptionRepository.GetByAccountIdAsync(accountId, ct);
+        var isPremium = false;
 
-        if (subscription is null)
+        if (subscription is not null)
         {
-            return new SubscriptionStatusResponse
+            // Check if expired
+            if (subscription.Status == SubscriptionStatus.Active &&
+                subscription.CurrentPeriodEnd < DateTime.UtcNow)
             {
-                Status = SubscriptionStatus.None,
-                IsPremium = false
-            };
+                subscription.Status = SubscriptionStatus.Expired;
+                await subscriptionRepository.UpdateAsync(subscription, ct);
+            }
+
+            isPremium = subscription.Status == SubscriptionStatus.Active;
         }
 
-        // Check if expired
+        var limits = await BuildLimitsAsync(accountId, isPremium, ct);
+
+        return new SubscriptionStatusResponse
+        {
+            Status = subscription?.Status ?? SubscriptionStatus.None,
+            Plan = subscription?.Plan,
+            CurrentPeriodEnd = subscription?.CurrentPeriodEnd,
+            IsPremium = isPremium,
+            WillCancel = subscription?.CancelAtPeriodEnd ?? false,
+            Limits = limits
+        };
+    }
+
+    public async Task<bool> IsPremiumAsync(Guid accountId, CancellationToken ct = default)
+    {
+        var subscription = await subscriptionRepository.GetByAccountIdAsync(accountId, ct);
+        if (subscription is null) return false;
+
         if (subscription.Status == SubscriptionStatus.Active &&
             subscription.CurrentPeriodEnd < DateTime.UtcNow)
         {
             subscription.Status = SubscriptionStatus.Expired;
             await subscriptionRepository.UpdateAsync(subscription, ct);
+            return false;
         }
 
-        return new SubscriptionStatusResponse
+        return subscription.Status == SubscriptionStatus.Active;
+    }
+
+    private async Task<SubscriptionLimitsDto> BuildLimitsAsync(Guid accountId, bool isPremium, CancellationToken ct)
+    {
+        if (isPremium)
         {
-            Status = subscription.Status,
-            Plan = subscription.Plan,
-            CurrentPeriodEnd = subscription.CurrentPeriodEnd,
-            IsPremium = subscription.Status == SubscriptionStatus.Active,
-            WillCancel = subscription.CancelAtPeriodEnd
+            var freezesUsed = await CountMonthlyFreezesUsedAsync(accountId, ct);
+            return new SubscriptionLimitsDto
+            {
+                MaxDailyChatMessages = int.MaxValue,
+                RemainingChatMessagesToday = int.MaxValue,
+                MaxBlockRules = int.MaxValue,
+                CurrentBlockRuleCount = 0,
+                CanCustomizeEmoji = true,
+                CanCustomizeColors = true,
+                CanViewWeeklyStats = true,
+                MonthlyStreakFreezes = freeLimitsSettings.MonthlyStreakFreezes,
+                RemainingStreakFreezes = Math.Max(0, freeLimitsSettings.MonthlyStreakFreezes - freezesUsed)
+            };
+        }
+
+        var todayMessages = await chatRepository.CountTodayUserMessagesAsync(accountId, ct);
+        var blockRules = await blockRuleRepository.FindAsync(r => r.AccountId == accountId, ct);
+        var blockCount = blockRules.Count();
+
+        return new SubscriptionLimitsDto
+        {
+            MaxDailyChatMessages = freeLimitsSettings.MaxDailyChatMessages,
+            RemainingChatMessagesToday = Math.Max(0, freeLimitsSettings.MaxDailyChatMessages - todayMessages),
+            MaxBlockRules = freeLimitsSettings.MaxBlockRules,
+            CurrentBlockRuleCount = blockCount,
+            CanCustomizeEmoji = freeLimitsSettings.CanCustomizeEmoji,
+            CanCustomizeColors = freeLimitsSettings.CanCustomizeColors,
+            CanViewWeeklyStats = freeLimitsSettings.CanViewWeeklyStats,
+            MonthlyStreakFreezes = 0,
+            RemainingStreakFreezes = 0
         };
+    }
+
+    private async Task<int> CountMonthlyFreezesUsedAsync(Guid accountId, CancellationToken ct)
+    {
+        var monthStart = new DateOnly(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
+        var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+
+        var freezes = await streakFreezeRepository.FindAsync(
+            f => f.AccountId == accountId
+                 && f.Date >= monthStart
+                 && f.Date <= monthEnd, ct);
+
+        return freezes.Count();
     }
 
     public async Task<CreateCheckoutSessionResponse> CreateCheckoutSessionAsync(

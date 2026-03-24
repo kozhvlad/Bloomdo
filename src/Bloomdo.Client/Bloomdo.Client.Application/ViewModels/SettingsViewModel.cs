@@ -47,7 +47,7 @@ public partial class SettingsViewModel : PageViewModel
     [RelayCommand]
     private void Done()
     {
-        _navigationService.NavigateTo<MainViewModel>(vm => vm.SelectedTabIndex = 3);
+        _navigationService.NavigateTo<MainViewModel>(vm => vm.SelectedTabIndex = 5);
     }
 
     [RelayCommand]

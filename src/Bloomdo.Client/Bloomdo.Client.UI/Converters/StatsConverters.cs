@@ -42,16 +42,20 @@ public class StreakEndCornerRadiusConverter : IValueConverter
         => throw new NotSupportedException();
 }
 
-public class StreakBrushConverter : IValueConverter
+public class StreakBrushConverter : IMultiValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    public object Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
     {
-        return value is true
-            ? new SolidColorBrush(Color.Parse("#50FF9800"))
-            : Brushes.Transparent;
+        var isStreakDay = values.Count > 0 && values[0] is true;
+        var isFreezeDay = values.Count > 1 && values[1] is true;
+
+        if (!isStreakDay) return Brushes.Transparent;
+        return isFreezeDay
+            ? new SolidColorBrush(Color.Parse("#5042A5F5")) // blue for freeze
+            : new SolidColorBrush(Color.Parse("#50FF9800")); // orange for goal met
     }
 
-    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    public object[] ConvertBack(object value, Type[] targetTypes, object? parameter, CultureInfo culture)
         => throw new NotSupportedException();
 }
 
@@ -75,16 +79,20 @@ public class StreakCornerRadiusConverter : IMultiValueConverter
         => throw new NotSupportedException();
 }
 
-public class StreakDotBrushConverter : IValueConverter
+public class StreakDotBrushConverter : IMultiValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    public object Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
     {
-        return value is true
-            ? new SolidColorBrush(Color.Parse("#FF9800"))
-            : Brushes.Transparent;
+        var isToday = values.Count > 0 && values[0] is true;
+        var isFreezeDay = values.Count > 1 && values[1] is true;
+
+        if (!isToday) return Brushes.Transparent;
+        return isFreezeDay
+            ? new SolidColorBrush(Color.Parse("#42A5F5"))
+            : new SolidColorBrush(Color.Parse("#FF9800"));
     }
 
-    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    public object[] ConvertBack(object value, Type[] targetTypes, object? parameter, CultureInfo culture)
         => throw new NotSupportedException();
 }
 

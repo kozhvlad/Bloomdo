@@ -12,6 +12,8 @@ public partial class GroupEditorViewModel : PageViewModel
     private readonly IDailyActivityApiService? _activityApi;
     private readonly INavigationService _navigationService;
     private readonly IToastService? _toastService;
+    private readonly ISubscriptionApiService? _subscriptionApiService;
+    private readonly IConfirmDialogService? _confirmDialogService;
 
     private Guid? _editingGroupId;
 
@@ -20,6 +22,12 @@ public partial class GroupEditorViewModel : PageViewModel
 
     [ObservableProperty]
     private string _pageTitle = "New Group";
+
+    [ObservableProperty]
+    private bool _canCustomizeEmoji = true;
+
+    [ObservableProperty]
+    private bool _canCustomizeColors = true;
 
     // --- Group fields ---
 
@@ -123,11 +131,35 @@ public partial class GroupEditorViewModel : PageViewModel
     public GroupEditorViewModel(
         IDailyActivityApiService? activityApi,
         INavigationService navigationService,
-        IToastService? toastService = null)
+        IToastService? toastService = null,
+        ISubscriptionApiService? subscriptionApiService = null,
+        IConfirmDialogService? confirmDialogService = null)
     {
         _activityApi = activityApi;
         _navigationService = navigationService;
         _toastService = toastService;
+        _subscriptionApiService = subscriptionApiService;
+        _confirmDialogService = confirmDialogService;
+        _ = LoadCustomizationPermissionsAsync();
+    }
+
+    private async Task LoadCustomizationPermissionsAsync()
+    {
+        if (_subscriptionApiService is null) return;
+
+        try
+        {
+            var status = await _subscriptionApiService.GetStatusAsync();
+            if (status?.Limits is not null)
+            {
+                CanCustomizeEmoji = status.Limits.CanCustomizeEmoji;
+                CanCustomizeColors = status.Limits.CanCustomizeColors;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"LoadCustomizationPermissions error: {ex}");
+        }
     }
 
     public void ConfigureForCreate()
@@ -346,6 +378,14 @@ public partial class GroupEditorViewModel : PageViewModel
     private async Task RemoveTask(ActivityTaskItemViewModel? task)
     {
         if (task is null) return;
+
+        if (_confirmDialogService is not null)
+        {
+            var confirmed = await _confirmDialogService.ConfirmAsync(
+                "Delete Task",
+                $"Delete \"{task.Title}\"? This action cannot be undone.");
+            if (!confirmed) return;
+        }
 
         if (_editingGroupId.HasValue && _activityApi is not null)
         {

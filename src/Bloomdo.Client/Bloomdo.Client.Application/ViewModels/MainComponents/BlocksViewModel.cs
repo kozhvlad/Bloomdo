@@ -15,6 +15,7 @@ public partial class BlocksViewModel : PageViewModel
     private readonly IBlockRuleStore? _blockRuleStore;
     private readonly IDailyActivityApiService? _activityApiService;
     private readonly IAppIconProvider? _appIconProvider;
+    private readonly ISubscriptionApiService? _subscriptionApiService;
     private List<BlockRuleResponse> _cachedRules = [];
 
     [ObservableProperty]
@@ -25,6 +26,12 @@ public partial class BlocksViewModel : PageViewModel
 
     [ObservableProperty]
     private bool _hasNoBlockers;
+
+    [ObservableProperty]
+    private bool _isLimitReached;
+
+    [ObservableProperty]
+    private int _maxBlockRules;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsEditing))]
@@ -39,19 +46,41 @@ public partial class BlocksViewModel : PageViewModel
         IInstalledAppsService? installedAppsService = null,
         IBlockRuleStore? blockRuleStore = null,
         IDailyActivityApiService? activityApiService = null,
-        IAppIconProvider? appIconProvider = null)
+        IAppIconProvider? appIconProvider = null,
+        ISubscriptionApiService? subscriptionApiService = null)
     {
         _blockApiService = blockApiService;
         _installedAppsService = installedAppsService;
         _blockRuleStore = blockRuleStore;
         _activityApiService = activityApiService;
         _appIconProvider = appIconProvider;
+        _subscriptionApiService = subscriptionApiService;
     }
 
     public override void OnAppearing()
     {
         base.OnAppearing();
         _ = LoadBlockRulesAsync();
+        _ = LoadSubscriptionLimitsAsync();
+    }
+
+    private async Task LoadSubscriptionLimitsAsync()
+    {
+        if (_subscriptionApiService is null) return;
+
+        try
+        {
+            var status = await _subscriptionApiService.GetStatusAsync();
+            if (status?.Limits is not null)
+            {
+                MaxBlockRules = status.Limits.MaxBlockRules;
+                IsLimitReached = !status.IsPremium && Blockers.Count >= status.Limits.MaxBlockRules;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"LoadSubscriptionLimits error: {ex}");
+        }
     }
 
     [RelayCommand]
@@ -103,6 +132,7 @@ public partial class BlocksViewModel : PageViewModel
                 Blockers.Remove(item);
                 _cachedRules.RemoveAll(r => r.Id == item.Id);
                 HasNoBlockers = Blockers.Count == 0;
+                IsLimitReached = MaxBlockRules > 0 && Blockers.Count >= MaxBlockRules;
                 await SyncRulesToLocalStoreAsync();
             }
         }
@@ -169,6 +199,7 @@ public partial class BlocksViewModel : PageViewModel
         Blockers.Add(MapToBlockerItem(response));
         _cachedRules.Add(response);
         HasNoBlockers = false;
+        IsLimitReached = MaxBlockRules > 0 && Blockers.Count >= MaxBlockRules;
         CloseEditor();
         await SyncRulesToLocalStoreAsync();
     }

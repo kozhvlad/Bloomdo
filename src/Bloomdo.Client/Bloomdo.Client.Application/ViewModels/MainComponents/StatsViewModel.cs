@@ -6,6 +6,7 @@ using Bloomdo.Client.Domain.Models;
 using Bloomdo.Shared.DTOs.Stats;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Bloomdo.Shared.DTOs.Subscription;
 
 namespace Bloomdo.Client.Application.ViewModels.MainComponents;
 
@@ -14,6 +15,7 @@ public partial class StatsViewModel : PageViewModel
 	private readonly IAppUsageService? _appUsageService;
 	private readonly IStatsApiService? _statsApiService;
 	private readonly IAppIconProvider? _appIconProvider;
+	private readonly ISubscriptionApiService? _subscriptionApiService;
 	private CancellationTokenSource? _cancellationTokenSource;
 
 	// Calendar data from server, keyed by DateOnly
@@ -91,6 +93,9 @@ public partial class StatsViewModel : PageViewModel
 	[NotifyPropertyChangedFor(nameof(WeekRangeTitle))]
 	private DateOnly _currentWeekStart;
 
+	[ObservableProperty]
+	private bool _isPremium = true;
+
 	public ObservableCollection<MostUsedAppViewModel> MostUsedApps { get; } = [];
 	public ObservableCollection<MostUsedAppViewModel> AllAppsUsage { get; } = [];
 	public ObservableCollection<MostUsedAppViewModel> SelectedDayApps { get; } = [];
@@ -99,11 +104,12 @@ public partial class StatsViewModel : PageViewModel
 	public string CurrentMonthTitle => CurrentMonth.ToString("MMMM yyyy", CultureInfo.CurrentCulture);
 	public string WeekRangeTitle => $"{CurrentWeekStart:MMM d} - {CurrentWeekStart.AddDays(6):MMM d}";
 
-	public StatsViewModel(IAppUsageService? appUsageService = null, IStatsApiService? statsApiService = null, IAppIconProvider? appIconProvider = null)
+	public StatsViewModel(IAppUsageService? appUsageService = null, IStatsApiService? statsApiService = null, IAppIconProvider? appIconProvider = null, ISubscriptionApiService? subscriptionApiService = null)
 	{
 		_appUsageService = appUsageService;
 		_statsApiService = statsApiService;
 		_appIconProvider = appIconProvider;
+		_subscriptionApiService = subscriptionApiService;
 		CurrentWeekStart = GetWeekStart(DateOnly.FromDateTime(DateTime.Today));
 		InitializeWeeklyChart();
 		LoadMonthCalendar();
@@ -113,6 +119,7 @@ public partial class StatsViewModel : PageViewModel
 	{
 		base.OnAppearing();
 		StartRefreshTimer();
+		_ = LoadSubscriptionStatusAsync();
 		_ = LoadCalendarFromServerAsync();
 		_ = LoadWeeklyStatsAsync();
 	}
@@ -233,6 +240,22 @@ public partial class StatsViewModel : PageViewModel
 			}
 		}
 		return null;
+	}
+
+	private async Task LoadSubscriptionStatusAsync()
+	{
+		if (_subscriptionApiService is null) return;
+
+		try
+		{
+			var status = await _subscriptionApiService.GetStatusAsync();
+			if (status is not null)
+				IsPremium = status.IsPremium;
+		}
+		catch (Exception ex)
+		{
+			System.Diagnostics.Debug.WriteLine($"LoadSubscriptionStatus error: {ex}");
+		}
 	}
 
 	#region Local Stats Refresh
@@ -388,10 +411,17 @@ public partial class StatsViewModel : PageViewModel
 		{
 			var dateOnly = DateOnly.FromDateTime(day.Date);
 			var isGoalMet = goalMetDates.Contains(dateOnly);
-			day.IsStreakDay = isGoalMet;
 
 			if (_calendarData.TryGetValue(dateOnly, out var data))
+			{
 				day.TotalScreenTimeSeconds = data.TotalScreenTimeSeconds;
+				day.IsFreezeDay = data.IsFreezeDay;
+				day.IsStreakDay = isGoalMet || data.IsFreezeDay;
+			}
+			else
+			{
+				day.IsStreakDay = isGoalMet;
+			}
 		}
 
 		// Calculate streak segments per week row for visual continuity

@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using Bloomdo.Client.Core.Interfaces;
 using Bloomdo.Shared.Constants;
@@ -29,6 +30,9 @@ public class BlockApiService(HttpClient httpClient) : IBlockApiService
         var response = await httpClient.PostAsJsonAsync(ApiRoutes.Blocks.Create, request, ct);
         if (response.IsSuccessStatusCode)
             return await response.Content.ReadFromJsonAsync<BlockRuleResponse>(ct);
+
+        if (response.StatusCode == HttpStatusCode.Forbidden)
+            throw new HttpRequestException("Block limit reached. Upgrade to Bloomdo Plus for unlimited blocks.");
 
         var body = await response.Content.ReadAsStringAsync(ct);
         throw new HttpRequestException($"HTTP {(int)response.StatusCode}: {body}");

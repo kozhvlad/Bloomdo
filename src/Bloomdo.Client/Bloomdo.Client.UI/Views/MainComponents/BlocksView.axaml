@@ -21,16 +21,23 @@
 			<ScrollViewer>
 				<StackPanel Margin="24" Spacing="24">
 					<StackPanel Spacing="4">
-						<TextBlock Text="Blocks" 
-								   FontSize="28" 
-								   FontWeight="Bold" 
-								   TextWrapping="Wrap"
-								   Foreground="#EFEFEF"/>
-						<TextBlock Text="Block apps with Limits or Schedules"
-								   FontSize="14"
-								   Foreground="#EFEFEF"
-								   Opacity="0.7" />
-					</StackPanel>
+							<TextBlock Text="Blocks" 
+									   FontSize="28" 
+									   FontWeight="Bold" 
+									   TextWrapping="Wrap"
+									   Foreground="#EFEFEF"/>
+							<TextBlock Text="Block apps with Limits or Schedules"
+									   FontSize="14"
+									   Foreground="#EFEFEF"
+									   Opacity="0.7" />
+						</StackPanel>
+
+						<!-- Block limit banner -->
+						<Border IsVisible="{Binding IsLimitReached}" CornerRadius="12"
+								Background="#1AFF9800" Padding="14,10">
+							<TextBlock Text="You've reached the free block limit. Upgrade to Bloomdo Plus for unlimited blocks."
+									   FontSize="12" TextWrapping="Wrap" Opacity="0.8" Foreground="#EFEFEF" />
+						</Border>
 
 					<!-- Empty state -->
 					<StackPanel IsVisible="{Binding HasNoBlockers}" 

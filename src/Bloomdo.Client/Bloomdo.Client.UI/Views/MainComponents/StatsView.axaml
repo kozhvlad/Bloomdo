@@ -151,8 +151,13 @@
 												<Panel>
 													<!-- Streak band background: fills cell edge-to-edge for continuous look -->
 													<Border Height="32" VerticalAlignment="Center"
-															HorizontalAlignment="Stretch"
-															Background="{Binding IsStreakDay, Converter={StaticResource StreakBrushConverter}}">
+															HorizontalAlignment="Stretch">
+														<Border.Background>
+															<MultiBinding Converter="{StaticResource StreakBrushConverter}">
+																<Binding Path="IsStreakDay" />
+																<Binding Path="IsFreezeDay" />
+															</MultiBinding>
+														</Border.Background>
 														<Border.CornerRadius>
 															<MultiBinding Converter="{StaticResource StreakCornerRadiusConverter}">
 																<Binding Path="IsStreakDay" />
@@ -193,8 +198,14 @@
 															</Border>
 															<!-- Today dot -->
 															<Ellipse Width="4" Height="4"
-																	 HorizontalAlignment="Center"
-																	 Fill="{Binding IsToday, Converter={StaticResource StreakDotBrushConverter}}" />
+																	 HorizontalAlignment="Center">
+																<Ellipse.Fill>
+																	<MultiBinding Converter="{StaticResource StreakDotBrushConverter}">
+																		<Binding Path="IsToday" />
+																		<Binding Path="IsFreezeDay" />
+																	</MultiBinding>
+																</Ellipse.Fill>
+															</Ellipse>
 														</StackPanel>
 													</Button>
 												</Panel>
@@ -207,140 +218,161 @@
 					</StackPanel>
 				</shadui:Card>
 
-				<!-- Weekly Chart -->
-				<shadui:Card HasShadow="True" Padding="14">
-					<StackPanel Spacing="10">
-						<!-- Week navigation -->
-						<Grid ColumnDefinitions="Auto,*,Auto">
-							<Button Grid.Column="0" Command="{Binding GoToPreviousWeekCommand}" Classes="Ghost" Padding="8,4">
-								<PathIcon Data="{StaticResource arrow_left_regular}" Width="14" Height="14" />
-							</Button>
-							<TextBlock Grid.Column="1" Text="{Binding WeekRangeTitle}" HorizontalAlignment="Center"
-									   VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold" />
-							<Button Grid.Column="2" Command="{Binding GoToNextWeekCommand}" Classes="Ghost" Padding="8,4">
-								<PathIcon Data="{StaticResource arrow_left_regular}" Width="14" Height="14"
-										  RenderTransform="scaleX(-1)" RenderTransformOrigin="50%,50%" />
-							</Button>
-						</Grid>
+				<!-- Weekly Stats (blurred for free users) -->
+					<Panel>
+						<StackPanel Spacing="14" Opacity="{Binding IsPremium, Converter={StaticResource BoolToOpacityConverter}}">
 
-						<!-- Trend badge -->
-						<Border IsVisible="{Binding HasComparison}"
-								CornerRadius="10"
-								Padding="10,6"
-								HorizontalAlignment="Center"
-								Background="{Binding IsImproving, Converter={StaticResource ImprovingBackgroundConverter}}">
-							<TextBlock Text="{Binding ComparisonText}"
-									   FontSize="12" FontWeight="Medium"
-									   Foreground="{Binding IsImproving, Converter={StaticResource ImprovingBrushConverter}}" />
-						</Border>
-
-						<!-- Bar chart -->
-						<Border Height="160" Margin="0,4">
-							<ItemsControl ItemsSource="{Binding WeeklyChartData}">
-								<ItemsControl.ItemsPanel>
-									<ItemsPanelTemplate>
-										<UniformGrid Columns="7" />
-									</ItemsPanelTemplate>
-								</ItemsControl.ItemsPanel>
-								<ItemsControl.ItemTemplate>
-									<DataTemplate x:DataType="items:DayChartBarViewModel">
-										<StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Center" Spacing="3">
-											<!-- Time label above bar -->
-											<TextBlock Text="{Binding FormattedTime}"
-													   FontSize="8" HorizontalAlignment="Center" Opacity="0.6"
-													   IsVisible="{Binding HasData}" />
-											<!-- Bar -->
-											<Border Width="28"
-													CornerRadius="6,6,2,2"
-													HorizontalAlignment="Center"
-													Height="{Binding BarHeightPercent, Converter={StaticResource BarHeightConverter}, ConverterParameter=130}"
-													MinHeight="4">
-												<Border.Background>
-													<MultiBinding Converter="{StaticResource GoalMetBarBrushConverter}">
-														<Binding Path="IsToday" />
-														<Binding Path="GoalMet" />
-													</MultiBinding>
-												</Border.Background>
-											</Border>
-											<!-- Day label -->
-											<TextBlock Text="{Binding DayLabel}"
-													   FontSize="10" FontWeight="Medium"
-													   HorizontalAlignment="Center" Opacity="0.6" />
-										</StackPanel>
-									</DataTemplate>
-								</ItemsControl.ItemTemplate>
-							</ItemsControl>
-						</Border>
-
-						<!-- Weekly summary -->
-						<Border CornerRadius="10" Background="{DynamicResource Brush.Ghost}" Padding="12,8" Margin="0,2,0,0">
-							<Grid ColumnDefinitions="*,Auto,*">
-								<StackPanel Grid.Column="0" HorizontalAlignment="Center" Spacing="2">
-									<TextBlock Text="{Binding WeeklyTotalTime}" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" />
-									<TextBlock Text="TOTAL" FontSize="9" Opacity="0.5" HorizontalAlignment="Center" />
-								</StackPanel>
-								<Border Grid.Column="1" Width="1" Background="{DynamicResource Brush.Background}" Margin="8,2" />
-								<StackPanel Grid.Column="2" HorizontalAlignment="Center" Spacing="2">
-									<TextBlock Text="{Binding WeeklyAverageTime}" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" />
-									<TextBlock Text="AVG / DAY" FontSize="9" Opacity="0.5" HorizontalAlignment="Center" />
-								</StackPanel>
-							</Grid>
-						</Border>
-					</StackPanel>
-				</shadui:Card>
-
-				<!-- Weekly Top Apps -->
-				<shadui:Card HasShadow="True" Padding="14">
-					<StackPanel Spacing="10">
-						<TextBlock Text="TOP APPS THIS WEEK" FontSize="11" FontWeight="SemiBold" Opacity="0.5" />
-						<ItemsControl ItemsSource="{Binding WeeklyTopApps}">
-							<ItemsControl.ItemTemplate>
-								<DataTemplate x:DataType="items:MostUsedAppViewModel">
-									<Grid ColumnDefinitions="Auto,*,Auto" Margin="0,5">
-										<Panel Grid.Column="0" Width="30" Height="30" Margin="0,0,10,0">
-											<Border CornerRadius="15" ClipToBounds="True" IsVisible="{Binding HasIcon}">
-												<Image Source="{Binding IconBytes, Converter={StaticResource BytesToBitmapConverter}}" Width="30" Height="30" Stretch="UniformToFill" />
-											</Border>
-											<shadui:Avatar Width="30" Height="30" Fallback="{Binding Icon}" IsVisible="{Binding !HasIcon}" />
-										</Panel>
-										<StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
-											<TextBlock Text="{Binding Name}" FontSize="13" FontWeight="Medium" />
-											<!-- Usage bar -->
-											<Grid Height="5">
-												<Grid.ColumnDefinitions>
-													<ColumnDefinition Width="{Binding UsagePercent, Converter={StaticResource PercentToWidthConverter}}" />
-													<ColumnDefinition Width="{Binding UsagePercent, Converter={StaticResource PercentToRemainingWidthConverter}}" />
-												</Grid.ColumnDefinitions>
-												<Border Grid.Column="0" CornerRadius="3"
-														Background="{Binding Name, Converter={StaticResource AppColorConverter}}" />
-												<Border Grid.Column="1" CornerRadius="0,3,3,0"
-														Background="{DynamicResource Brush.Ghost}" />
-											</Grid>
-										</StackPanel>
-										<TextBlock Grid.Column="2" Text="{Binding Duration}" VerticalAlignment="Center"
-												   Opacity="0.6" FontSize="12" Margin="8,0,0,0" />
+							<!-- Weekly Chart -->
+							<shadui:Card HasShadow="True" Padding="14">
+								<StackPanel Spacing="10">
+									<!-- Week navigation -->
+									<Grid ColumnDefinitions="Auto,*,Auto">
+										<Button Grid.Column="0" Command="{Binding GoToPreviousWeekCommand}" Classes="Ghost" Padding="8,4">
+											<PathIcon Data="{StaticResource arrow_left_regular}" Width="14" Height="14" />
+										</Button>
+										<TextBlock Grid.Column="1" Text="{Binding WeekRangeTitle}" HorizontalAlignment="Center"
+												   VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold" />
+										<Button Grid.Column="2" Command="{Binding GoToNextWeekCommand}" Classes="Ghost" Padding="8,4">
+											<PathIcon Data="{StaticResource arrow_left_regular}" Width="14" Height="14"
+													  RenderTransform="scaleX(-1)" RenderTransformOrigin="50%,50%" />
+										</Button>
 									</Grid>
-								</DataTemplate>
-							</ItemsControl.ItemTemplate>
-						</ItemsControl>
-					</StackPanel>
-				</shadui:Card>
 
-				<!-- Weekly pickups summary -->
-				<Grid ColumnDefinitions="*,*" ColumnSpacing="10">
-					<shadui:Card Grid.Column="0" HasShadow="True" Padding="14">
-						<StackPanel HorizontalAlignment="Center" Spacing="4">
-							<TextBlock Text="{Binding WeeklyTotalPickups}" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" />
-							<TextBlock Text="WEEKLY PICKUPS" FontSize="9" Opacity="0.5" HorizontalAlignment="Center" />
+									<!-- Trend badge -->
+									<Border IsVisible="{Binding HasComparison}"
+											CornerRadius="10"
+											Padding="10,6"
+											HorizontalAlignment="Center"
+											Background="{Binding IsImproving, Converter={StaticResource ImprovingBackgroundConverter}}">
+										<TextBlock Text="{Binding ComparisonText}"
+												   FontSize="12" FontWeight="Medium"
+												   Foreground="{Binding IsImproving, Converter={StaticResource ImprovingBrushConverter}}" />
+									</Border>
+
+									<!-- Bar chart -->
+									<Border Height="160" Margin="0,4">
+										<ItemsControl ItemsSource="{Binding WeeklyChartData}">
+											<ItemsControl.ItemsPanel>
+												<ItemsPanelTemplate>
+													<UniformGrid Columns="7" />
+												</ItemsPanelTemplate>
+											</ItemsControl.ItemsPanel>
+											<ItemsControl.ItemTemplate>
+												<DataTemplate x:DataType="items:DayChartBarViewModel">
+													<StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Center" Spacing="3">
+														<!-- Time label above bar -->
+														<TextBlock Text="{Binding FormattedTime}"
+																   FontSize="8" HorizontalAlignment="Center" Opacity="0.6"
+																   IsVisible="{Binding HasData}" />
+														<!-- Bar -->
+														<Border Width="28"
+																CornerRadius="6,6,2,2"
+																HorizontalAlignment="Center"
+																Height="{Binding BarHeightPercent, Converter={StaticResource BarHeightConverter}, ConverterParameter=130}"
+																MinHeight="4">
+															<Border.Background>
+																<MultiBinding Converter="{StaticResource GoalMetBarBrushConverter}">
+																	<Binding Path="IsToday" />
+																	<Binding Path="GoalMet" />
+																</MultiBinding>
+															</Border.Background>
+														</Border>
+														<!-- Day label -->
+														<TextBlock Text="{Binding DayLabel}"
+																   FontSize="10" FontWeight="Medium"
+																   HorizontalAlignment="Center" Opacity="0.6" />
+													</StackPanel>
+												</DataTemplate>
+											</ItemsControl.ItemTemplate>
+										</ItemsControl>
+									</Border>
+
+									<!-- Weekly summary -->
+									<Border CornerRadius="10" Background="{DynamicResource Brush.Ghost}" Padding="12,8" Margin="0,2,0,0">
+										<Grid ColumnDefinitions="*,Auto,*">
+											<StackPanel Grid.Column="0" HorizontalAlignment="Center" Spacing="2">
+												<TextBlock Text="{Binding WeeklyTotalTime}" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" />
+												<TextBlock Text="TOTAL" FontSize="9" Opacity="0.5" HorizontalAlignment="Center" />
+											</StackPanel>
+											<Border Grid.Column="1" Width="1" Background="{DynamicResource Brush.Background}" Margin="8,2" />
+											<StackPanel Grid.Column="2" HorizontalAlignment="Center" Spacing="2">
+												<TextBlock Text="{Binding WeeklyAverageTime}" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" />
+												<TextBlock Text="AVG / DAY" FontSize="9" Opacity="0.5" HorizontalAlignment="Center" />
+											</StackPanel>
+										</Grid>
+									</Border>
+								</StackPanel>
+							</shadui:Card>
+
+							<!-- Weekly Top Apps -->
+							<shadui:Card HasShadow="True" Padding="14">
+								<StackPanel Spacing="10">
+									<TextBlock Text="TOP APPS THIS WEEK" FontSize="11" FontWeight="SemiBold" Opacity="0.5" />
+									<ItemsControl ItemsSource="{Binding WeeklyTopApps}">
+										<ItemsControl.ItemTemplate>
+											<DataTemplate x:DataType="items:MostUsedAppViewModel">
+												<Grid ColumnDefinitions="Auto,*,Auto" Margin="0,5">
+													<Panel Grid.Column="0" Width="30" Height="30" Margin="0,0,10,0">
+														<Border CornerRadius="15" ClipToBounds="True" IsVisible="{Binding HasIcon}">
+															<Image Source="{Binding IconBytes, Converter={StaticResource BytesToBitmapConverter}}" Width="30" Height="30" Stretch="UniformToFill" />
+														</Border>
+														<shadui:Avatar Width="30" Height="30" Fallback="{Binding Icon}" IsVisible="{Binding !HasIcon}" />
+													</Panel>
+													<StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+														<TextBlock Text="{Binding Name}" FontSize="13" FontWeight="Medium" />
+														<!-- Usage bar -->
+														<Grid Height="5">
+															<Grid.ColumnDefinitions>
+																<ColumnDefinition Width="{Binding UsagePercent, Converter={StaticResource PercentToWidthConverter}}" />
+																<ColumnDefinition Width="{Binding UsagePercent, Converter={StaticResource PercentToRemainingWidthConverter}}" />
+															</Grid.ColumnDefinitions>
+															<Border Grid.Column="0" CornerRadius="3"
+																	Background="{Binding Name, Converter={StaticResource AppColorConverter}}" />
+															<Border Grid.Column="1" CornerRadius="0,3,3,0"
+																	Background="{DynamicResource Brush.Ghost}" />
+														</Grid>
+													</StackPanel>
+													<TextBlock Grid.Column="2" Text="{Binding Duration}" VerticalAlignment="Center"
+															   Opacity="0.6" FontSize="12" Margin="8,0,0,0" />
+												</Grid>
+											</DataTemplate>
+										</ItemsControl.ItemTemplate>
+									</ItemsControl>
+								</StackPanel>
+							</shadui:Card>
+
+							<!-- Weekly pickups summary -->
+							<Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+								<shadui:Card Grid.Column="0" HasShadow="True" Padding="14">
+									<StackPanel HorizontalAlignment="Center" Spacing="4">
+										<TextBlock Text="{Binding WeeklyTotalPickups}" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" />
+										<TextBlock Text="WEEKLY PICKUPS" FontSize="9" Opacity="0.5" HorizontalAlignment="Center" />
+									</StackPanel>
+								</shadui:Card>
+								<shadui:Card Grid.Column="1" HasShadow="True" Padding="14">
+									<StackPanel HorizontalAlignment="Center" Spacing="4">
+										<TextBlock Text="{Binding WeeklyAveragePickups}" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" />
+										<TextBlock Text="AVG PICKUPS / DAY" FontSize="9" Opacity="0.5" HorizontalAlignment="Center" />
+									</StackPanel>
+								</shadui:Card>
+							</Grid>
+
 						</StackPanel>
-					</shadui:Card>
-					<shadui:Card Grid.Column="1" HasShadow="True" Padding="14">
-						<StackPanel HorizontalAlignment="Center" Spacing="4">
-							<TextBlock Text="{Binding WeeklyAveragePickups}" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" />
-							<TextBlock Text="AVG PICKUPS / DAY" FontSize="9" Opacity="0.5" HorizontalAlignment="Center" />
-						</StackPanel>
-					</shadui:Card>
-				</Grid>
+
+						<!-- Premium upgrade overlay -->
+						<Border IsVisible="{Binding !IsPremium}"
+								Background="#CC000000" CornerRadius="16"
+								HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+								IsHitTestVisible="True">
+							<StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
+								<TextBlock Text="🔒" FontSize="28" HorizontalAlignment="Center" />
+								<TextBlock Text="Upgrade to Bloomdo Plus" FontSize="16" FontWeight="Bold"
+										   Foreground="White" HorizontalAlignment="Center" />
+								<TextBlock Text="Unlock weekly statistics and more"
+										   FontSize="12" Foreground="White" Opacity="0.7" HorizontalAlignment="Center" />
+							</StackPanel>
+						</Border>
+					</Panel>
 
 			</StackPanel>
 		</ScrollViewer>

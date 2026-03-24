@@ -61,4 +61,19 @@ public class ChatRepository(AppDbContext context) : IChatRepository
     {
         await context.SaveChangesAsync(ct);
     }
+
+    public async Task<int> CountTodayUserMessagesAsync(Guid accountId, CancellationToken ct = default)
+    {
+        var todayUtc = DateTime.UtcNow.Date;
+        var tomorrowUtc = todayUtc.AddDays(1);
+
+        return await context.ChatMessages
+            .Where(m => !m.IsDeleted
+                && m.Role == "user"
+                && m.CreatedAt >= todayUtc
+                && m.CreatedAt < tomorrowUtc
+                && m.Conversation.AccountId == accountId
+                && !m.Conversation.IsDeleted)
+            .CountAsync(ct);
+    }
 }

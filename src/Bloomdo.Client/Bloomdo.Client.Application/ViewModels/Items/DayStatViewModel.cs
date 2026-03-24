@@ -25,6 +25,9 @@ public partial class DayStatViewModel : ObservableObject
     private bool _isStreakDay;
 
     [ObservableProperty]
+    private bool _isFreezeDay;
+
+    [ObservableProperty]
     private bool _isStreakStart;
 
     [ObservableProperty]

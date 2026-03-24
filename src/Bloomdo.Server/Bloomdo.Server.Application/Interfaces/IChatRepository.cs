@@ -11,4 +11,5 @@ public interface IChatRepository
     Task<bool> DeleteConversationAsync(Guid conversationId, Guid accountId, CancellationToken ct = default);
     Task UpdateConversationAsync(ChatConversation conversation, CancellationToken ct = default);
     Task SaveChangesAsync(CancellationToken ct = default);
+    Task<int> CountTodayUserMessagesAsync(Guid accountId, CancellationToken ct = default);
 }

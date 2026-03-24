@@ -1,4 +1,5 @@
 using System.Text;
+using Bloomdo.Server.Application.Exceptions;
 using Bloomdo.Server.Application.Interfaces;
 using Bloomdo.Server.Application.Settings;
 using Bloomdo.Server.Domain.Entities;
@@ -13,7 +14,9 @@ public class ChatService(
     IStatsRepository statsRepository,
     IDailyActivityService activityService,
     IRepository<BlockRule> blockRuleRepository,
-    IGeminiSettings geminiSettings) : IChatService
+    IGeminiSettings geminiSettings,
+    ISubscriptionService subscriptionService,
+    IFreeLimitsSettings freeLimitsSettings) : IChatService
 {
     private const string Model = "gemini-2.5-flash";
     private const int MaxHistoryMessages = 50;
@@ -77,6 +80,17 @@ public class ChatService(
 
     public async Task<SendMessageResponse> SendMessageAsync(Guid accountId, Guid? conversationId, string message, CancellationToken ct = default)
     {
+        // Enforce daily message limit for free users
+        var isPremium = await subscriptionService.IsPremiumAsync(accountId, ct);
+        if (!isPremium)
+        {
+            var todayCount = await chatRepository.CountTodayUserMessagesAsync(accountId, ct);
+            if (todayCount >= freeLimitsSettings.MaxDailyChatMessages)
+            {
+                throw new ChatLimitExceededException(freeLimitsSettings.MaxDailyChatMessages);
+            }
+        }
+
         ChatConversation conversation;
 
         if (conversationId.HasValue)

@@ -1,5 +1,7 @@
 using System.Text.Json;
+using Bloomdo.Server.Application.Exceptions;
 using Bloomdo.Server.Application.Interfaces;
+using Bloomdo.Server.Application.Settings;
 using Bloomdo.Server.Domain.Entities;
 using Bloomdo.Shared.DTOs.Blocks;
 
@@ -9,7 +11,9 @@ public class BlockService(
     IRepository<BlockRule> blockRuleRepository,
     IRepository<ActivityGroup> activityGroupRepository,
     IRepository<ActivityItem> activityItemRepository,
-    IRepository<ActivityCompletion> activityCompletionRepository) : IBlockService
+    IRepository<ActivityCompletion> activityCompletionRepository,
+    ISubscriptionService subscriptionService,
+    IFreeLimitsSettings freeLimitsSettings) : IBlockService
 {
     public async Task<List<BlockRuleResponse>> GetBlockRulesAsync(Guid accountId, CancellationToken ct = default)
     {
@@ -38,6 +42,17 @@ public class BlockService(
 
     public async Task<BlockRuleResponse> CreateBlockRuleAsync(Guid accountId, CreateBlockRuleRequest request, CancellationToken ct = default)
     {
+        // Enforce block limit for free users
+        var isPremium = await subscriptionService.IsPremiumAsync(accountId, ct);
+        if (!isPremium)
+        {
+            var existingRules = await blockRuleRepository.FindAsync(r => r.AccountId == accountId, ct);
+            if (existingRules.Count() >= freeLimitsSettings.MaxBlockRules)
+            {
+                throw new BlockLimitExceededException(freeLimitsSettings.MaxBlockRules);
+            }
+        }
+
         var rule = new BlockRule
         {
             AccountId = accountId,

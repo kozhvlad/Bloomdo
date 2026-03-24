@@ -9,4 +9,5 @@ public class SubscriptionStatusResponse
     public DateTime? CurrentPeriodEnd { get; set; }
     public bool IsPremium { get; set; }
     public bool WillCancel { get; set; }
+    public SubscriptionLimitsDto Limits { get; set; } = new();
 }

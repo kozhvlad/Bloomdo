@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using Bloomdo.Client.Core.Interfaces;
 using Bloomdo.Shared.Constants;
@@ -48,8 +49,11 @@ public class ChatApiService(HttpClient httpClient) : IChatApiService
             var response = await httpClient.PostAsJsonAsync(ApiRoutes.Chat.Conversations, request, ct);
             if (response.IsSuccessStatusCode)
                 return await response.Content.ReadFromJsonAsync<SendMessageResponse>(ct);
+            if (response.StatusCode == HttpStatusCode.TooManyRequests)
+                throw new HttpRequestException("Daily message limit reached", null, HttpStatusCode.TooManyRequests);
             return null;
         }
+        catch (HttpRequestException) { throw; }
         catch (Exception ex)
         {
             Console.WriteLine($"CreateConversation failed: {ex.Message}");
@@ -66,8 +70,11 @@ public class ChatApiService(HttpClient httpClient) : IChatApiService
             var response = await httpClient.PostAsJsonAsync(url, request, ct);
             if (response.IsSuccessStatusCode)
                 return await response.Content.ReadFromJsonAsync<SendMessageResponse>(ct);
+            if (response.StatusCode == HttpStatusCode.TooManyRequests)
+                throw new HttpRequestException("Daily message limit reached", null, HttpStatusCode.TooManyRequests);
             return null;
         }
+        catch (HttpRequestException) { throw; }
         catch (Exception ex)
         {
             Console.WriteLine($"SendMessage failed: {ex.Message}");

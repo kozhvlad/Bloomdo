@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Bloomdo.Server.Application.Interfaces;
+using Bloomdo.Server.Application.Settings;
 using Bloomdo.Server.Domain.Entities;
 using Bloomdo.Shared.DTOs.Stats;
 using Bloomdo.Shared.Enums;
@@ -8,7 +9,10 @@ namespace Bloomdo.Server.Application.Services;
 
 public class StatsService(
     IStatsRepository statsRepository,
-    IRepository<BlockRule> blockRuleRepository) : IStatsService
+    IRepository<BlockRule> blockRuleRepository,
+    ISubscriptionService subscriptionService,
+    IRepository<StreakFreeze> streakFreezeRepository,
+    IFreeLimitsSettings freeLimitsSettings) : IStatsService
 {
     public async Task SyncUsageAsync(Guid accountId, SyncUsageRequest request, CancellationToken ct = default)
     {
@@ -91,14 +95,34 @@ public class StatsService(
         var startDate = new DateOnly(year, month, 1);
         var endDate = startDate.AddMonths(1).AddDays(-1);
 
+        // Auto-apply streak freezes for premium users before calculating
+        await AutoApplyStreakFreezesAsync(accountId, ct);
+
         var snapshots = await statsRepository.GetSnapshotsForMonthAsync(accountId, startDate, endDate, ct);
+        var freezeDates = await GetFreezeDatesAsync(accountId, startDate, endDate, ct);
 
         var days = snapshots.Select(s => new CalendarDayDto
         {
             Date = s.Date,
-            GoalMet = s.GoalMet,
+            GoalMet = s.GoalMet || freezeDates.Contains(s.Date),
+            IsFreezeDay = freezeDates.Contains(s.Date),
             TotalScreenTimeSeconds = s.TotalScreenTimeSeconds
         }).ToList();
+
+        // Add freeze days that don't have snapshots
+        foreach (var freezeDate in freezeDates)
+        {
+            if (days.All(d => d.Date != freezeDate))
+            {
+                days.Add(new CalendarDayDto
+                {
+                    Date = freezeDate,
+                    GoalMet = true,
+                    IsFreezeDay = true,
+                    TotalScreenTimeSeconds = 0
+                });
+            }
+        }
 
         var (current, longest) = await CalculateStreaksAsync(accountId, ct);
 
@@ -206,7 +230,15 @@ public class StatsService(
     {
         var goalDays = await statsRepository.GetGoalMetDatesAsync(accountId, ct);
 
-        if (goalDays.Count == 0)
+        // Merge freeze days into goal days
+        var allFreezeDates = await GetFreezeDatesAsync(accountId, DateOnly.MinValue, DateOnly.MaxValue, ct);
+        var mergedDays = new SortedSet<DateOnly>(goalDays, Comparer<DateOnly>.Create((a, b) => b.CompareTo(a)));
+        foreach (var fd in allFreezeDates)
+            mergedDays.Add(fd);
+
+        var sortedDays = mergedDays.ToList(); // descending
+
+        if (sortedDays.Count == 0)
             return (0, 0);
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
@@ -216,10 +248,10 @@ public class StatsService(
         var checkDate = today;
 
         // If today is not in the list, start from yesterday
-        if (!goalDays.Contains(today) && goalDays.Count > 0 && goalDays[0] == today.AddDays(-1))
+        if (!sortedDays.Contains(today) && sortedDays.Count > 0 && sortedDays[0] == today.AddDays(-1))
             checkDate = today.AddDays(-1);
 
-        foreach (var day in goalDays)
+        foreach (var day in sortedDays)
         {
             if (day == checkDate)
             {
@@ -232,13 +264,13 @@ public class StatsService(
             }
         }
 
-        // Longest streak: scan all goal days (sorted descending)
+        // Longest streak: scan all days (sorted descending)
         var longestStreak = 0;
         var streak = 1;
 
-        for (var i = 1; i < goalDays.Count; i++)
+        for (var i = 1; i < sortedDays.Count; i++)
         {
-            if (goalDays[i - 1].AddDays(-1) == goalDays[i])
+            if (sortedDays[i - 1].AddDays(-1) == sortedDays[i])
             {
                 streak++;
             }
@@ -251,6 +283,76 @@ public class StatsService(
         longestStreak = Math.Max(longestStreak, streak);
 
         return (currentStreak, longestStreak);
+    }
+
+    /// <summary>
+    /// Auto-applies streak freezes for premium users when a gap is detected
+    /// in the recent streak.
+    /// </summary>
+    private async Task AutoApplyStreakFreezesAsync(Guid accountId, CancellationToken ct)
+    {
+        var isPremium = await subscriptionService.IsPremiumAsync(accountId, ct);
+        if (!isPremium) return;
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var goalDays = await statsRepository.GetGoalMetDatesAsync(accountId, ct);
+        var goalDaySet = new HashSet<DateOnly>(goalDays);
+
+        // Get existing freezes this month
+        var monthStart = new DateOnly(today.Year, today.Month, 1);
+        var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+        var existingFreezes = await streakFreezeRepository.FindAsync(
+            f => f.AccountId == accountId && f.Date >= monthStart && f.Date <= monthEnd, ct);
+        var freezeList = existingFreezes.ToList();
+        var frozenDates = new HashSet<DateOnly>(freezeList.Select(f => f.Date));
+        var freezesUsedThisMonth = freezeList.Count;
+
+        var maxFreezes = freeLimitsSettings.MonthlyStreakFreezes;
+        var remaining = maxFreezes - freezesUsedThisMonth;
+        if (remaining <= 0) return;
+
+        // Scan backwards from yesterday looking for gaps in the streak
+        // Only freeze days adjacent to goal-met days (to preserve streak continuity)
+        var checkDate = today.AddDays(-1);
+        var frozenCount = 0;
+
+        for (var i = 0; i < 7 && frozenCount < remaining; i++)
+        {
+            var date = checkDate.AddDays(-i);
+
+            if (goalDaySet.Contains(date) || frozenDates.Contains(date))
+                continue;
+
+            // Check if freezing this day would connect to a goal-met day
+            var hasPrevGoal = goalDaySet.Contains(date.AddDays(-1)) || frozenDates.Contains(date.AddDays(-1));
+            var hasNextGoal = goalDaySet.Contains(date.AddDays(1)) || frozenDates.Contains(date.AddDays(1));
+
+            if (hasPrevGoal || hasNextGoal)
+            {
+                await streakFreezeRepository.AddAsync(new StreakFreeze
+                {
+                    AccountId = accountId,
+                    Date = date
+                }, ct);
+                frozenDates.Add(date);
+                frozenCount++;
+            }
+            else
+            {
+                // No adjacent goal day — stop scanning
+                break;
+            }
+        }
+    }
+
+    private async Task<HashSet<DateOnly>> GetFreezeDatesAsync(Guid accountId, DateOnly start, DateOnly end, CancellationToken ct)
+    {
+        var freezes = await streakFreezeRepository.FindAsync(
+            f => f.AccountId == accountId
+                 && (start == DateOnly.MinValue || f.Date >= start)
+                 && (end == DateOnly.MaxValue || f.Date <= end), ct);
+
+        return [.. freezes.Select(f => f.Date)];
     }
 
     /// <summary>

@@ -41,6 +41,10 @@ public class Program
         var geminiSettings = new GeminiSettings { ApiKeys = geminiApiKeys };
         builder.Services.AddSingleton<IGeminiSettings>(geminiSettings);
 
+        // Configure Free Limits Settings
+        var freeLimitsSettings = builder.Configuration.GetSection("FreeLimits").Get<FreeLimitsSettings>() ?? new FreeLimitsSettings();
+        builder.Services.AddSingleton<IFreeLimitsSettings>(freeLimitsSettings);
+
         // Configure Stripe Settings
         var stripeSettings = new StripeSettings
         {

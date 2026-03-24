@@ -120,18 +120,32 @@
 
             <!-- Input bar -->
             <Border Grid.Row="2" BorderBrush="{DynamicResource OutlineColor}" BorderThickness="0,1,0,0" Padding="12,10">
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                    <TextBox Grid.Column="0" Text="{Binding MessageText, Mode=TwoWay}"
-                             Watermark="Type a message..." AcceptsReturn="False" TextWrapping="Wrap"
-                             MaxHeight="120" CornerRadius="20" Padding="16,10"/>
-                    <Button Grid.Column="1" Command="{Binding SendMessageCommand}" CornerRadius="20"
-                            Width="40" Height="40" Padding="0"
-                            HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
-                            IsEnabled="{Binding !IsSending}">
-                        <PathIcon Data="M5.694,12 L2.299,3.272 C1.867,2.208 2.974,1.198 3.994,1.726 L3.994,1.726 L21.324,10.891 C22.226,11.362 22.226,12.638 21.324,13.109 L21.324,13.109 L3.994,22.274 C2.974,22.802 1.867,21.792 2.299,20.728 L2.299,20.728 L5.694,12 L13,12"
-                               Width="18" Height="18"/>
-                    </Button>
-                </Grid>
+                <StackPanel Spacing="6">
+                    <!-- Remaining messages counter -->
+                    <TextBlock IsVisible="{Binding HasLimit}"
+                               HorizontalAlignment="Center" FontSize="11" Opacity="0.5"
+                               Text="{Binding RemainingMessages, StringFormat='{}{0} messages remaining today'}" />
+
+                    <!-- Limit reached message -->
+                    <Border IsVisible="{Binding IsLimitReached}" CornerRadius="10"
+                            Background="#1AEF5350" Padding="12,8" HorizontalAlignment="Stretch">
+                        <TextBlock Text="Daily message limit reached. Upgrade to Bloomdo Plus for unlimited messages."
+                                   FontSize="12" TextWrapping="Wrap" TextAlignment="Center" Opacity="0.8" />
+                    </Border>
+
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBox Grid.Column="0" Text="{Binding MessageText, Mode=TwoWay}"
+                                 Watermark="Type a message..." AcceptsReturn="False" TextWrapping="Wrap"
+                                 MaxHeight="120" CornerRadius="20" Padding="16,10"/>
+                        <Button Grid.Column="1" Command="{Binding SendMessageCommand}" CornerRadius="20"
+                                Width="40" Height="40" Padding="0"
+                                HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                                IsEnabled="{Binding !IsSending}">
+                            <PathIcon Data="M5.694,12 L2.299,3.272 C1.867,2.208 2.974,1.198 3.994,1.726 L3.994,1.726 L21.324,10.891 C22.226,11.362 22.226,12.638 21.324,13.109 L21.324,13.109 L3.994,22.274 C2.974,22.802 1.867,21.792 2.299,20.728 L2.299,20.728 L5.694,12 L13,12"
+                                   Width="18" Height="18"/>
+                        </Button>
+                    </Grid>
+                </StackPanel>
             </Border>
         </Grid>
 

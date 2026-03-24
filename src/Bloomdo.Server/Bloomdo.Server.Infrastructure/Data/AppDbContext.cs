@@ -27,6 +27,7 @@ public class AppDbContext : DbContext
     public DbSet<ChatConversation> ChatConversations { get; set; }
     public DbSet<ChatMessage> ChatMessages { get; set; }
     public DbSet<Subscription> Subscriptions { get; set; }
+    public DbSet<StreakFreeze> StreakFreezes { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -380,6 +381,27 @@ public class AppDbContext : DbContext
                 .HasFilter("\"IsDeleted\" = false");
             entity.HasIndex(e => e.StripeCustomerId);
             entity.HasIndex(e => e.StripeSubscriptionId);
+
+            entity.HasOne(e => e.Account)
+                .WithMany()
+                .HasForeignKey(e => e.AccountId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasQueryFilter(e => !e.IsDeleted);
+        });
+
+        // StreakFreeze configuration
+        modelBuilder.Entity<StreakFreeze>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasDefaultValueSql("uuid_generate_v4()");
+
+            entity.Property(e => e.Date).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+
+            entity.HasIndex(e => new { e.AccountId, e.Date }).IsUnique()
+                .HasFilter("\"IsDeleted\" = false");
 
             entity.HasOne(e => e.Account)
                 .WithMany()

@@ -1,4 +1,5 @@
 using Bloomdo.Server.Api.Authorization;
+using Bloomdo.Server.Application.Exceptions;
 using Bloomdo.Server.Application.Interfaces;
 using Bloomdo.Shared.Constants;
 using Bloomdo.Shared.DTOs.Blocks;
@@ -30,8 +31,15 @@ public class BlocksController(IBlockService blockService) : ControllerBase
         var accountId = GetAccountId();
         if (accountId is null) return Unauthorized();
 
-        var rule = await blockService.CreateBlockRuleAsync(accountId.Value, request, ct);
-        return Created(string.Empty, rule);
+        try
+        {
+            var rule = await blockService.CreateBlockRuleAsync(accountId.Value, request, ct);
+            return Created(string.Empty, rule);
+        }
+        catch (BlockLimitExceededException ex)
+        {
+            return StatusCode(403, new { error = ex.Message, maxBlocks = ex.MaxBlocks });
+        }
     }
 
     [HttpPut("api/blocks/{id:guid}")]

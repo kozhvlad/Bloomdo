@@ -58,6 +58,7 @@
                 </Border>
 
                 <!-- Emoji Picker -->
+                <Panel>
                 <shad:Card Padding="14" Background="{DynamicResource Brush.Card}">
                     <StackPanel Spacing="10">
                         <TextBlock Text="Task Icon" FontSize="14" FontWeight="SemiBold"
@@ -66,7 +67,8 @@
                         <Button Command="{Binding ToggleEmojiPickerCommand}"
                                 Background="#15FFFFFF" CornerRadius="12"
                                 Padding="10,8" BorderThickness="0" Cursor="Hand"
-                                HorizontalAlignment="Left">
+                                HorizontalAlignment="Left"
+                                IsEnabled="{Binding CanCustomizeEmoji}">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <TextBlock Text="{Binding TaskIcon}"
                                            FontFamily="{StaticResource EmojiFont}"
@@ -107,6 +109,17 @@
                         </Border>
                     </StackPanel>
                 </shad:Card>
+                <Border IsVisible="{Binding !CanCustomizeEmoji}" CornerRadius="12"
+                        Background="#AA000000" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                        IsHitTestVisible="False">
+                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="🔒" FontFamily="{StaticResource EmojiFont}" FontSize="14"
+                                   Foreground="White" VerticalAlignment="Center"/>
+                        <TextBlock Text="Bloomdo Plus" FontSize="12" FontWeight="Medium"
+                                   Foreground="White" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+                </Panel>
 
                 <!-- Task Name -->
                 <shad:Card Padding="14" Background="{DynamicResource Brush.Card}">
@@ -317,11 +330,13 @@
                 </shad:Card>
 
                 <!-- Color Palette -->
+                <Panel>
                 <shad:Card Padding="14" Background="{DynamicResource Brush.Card}">
                     <StackPanel Spacing="8">
                         <TextBlock Text="Color" FontSize="14" FontWeight="SemiBold"
                                    Foreground="#EFEFEF"/>
-                        <ItemsControl ItemsSource="{x:Static vm:TaskEditorViewModel.AvailableColors}">
+                        <ItemsControl ItemsSource="{x:Static vm:TaskEditorViewModel.AvailableColors}"
+                                      IsEnabled="{Binding CanCustomizeColors}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <WrapPanel/>
@@ -341,6 +356,17 @@
                         </ItemsControl>
                     </StackPanel>
                 </shad:Card>
+                <Border IsVisible="{Binding !CanCustomizeColors}" CornerRadius="12"
+                        Background="#AA000000" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                        IsHitTestVisible="False">
+                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="🔒" FontFamily="{StaticResource EmojiFont}" FontSize="14"
+                                   Foreground="White" VerticalAlignment="Center"/>
+                        <TextBlock Text="Bloomdo Plus" FontSize="12" FontWeight="Medium"
+                                   Foreground="White" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+                </Panel>
 
             </StackPanel>
         </ScrollViewer>

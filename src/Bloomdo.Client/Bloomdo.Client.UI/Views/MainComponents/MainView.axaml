@@ -131,7 +131,7 @@
 						Command="{Binding SelectTabCommand}"
 						CommandParameter="4">
 					<StackPanel Spacing="4" HorizontalAlignment="Center">
-						<PathIcon Data="{x:Static shad:Icons.Marker}"
+						<PathIcon Data="{StaticResource star_regular}"
 								  Classes.Active="{Binding IsSubscriptionSelected}"
 								  Classes="TabIcon"/>
 						<TextBlock Text="Plus" 

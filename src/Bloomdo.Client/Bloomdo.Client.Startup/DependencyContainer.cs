@@ -264,16 +264,19 @@ public static class DependencyContainer
             sp.GetService<IInstalledAppsService>(),
             sp.GetService<IBlockRuleStore>(),
             sp.GetRequiredService<IDailyActivityApiService>(),
-            sp.GetService<IAppIconProvider>()));
+            sp.GetService<IAppIconProvider>(),
+            sp.GetRequiredService<ISubscriptionApiService>()));
         services.AddTransient<StatsViewModel>(sp =>
         {
             var appUsageService = sp.GetService<IAppUsageService>();
             var statsApiService = sp.GetRequiredService<IStatsApiService>();
             var appIconProvider = sp.GetService<IAppIconProvider>();
-            return new StatsViewModel(appUsageService, statsApiService, appIconProvider);
+            var subscriptionApiService = sp.GetRequiredService<ISubscriptionApiService>();
+            return new StatsViewModel(appUsageService, statsApiService, appIconProvider, subscriptionApiService);
         });
         services.AddTransient<AiChatViewModel>(sp => new AiChatViewModel(
-            sp.GetRequiredService<IChatApiService>()));
+            sp.GetRequiredService<IChatApiService>(),
+            sp.GetRequiredService<ISubscriptionApiService>()));
         services.AddTransient<SubscriptionViewModel>(sp => new SubscriptionViewModel(
             sp.GetRequiredService<ISubscriptionApiService>(),
             sp.GetRequiredService<IToastService>(),
@@ -310,11 +313,14 @@ public static class DependencyContainer
         services.AddSingleton<GroupEditorViewModel>(sp => new GroupEditorViewModel(
             sp.GetRequiredService<IDailyActivityApiService>(),
             sp.GetRequiredService<INavigationService>(),
-            sp.GetRequiredService<IToastService>()));
+            sp.GetRequiredService<IToastService>(),
+            sp.GetRequiredService<ISubscriptionApiService>(),
+            sp.GetRequiredService<IConfirmDialogService>()));
 
         services.AddSingleton<TaskEditorViewModel>(sp => new TaskEditorViewModel(
             sp.GetRequiredService<IDailyActivityApiService>(),
             sp.GetRequiredService<INavigationService>(),
-            sp.GetRequiredService<IToastService>()));
+            sp.GetRequiredService<IToastService>(),
+            sp.GetRequiredService<ISubscriptionApiService>()));
     }
 }

@@ -1,4 +1,5 @@
 using Bloomdo.Server.Api.Authorization;
+using Bloomdo.Server.Application.Exceptions;
 using Bloomdo.Server.Application.Interfaces;
 using Bloomdo.Shared.Constants;
 using Bloomdo.Shared.DTOs.Chat;
@@ -41,8 +42,15 @@ public class ChatController(IChatService chatService) : ControllerBase
         var accountId = GetAccountId();
         if (accountId is null) return Unauthorized();
 
-        var response = await chatService.SendMessageAsync(accountId.Value, null, request.Message, ct);
-        return Ok(response);
+        try
+        {
+            var response = await chatService.SendMessageAsync(accountId.Value, null, request.Message, ct);
+            return Ok(response);
+        }
+        catch (ChatLimitExceededException ex)
+        {
+            return StatusCode(429, new { error = ex.Message, maxMessages = ex.MaxMessages });
+        }
     }
 
     [HttpPost(ApiRoutes.Chat.Messages)]
@@ -52,8 +60,15 @@ public class ChatController(IChatService chatService) : ControllerBase
         var accountId = GetAccountId();
         if (accountId is null) return Unauthorized();
 
-        var response = await chatService.SendMessageAsync(accountId.Value, id, request.Message, ct);
-        return Ok(response);
+        try
+        {
+            var response = await chatService.SendMessageAsync(accountId.Value, id, request.Message, ct);
+            return Ok(response);
+        }
+        catch (ChatLimitExceededException ex)
+        {
+            return StatusCode(429, new { error = ex.Message, maxMessages = ex.MaxMessages });
+        }
     }
 
     [HttpDelete(ApiRoutes.Chat.ConversationById)]

@@ -10,6 +10,7 @@ namespace Bloomdo.Client.Application.ViewModels.MainComponents;
 public partial class AiChatViewModel : PageViewModel
 {
     private readonly IChatApiService _chatApiService;
+    private readonly ISubscriptionApiService? _subscriptionApiService;
 
     private Guid? _currentConversationId;
 
@@ -34,16 +35,29 @@ public partial class AiChatViewModel : PageViewModel
     [ObservableProperty]
     private string _currentTitle = "New Chat";
 
+    [ObservableProperty]
+    private int _remainingMessages = -1;
+
+    [ObservableProperty]
+    private int _maxDailyMessages;
+
+    [ObservableProperty]
+    private bool _isLimitReached;
+
+    public bool HasLimit => RemainingMessages >= 0;
+
     public Func<string, Task>? CopyToClipboardFunc { get; set; }
 
-    public AiChatViewModel(IChatApiService chatApiService)
+    public AiChatViewModel(IChatApiService chatApiService, ISubscriptionApiService? subscriptionApiService = null)
     {
         _chatApiService = chatApiService;
+        _subscriptionApiService = subscriptionApiService;
     }
 
     public override async void OnAppearing()
     {
         base.OnAppearing();
+        await LoadSubscriptionLimitsAsync();
         await LoadConversationsAsync();
     }
 
@@ -164,6 +178,15 @@ public partial class AiChatViewModel : PageViewModel
                     CreatedAt = response.AssistantMessage.CreatedAt
                 });
 
+                // Decrement remaining messages counter
+                if (RemainingMessages > 0)
+                {
+                    RemainingMessages--;
+                    OnPropertyChanged(nameof(HasLimit));
+                    if (RemainingMessages <= 0)
+                        IsLimitReached = true;
+                }
+
                 // If this was a new conversation, update conversation id and title
                 if (!_currentConversationId.HasValue)
                 {
@@ -187,6 +210,18 @@ public partial class AiChatViewModel : PageViewModel
                 });
             }
         }
+        catch (HttpRequestException httpEx) when (httpEx.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+        {
+            RemainingMessages = 0;
+            IsLimitReached = true;
+            OnPropertyChanged(nameof(HasLimit));
+            Messages.Add(new ChatMessageItemViewModel
+            {
+                Role = "assistant",
+                Content = "You've reached your daily message limit. Upgrade to Bloomdo Plus for unlimited messages!",
+                CreatedAt = DateTime.UtcNow
+            });
+        }
         catch (Exception ex)
         {
             Console.WriteLine($"SendMessage failed: {ex.Message}");
@@ -203,7 +238,7 @@ public partial class AiChatViewModel : PageViewModel
         }
     }
 
-    private bool CanSendMessage() => !IsSending && !string.IsNullOrWhiteSpace(MessageText);
+    private bool CanSendMessage() => !IsSending && !IsLimitReached && !string.IsNullOrWhiteSpace(MessageText);
 
     partial void OnMessageTextChanged(string value)
     {
@@ -213,6 +248,40 @@ public partial class AiChatViewModel : PageViewModel
     partial void OnIsSendingChanged(bool value)
     {
         SendMessageCommand.NotifyCanExecuteChanged();
+    }
+
+    partial void OnIsLimitReachedChanged(bool value)
+    {
+        SendMessageCommand.NotifyCanExecuteChanged();
+    }
+
+    private async Task LoadSubscriptionLimitsAsync()
+    {
+        if (_subscriptionApiService is null) return;
+
+        try
+        {
+            var status = await _subscriptionApiService.GetStatusAsync();
+                if (status is null) return;
+
+                if (status.IsPremium)
+                {
+                    IsLimitReached = false;
+                    return;
+                }
+
+                if (status.Limits is not null)
+                {
+                    MaxDailyMessages = status.Limits.MaxDailyChatMessages;
+                    RemainingMessages = status.Limits.RemainingChatMessagesToday;
+                    IsLimitReached = RemainingMessages <= 0;
+                    OnPropertyChanged(nameof(HasLimit));
+                }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"LoadSubscriptionLimits failed: {ex.Message}");
+        }
     }
 
     private async Task LoadConversationsAsync()
