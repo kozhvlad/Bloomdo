@@ -5,5 +5,6 @@ public enum ActivityItemType
     Timer = 0,
     Count = 1,
     Steps = 2,
-    Checkbox = 3
+    Checkbox = 3,
+    PhotoVerification = 4
 }

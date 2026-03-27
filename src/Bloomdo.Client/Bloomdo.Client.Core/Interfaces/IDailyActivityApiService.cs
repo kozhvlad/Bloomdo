@@ -13,4 +13,5 @@ public interface IDailyActivityApiService
     Task<ActivityItemResponse?> UpdateItemAsync(Guid id, UpdateActivityItemRequest request, CancellationToken ct = default);
     Task<bool> DeleteItemAsync(Guid id, CancellationToken ct = default);
     Task<bool> ToggleCompletionAsync(ToggleCompletionRequest request, CancellationToken ct = default);
+    Task<VerifyPhotoResponse?> VerifyPhotoAsync(VerifyPhotoRequest request, CancellationToken ct = default);
 }

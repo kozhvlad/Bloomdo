@@ -1,0 +1,170 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:shad="clr-namespace:ShadUI;assembly=ShadUI"
+             xmlns:converters="clr-namespace:Bloomdo.Client.UI.Converters"
+             xmlns:vm="clr-namespace:Bloomdo.Client.Application.ViewModels;assembly=Bloomdo.Client.Application"
+             mc:Ignorable="d" d:DesignWidth="360" d:DesignHeight="480"
+             x:DataType="vm:PhotoVerificationViewModel"
+             x:Class="Bloomdo.Client.UI.Dialogs.PhotoVerificationView">
+
+    <UserControl.Resources>
+        <converters:BytesToBitmapConverter x:Key="BytesToBitmap"/>
+    </UserControl.Resources>
+
+    <Border Background="#1A1A2E" CornerRadius="24" Padding="20,20,20,24"
+            MinWidth="320" MaxWidth="380">
+        <StackPanel Spacing="16">
+
+            <!-- IDLE: pick photo -->
+            <StackPanel IsVisible="{Binding IsIdle}" Spacing="16" HorizontalAlignment="Center">
+                <Border Width="64" Height="64" CornerRadius="32"
+                        Background="#22FFFFFF" HorizontalAlignment="Center">
+                    <TextBlock Text="📷" FontFamily="{StaticResource EmojiFont}"
+                               FontSize="30" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Text="Verify Task" FontSize="20" FontWeight="Bold"
+                           Foreground="White" HorizontalAlignment="Center"/>
+                <TextBlock Text="Take or choose a photo to prove you completed it"
+                           FontSize="13" Opacity="0.6" Foreground="White"
+                           HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+
+                <Grid ColumnDefinitions="*,12,*" Margin="0,4,0,0">
+                    <Button Grid.Column="0" Padding="12,10"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                            Background="#22FFFFFF" CornerRadius="14"
+                            Command="{Binding TakePhotoCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                            <TextBlock Text="📷" FontFamily="{StaticResource EmojiFont}" FontSize="16" VerticalAlignment="Center"/>
+                            <TextBlock Text="Camera" FontSize="13" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Grid.Column="2" Padding="12,10"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                            Background="#22FFFFFF" CornerRadius="14"
+                            Command="{Binding PickFromGalleryCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                            <TextBlock Text="🖼️" FontFamily="{StaticResource EmojiFont}" FontSize="16" VerticalAlignment="Center"/>
+                            <TextBlock Text="Gallery" FontSize="13" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </StackPanel>
+
+            <!-- HAS PHOTO: preview + send -->
+            <StackPanel IsVisible="{Binding HasPhoto}" Spacing="14">
+                <TextBlock Text="Preview" FontSize="16" FontWeight="SemiBold"
+                           Foreground="White" HorizontalAlignment="Center"/>
+                <Border CornerRadius="14" ClipToBounds="True"
+                        MaxHeight="220" HorizontalAlignment="Stretch">
+                    <Image Source="{Binding PreviewImageBytes, Converter={StaticResource BytesToBitmap}}"
+                           Stretch="UniformToFill"/>
+                </Border>
+                <Grid ColumnDefinitions="*,12,*">
+                    <Button Grid.Column="0" Padding="12"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                            Background="#22FFFFFF" CornerRadius="14"
+                            Command="{Binding RetryCommand}">
+                        <TextBlock Text="Retake" FontSize="13" FontWeight="SemiBold"
+                                   Foreground="White" Opacity="0.7"/>
+                    </Button>
+                    <Button Grid.Column="2" Padding="12"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                            Background="#66BB6A" CornerRadius="14"
+                            Command="{Binding VerifyCommand}">
+                        <TextBlock Text="Send for Review" FontSize="13" FontWeight="Bold" Foreground="White"/>
+                    </Button>
+                </Grid>
+            </StackPanel>
+
+            <!-- VERIFYING -->
+            <StackPanel IsVisible="{Binding IsVerifying}" Spacing="16"
+                        HorizontalAlignment="Center" Margin="0,20">
+                <Border Width="60" Height="60" CornerRadius="30"
+                        Background="#22FFFFFF" HorizontalAlignment="Center">
+                    <TextBlock Text="🔍" FontFamily="{StaticResource EmojiFont}"
+                               FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Text="Analyzing photo..." FontSize="16" FontWeight="SemiBold"
+                           Foreground="White" HorizontalAlignment="Center"/>
+                <TextBlock Text="Gemini AI is reviewing your photo"
+                           FontSize="12" Opacity="0.5" Foreground="White" HorizontalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- VERIFIED -->
+            <StackPanel IsVisible="{Binding IsVerified}" Spacing="14"
+                        HorizontalAlignment="Center" Margin="0,8">
+                <Border Width="80" Height="80" CornerRadius="40"
+                        Background="#4466BB6A" HorizontalAlignment="Center">
+                    <PathIcon Data="{x:Static shad:Icons.Check}" Width="36" Height="36"
+                              Foreground="#66BB6A"
+                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Text="Task Verified!" FontSize="22" FontWeight="Bold"
+                           Foreground="#66BB6A" HorizontalAlignment="Center"/>
+                <TextBlock Text="{Binding Explanation}" FontSize="12" Opacity="0.7"
+                           Foreground="White" HorizontalAlignment="Center"
+                           TextAlignment="Center" TextWrapping="Wrap" MaxWidth="280"/>
+            </StackPanel>
+
+            <!-- REJECTED -->
+            <StackPanel IsVisible="{Binding IsRejected}" Spacing="14" HorizontalAlignment="Center">
+                <Border Width="64" Height="64" CornerRadius="32"
+                        Background="#33EF5350" HorizontalAlignment="Center">
+                    <PathIcon Data="{x:Static shad:Icons.Cross}" Width="28" Height="28"
+                              Foreground="#EF5350"
+                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Text="Not Verified" FontSize="18" FontWeight="Bold"
+                           Foreground="#EF5350" HorizontalAlignment="Center"/>
+                <TextBlock Text="{Binding Explanation}" FontSize="12" Opacity="0.7"
+                           Foreground="White" HorizontalAlignment="Center"
+                           TextAlignment="Center" TextWrapping="Wrap" MaxWidth="280"/>
+                <Button Padding="16,10" HorizontalAlignment="Center"
+                        Background="#22FFFFFF" CornerRadius="14"
+                        Command="{Binding RetryCommand}">
+                    <TextBlock Text="Try Again" FontSize="13" FontWeight="SemiBold" Foreground="White"/>
+                </Button>
+            </StackPanel>
+
+            <!-- LOW CONFIDENCE -->
+            <StackPanel IsVisible="{Binding IsLowConfidence}" Spacing="14" HorizontalAlignment="Center">
+                <Border Width="64" Height="64" CornerRadius="32"
+                        Background="#33FF9800" HorizontalAlignment="Center">
+                    <TextBlock Text="⚠️" FontFamily="{StaticResource EmojiFont}"
+                               FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Text="Photo Unclear" FontSize="18" FontWeight="Bold"
+                           Foreground="#FF9800" HorizontalAlignment="Center"/>
+                <TextBlock Text="{Binding Explanation}" FontSize="12" Opacity="0.7"
+                           Foreground="White" HorizontalAlignment="Center"
+                           TextAlignment="Center" TextWrapping="Wrap" MaxWidth="280"/>
+                <Button Padding="16,10" HorizontalAlignment="Center"
+                        Background="#22FFFFFF" CornerRadius="14"
+                        Command="{Binding RetryCommand}">
+                    <TextBlock Text="Retake Photo" FontSize="13" FontWeight="SemiBold" Foreground="White"/>
+                </Button>
+            </StackPanel>
+
+            <!-- ERROR -->
+            <StackPanel IsVisible="{Binding IsError}" Spacing="14" HorizontalAlignment="Center">
+                <Border Width="64" Height="64" CornerRadius="32"
+                        Background="#22FFFFFF" HorizontalAlignment="Center">
+                    <TextBlock Text="🔌" FontFamily="{StaticResource EmojiFont}"
+                               FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <TextBlock Text="Service Unavailable" FontSize="18" FontWeight="Bold"
+                           Foreground="White" HorizontalAlignment="Center"/>
+                <TextBlock Text="Please try again later"
+                           FontSize="12" Opacity="0.5" Foreground="White" HorizontalAlignment="Center"/>
+                <Button Padding="16,10" HorizontalAlignment="Center"
+                        Background="#22FFFFFF" CornerRadius="14"
+                        Command="{Binding RetryCommand}">
+                    <TextBlock Text="OK" FontSize="13" FontWeight="SemiBold" Foreground="White"/>
+                </Button>
+            </StackPanel>
+
+        </StackPanel>
+    </Border>
+</UserControl>

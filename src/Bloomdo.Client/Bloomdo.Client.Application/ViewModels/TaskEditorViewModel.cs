@@ -59,10 +59,20 @@ public partial class TaskEditorViewModel : PageViewModel
     [ObservableProperty]
     private bool _isSaving;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsCustomVerification))]
+    private VerificationTemplate _selectedVerificationTemplate = VerificationTemplate.Workout;
+
+    [ObservableProperty]
+    private string? _customVerificationCriteria;
+
     public bool IsTimerType => SelectedTaskType == ActivityItemType.Timer;
     public bool IsCountType => SelectedTaskType == ActivityItemType.Count;
     public bool IsStepsType => SelectedTaskType == ActivityItemType.Steps;
     public bool IsCheckboxType => SelectedTaskType == ActivityItemType.Checkbox;
+    public bool IsPhotoVerificationType => SelectedTaskType == ActivityItemType.PhotoVerification;
+    public bool IsCustomVerification => SelectedTaskType == ActivityItemType.PhotoVerification
+                                        && SelectedVerificationTemplate == VerificationTemplate.Custom;
 
     public string PreviewTitle => string.IsNullOrWhiteSpace(TaskTitle) ? "Task Preview" : TaskTitle;
     public string PreviewIcon => string.IsNullOrWhiteSpace(TaskIcon) ? "✨" : TaskIcon;
@@ -74,6 +84,7 @@ public partial class TaskEditorViewModel : PageViewModel
         ActivityItemType.Count => $"0/{TaskTargetCount}",
         ActivityItemType.Steps => $"0/{TaskTargetCount} steps",
         ActivityItemType.Checkbox => "Tap to complete",
+        ActivityItemType.PhotoVerification => "Tap to verify with photo",
         _ => string.Empty
     };
 
@@ -144,6 +155,8 @@ public partial class TaskEditorViewModel : PageViewModel
         TaskIcon = "✨";
         TaskColor = groupColor;
         IsEmojiPickerOpen = false;
+        SelectedVerificationTemplate = VerificationTemplate.Workout;
+        CustomVerificationCriteria = null;
     }
 
     public void ConfigureForEdit(ActivityTaskItemViewModel task, Action? onComplete = null)
@@ -160,6 +173,8 @@ public partial class TaskEditorViewModel : PageViewModel
         TaskIcon = task.Icon;
         TaskColor = task.Color;
         IsEmojiPickerOpen = false;
+        SelectedVerificationTemplate = task.VerificationTemplate ?? VerificationTemplate.Workout;
+        CustomVerificationCriteria = task.CustomVerificationCriteria;
     }
 
     [RelayCommand]
@@ -170,8 +185,16 @@ public partial class TaskEditorViewModel : PageViewModel
             "Count" => ActivityItemType.Count,
             "Steps" => ActivityItemType.Steps,
             "Checkbox" => ActivityItemType.Checkbox,
+            "PhotoVerification" => ActivityItemType.PhotoVerification,
             _ => ActivityItemType.Timer
         };
+    }
+
+    [RelayCommand]
+    private void SelectVerificationTemplate(string template)
+    {
+        if (Enum.TryParse<VerificationTemplate>(template, out var parsed))
+            SelectedVerificationTemplate = parsed;
     }
 
     [RelayCommand]
@@ -219,6 +242,8 @@ public partial class TaskEditorViewModel : PageViewModel
         OnPropertyChanged(nameof(IsCountType));
         OnPropertyChanged(nameof(IsStepsType));
         OnPropertyChanged(nameof(IsCheckboxType));
+        OnPropertyChanged(nameof(IsPhotoVerificationType));
+        OnPropertyChanged(nameof(IsCustomVerification));
         OnPropertyChanged(nameof(PreviewSubtitle));
 
         // Set sensible defaults when switching types
@@ -246,7 +271,9 @@ public partial class TaskEditorViewModel : PageViewModel
                     DurationMinutes = IsTimerType ? TaskDurationMinutes : null,
                     TargetCount = (IsCountType || IsStepsType) ? TaskTargetCount : null,
                     Icon = TaskIcon,
-                    Color = TaskColor
+                    Color = TaskColor,
+                    VerificationTemplate = IsPhotoVerificationType ? SelectedVerificationTemplate : null,
+                    CustomVerificationCriteria = IsCustomVerification ? CustomVerificationCriteria?.Trim() : null
                 };
 
                 await _activityApi.UpdateItemAsync(_editingTaskId.Value, request);
@@ -263,7 +290,9 @@ public partial class TaskEditorViewModel : PageViewModel
                     DurationMinutes = IsTimerType ? TaskDurationMinutes : null,
                     TargetCount = (IsCountType || IsStepsType) ? TaskTargetCount : null,
                     Icon = TaskIcon,
-                    Color = TaskColor
+                    Color = TaskColor,
+                    VerificationTemplate = IsPhotoVerificationType ? SelectedVerificationTemplate : null,
+                    CustomVerificationCriteria = IsCustomVerification ? CustomVerificationCriteria?.Trim() : null
                 };
 
                 await _activityApi.CreateItemAsync(request);

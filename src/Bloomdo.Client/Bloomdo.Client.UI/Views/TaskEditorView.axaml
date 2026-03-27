@@ -149,7 +149,7 @@
                     <StackPanel Spacing="10">
                         <TextBlock Text="Task Type" FontSize="14" FontWeight="SemiBold"
                                    Foreground="#EFEFEF"/>
-                        <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,8,Auto">
+                        <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,8,Auto,8,Auto">
                             <Button Grid.Column="0" Grid.Row="0" Padding="10"
                                     HorizontalAlignment="Stretch"
                                     HorizontalContentAlignment="Center"
@@ -195,6 +195,18 @@
                                 <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
                                     <TextBlock Text="✅" FontFamily="{StaticResource EmojiFont}" FontSize="16" VerticalAlignment="Center"/>
                                     <TextBlock Text="Checkbox" FontSize="13" FontWeight="SemiBold"
+                                               Foreground="White" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Grid.Column="0" Grid.Row="4" Grid.ColumnSpan="3" Padding="10"
+                                    HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Center"
+                                    CornerRadius="12"
+                                    Command="{Binding SelectTaskTypeCommand}"
+                                    CommandParameter="PhotoVerification">
+                                <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+                                    <TextBlock Text="📷" FontFamily="{StaticResource EmojiFont}" FontSize="16" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Photo Verification" FontSize="13" FontWeight="SemiBold"
                                                Foreground="White" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
@@ -326,6 +338,133 @@
                                 </PathIcon>
                             </Button>
                         </Grid>
+                    </StackPanel>
+                </shad:Card>
+
+                <!-- Photo Verification Template -->
+                <shad:Card Padding="14" Background="{DynamicResource Brush.Card}"
+                           IsVisible="{Binding IsPhotoVerificationType}">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Verification Template" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="#EFEFEF"/>
+                        <TextBlock Text="AI will check the photo against this criteria"
+                                   FontSize="12" Opacity="0.5" Foreground="#EFEFEF"/>
+
+                        <WrapPanel>
+                            <Button Margin="0,0,8,8" Padding="10,8" CornerRadius="12"
+                                    Command="{Binding SelectVerificationTemplateCommand}"
+                                    CommandParameter="Workout">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Text="💪" FontFamily="{StaticResource EmojiFont}" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Workout" FontSize="12" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Margin="0,0,8,8" Padding="10,8" CornerRadius="12"
+                                    Command="{Binding SelectVerificationTemplateCommand}"
+                                    CommandParameter="Meal">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Text="🍽️" FontFamily="{StaticResource EmojiFont}" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Meal" FontSize="12" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Margin="0,0,8,8" Padding="10,8" CornerRadius="12"
+                                    Command="{Binding SelectVerificationTemplateCommand}"
+                                    CommandParameter="Workspace">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Text="💼" FontFamily="{StaticResource EmojiFont}" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Workspace" FontSize="12" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Margin="0,0,8,8" Padding="10,8" CornerRadius="12"
+                                    Command="{Binding SelectVerificationTemplateCommand}"
+                                    CommandParameter="Reading">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Text="📖" FontFamily="{StaticResource EmojiFont}" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Reading" FontSize="12" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Margin="0,0,8,8" Padding="10,8" CornerRadius="12"
+                                    Command="{Binding SelectVerificationTemplateCommand}"
+                                    CommandParameter="Outdoors">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Text="🌿" FontFamily="{StaticResource EmojiFont}" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Outdoors" FontSize="12" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Margin="0,0,8,8" Padding="10,8" CornerRadius="12"
+                                    Command="{Binding SelectVerificationTemplateCommand}"
+                                    CommandParameter="Sleep">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Text="😴" FontFamily="{StaticResource EmojiFont}" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Sleep" FontSize="12" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Margin="0,0,8,8" Padding="10,8" CornerRadius="12"
+                                    Command="{Binding SelectVerificationTemplateCommand}"
+                                    CommandParameter="Meditation">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Text="🧘" FontFamily="{StaticResource EmojiFont}" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Meditation" FontSize="12" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Margin="0,0,8,8" Padding="10,8" CornerRadius="12"
+                                    Command="{Binding SelectVerificationTemplateCommand}"
+                                    CommandParameter="Cleaning">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Text="🧹" FontFamily="{StaticResource EmojiFont}" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Cleaning" FontSize="12" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Margin="0,0,8,8" Padding="10,8" CornerRadius="12"
+                                    Command="{Binding SelectVerificationTemplateCommand}"
+                                    CommandParameter="Water">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Text="💧" FontFamily="{StaticResource EmojiFont}" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Water" FontSize="12" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Margin="0,0,8,8" Padding="10,8" CornerRadius="12"
+                                    Command="{Binding SelectVerificationTemplateCommand}"
+                                    CommandParameter="ColdShower">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Text="🚿" FontFamily="{StaticResource EmojiFont}" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Cold Shower" FontSize="12" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Margin="0,0,8,8" Padding="10,8" CornerRadius="12"
+                                    Command="{Binding SelectVerificationTemplateCommand}"
+                                    CommandParameter="Study">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Text="📚" FontFamily="{StaticResource EmojiFont}" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Study" FontSize="12" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Margin="0,0,8,8" Padding="10,8" CornerRadius="12"
+                                    Command="{Binding SelectVerificationTemplateCommand}"
+                                    CommandParameter="Custom">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Text="✏️" FontFamily="{StaticResource EmojiFont}" FontSize="14" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Custom" FontSize="12" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </WrapPanel>
+
+                        <!-- Selected template indicator -->
+                        <Border Background="#15FFFFFF" CornerRadius="8" Padding="10,6">
+                            <TextBlock FontSize="12" Foreground="#EFEFEF" Opacity="0.8">
+                                <Run Text="Selected: "/>
+                                <Run Text="{Binding SelectedVerificationTemplate}" FontWeight="SemiBold"/>
+                            </TextBlock>
+                        </Border>
+
+                        <!-- Custom criteria input -->
+                        <StackPanel IsVisible="{Binding IsCustomVerification}" Spacing="6">
+                            <TextBlock Text="Custom Criteria" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="#EFEFEF"/>
+                            <TextBox Text="{Binding CustomVerificationCriteria}"
+                                     Watermark="Describe what the photo should show..."
+                                     FontSize="13" AcceptsReturn="True" MaxHeight="100"/>
+                        </StackPanel>
                     </StackPanel>
                 </shad:Card>
 

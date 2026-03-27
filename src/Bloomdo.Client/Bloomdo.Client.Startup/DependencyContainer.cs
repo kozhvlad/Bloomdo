@@ -106,6 +106,17 @@ public static class DependencyContainer
 
         // Browser service
         services.AddSingleton<IBrowserService, BrowserService>();
+
+        // Image picker service
+        services.AddSingleton<IImagePickerService, AvaloniaImagePickerService>();
+
+        // Photo verification dialog service
+        services.AddSingleton<IPhotoVerificationDialogService>(sp =>
+            new PhotoVerificationDialogService(
+                sp.GetRequiredService<ShellViewModel>(),
+                sp.GetRequiredService<IDailyActivityApiService>(),
+                sp.GetRequiredService<IImagePickerService>(),
+                sp.GetRequiredService<IToastService>()));
     }
 
     private static void RegisterRepositories(IServiceCollection services)
@@ -258,7 +269,9 @@ public static class DependencyContainer
             sp.GetRequiredService<IBlockApiService>(),
             sp.GetRequiredService<INavigationService>(),
             sp.GetRequiredService<ITimerDialogService>(),
-            sp.GetRequiredService<IConfirmDialogService>()));
+            sp.GetRequiredService<IConfirmDialogService>(),
+            sp.GetRequiredService<IPhotoVerificationDialogService>(),
+            sp.GetRequiredService<IToastService>()));
         services.AddTransient<BlocksViewModel>(sp => new BlocksViewModel(
             sp.GetRequiredService<IBlockApiService>(),
             sp.GetService<IInstalledAppsService>(),

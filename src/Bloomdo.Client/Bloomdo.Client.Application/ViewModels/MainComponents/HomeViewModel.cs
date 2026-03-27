@@ -16,6 +16,8 @@ public partial class HomeViewModel : PageViewModel
     private readonly INavigationService? _navigationService;
     private readonly ITimerDialogService? _timerDialogService;
     private readonly IConfirmDialogService? _confirmDialogService;
+    private readonly IPhotoVerificationDialogService? _photoVerificationDialogService;
+    private readonly IToastService? _toastService;
 
     [ObservableProperty]
     private string _welcomeMessage = "Welcome to Bloomdo!";
@@ -63,7 +65,9 @@ public partial class HomeViewModel : PageViewModel
         IBlockApiService? blockApiService = null,
         INavigationService? navigationService = null,
         ITimerDialogService? timerDialogService = null,
-        IConfirmDialogService? confirmDialogService = null)
+        IConfirmDialogService? confirmDialogService = null,
+        IPhotoVerificationDialogService? photoVerificationDialogService = null,
+        IToastService? toastService = null)
     {
         _activityApi = activityApi;
         _groupCompletionStore = groupCompletionStore;
@@ -72,6 +76,8 @@ public partial class HomeViewModel : PageViewModel
         _navigationService = navigationService;
         _timerDialogService = timerDialogService;
         _confirmDialogService = confirmDialogService;
+        _photoVerificationDialogService = photoVerificationDialogService;
+        _toastService = toastService;
     }
 
     public override void OnAppearing()
@@ -119,7 +125,9 @@ public partial class HomeViewModel : PageViewModel
                         Color = item.Color,
                         CurrentStreak = item.CurrentStreak,
                         IsCompleted = item.IsCompleted,
-                        CompletedAtUtc = item.CompletedAtUtc
+                        CompletedAtUtc = item.CompletedAtUtc,
+                        VerificationTemplate = item.VerificationTemplate,
+                        CustomVerificationCriteria = item.CustomVerificationCriteria
                     });
                 }
 
@@ -148,6 +156,9 @@ public partial class HomeViewModel : PageViewModel
     {
         if (task is null || _activityApi is null || task.IsToggling) return;
 
+        // PhotoVerification tasks can only be completed via photo — block manual toggle to completed
+        if (task.IsPhotoVerificationType && !task.IsCompleted) return;
+
         task.IsToggling = true;
         try
         {
@@ -171,6 +182,23 @@ public partial class HomeViewModel : PageViewModel
         {
             task.IsToggling = false;
         }
+    }
+
+    // --- Photo verification ---
+
+    [RelayCommand]
+    private void OpenPhotoVerification(ActivityTaskItemViewModel? task)
+    {
+        if (task is null) return;
+
+        if (task.IsCompleted)
+        {
+            _toastService?.ShowInfo("Already verified today");
+            return;
+        }
+
+        var date = DateOnly.FromDateTime(DateTime.Today);
+        _photoVerificationDialogService?.Show(task.Id, task.VerificationTemplate, task.CustomVerificationCriteria, date, () => _ = LoadDailyActivitiesAsync());
     }
 
     // --- Group CRUD ---
@@ -218,18 +246,19 @@ public partial class HomeViewModel : PageViewModel
 
         if (_confirmDialogService is not null)
         {
-            var confirmed = await _confirmDialogService.ConfirmAsync(
-                "Delete Group",
-                $"Delete \"{group.Title}\" and all its tasks? This action cannot be undone.");
+            var taskCount = group.Tasks.Count;
+            var message = taskCount > 0
+                ? $"Delete \"{group.Title}\"? This will also delete {taskCount} task{(taskCount == 1 ? "" : "s")} inside."
+                : $"Delete \"{group.Title}\"?";
+            var confirmed = await _confirmDialogService.ConfirmAsync("Delete Group", message);
             if (!confirmed) return;
         }
 
         var deleted = await _activityApi.DeleteGroupAsync(group.Id);
         if (deleted)
         {
-            Groups.Remove(group);
-            HasNoGroups = Groups.Count == 0;
-            RecalculateProgress();
+            _toastService?.ShowSuccess("Group deleted");
+            _ = LoadDailyActivitiesAsync();
         }
     }
 
@@ -419,15 +448,8 @@ public partial class HomeViewModel : PageViewModel
         var deleted = await _activityApi.DeleteItemAsync(task.Id);
         if (deleted)
         {
-            foreach (var group in Groups)
-            {
-                if (group.Tasks.Remove(task))
-                {
-                    group.RefreshProgress();
-                    break;
-                }
-            }
-            RecalculateProgress();
+            _toastService?.ShowSuccess("Task deleted");
+            _ = LoadDailyActivitiesAsync();
         }
     }
 

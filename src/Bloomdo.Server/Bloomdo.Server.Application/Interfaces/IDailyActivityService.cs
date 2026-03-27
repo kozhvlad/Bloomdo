@@ -15,4 +15,5 @@ public interface IDailyActivityService
 
     Task<DailyActivitiesResponse> GetDailyAsync(Guid accountId, DateOnly date, CancellationToken ct = default);
     Task<bool> ToggleCompletionAsync(Guid accountId, ToggleCompletionRequest request, CancellationToken ct = default);
+    Task<VerifyPhotoResponse> VerifyPhotoAsync(Guid accountId, VerifyPhotoRequest request, CancellationToken ct = default);
 }

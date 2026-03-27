@@ -52,6 +52,7 @@ public static class ApiRoutes
         public const string Items = $"{BaseRoute}/items";
         public const string ItemById = $"{BaseRoute}/items/{{id}}";
         public const string Toggle = $"{BaseRoute}/toggle";
+        public const string VerifyPhoto = $"{BaseRoute}/verify-photo";
     }
 
     public static class Achievements

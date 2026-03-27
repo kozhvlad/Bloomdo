@@ -112,6 +112,24 @@ public class DailyActivitiesController(IDailyActivityService activityService) : 
         return result ? Ok() : NotFound();
     }
 
+    [HttpPost(ApiRoutes.Activities.VerifyPhoto)]
+    [RequirePermission(Permissions.ActivitiesManage)]
+    public async Task<IActionResult> VerifyPhoto([FromBody] VerifyPhotoRequest request, CancellationToken ct)
+    {
+        var accountId = GetAccountId();
+        if (accountId is null) return Unauthorized();
+
+        try
+        {
+            var result = await activityService.VerifyPhotoAsync(accountId.Value, request, ct);
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("API keys exhausted") || ex.Message.Contains("unavailable"))
+        {
+            return StatusCode(503, new { message = "Vision service is temporarily unavailable. Please try again later." });
+        }
+    }
+
     private Guid? GetAccountId()
     {
         var claim = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;

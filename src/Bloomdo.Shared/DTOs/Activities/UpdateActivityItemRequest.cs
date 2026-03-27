@@ -11,4 +11,6 @@ public class UpdateActivityItemRequest
     public string? Color { get; set; }
     public int? SortOrder { get; set; }
     public bool? IsActive { get; set; }
+    public VerificationTemplate? VerificationTemplate { get; set; }
+    public string? CustomVerificationCriteria { get; set; }
 }

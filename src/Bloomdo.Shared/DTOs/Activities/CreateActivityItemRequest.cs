@@ -10,4 +10,6 @@ public class CreateActivityItemRequest
     public int? TargetCount { get; set; }
     public string Icon { get; set; } = "✨";
     public string Color { get; set; } = "#7E57C2";
+    public VerificationTemplate? VerificationTemplate { get; set; }
+    public string? CustomVerificationCriteria { get; set; }
 }

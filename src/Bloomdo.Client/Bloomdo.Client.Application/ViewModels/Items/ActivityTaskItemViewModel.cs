@@ -67,11 +67,18 @@ public partial class ActivityTaskItemViewModel : ObservableObject
     [ObservableProperty]
     private int _timerRemainingSeconds;
 
+    [ObservableProperty]
+    private VerificationTemplate? _verificationTemplate;
+
+    [ObservableProperty]
+    private string? _customVerificationCriteria;
+
     // Computed — type checks
     public bool IsTimerType => TaskType == ActivityItemType.Timer;
     public bool IsCountType => TaskType == ActivityItemType.Count;
     public bool IsStepsType => TaskType == ActivityItemType.Steps;
     public bool IsCheckboxType => TaskType == ActivityItemType.Checkbox;
+    public bool IsPhotoVerificationType => TaskType == ActivityItemType.PhotoVerification;
     public bool IsCountBasedType => IsCountType || IsStepsType;
 
     public string FirstLetter =>
@@ -116,6 +123,8 @@ public partial class ActivityTaskItemViewModel : ObservableObject
                 parts.Add($"{CurrentCount}/{TargetCount} steps");
             else if (IsCheckboxType)
                 parts.Add(IsCompleted ? "Done" : "Tap to complete");
+            else if (IsPhotoVerificationType)
+                parts.Add(IsCompleted ? "Verified" : "Tap to verify with photo");
             else if (DurationMinutes.HasValue)
                 parts.Add($"{DurationMinutes} min");
             if (!string.IsNullOrWhiteSpace(Description))
@@ -150,6 +159,7 @@ public partial class ActivityTaskItemViewModel : ObservableObject
         OnPropertyChanged(nameof(IsCountType));
         OnPropertyChanged(nameof(IsStepsType));
         OnPropertyChanged(nameof(IsCheckboxType));
+        OnPropertyChanged(nameof(IsPhotoVerificationType));
         OnPropertyChanged(nameof(IsCountBasedType));
         OnPropertyChanged(nameof(HasDuration));
         OnPropertyChanged(nameof(Subtitle));

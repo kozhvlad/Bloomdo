@@ -7,7 +7,8 @@ namespace Bloomdo.Server.Application.Services;
 public class DailyActivityService(
     IRepository<ActivityGroup> groupRepo,
     IRepository<ActivityItem> itemRepo,
-    IRepository<ActivityCompletion> completionRepo) : IDailyActivityService
+    IRepository<ActivityCompletion> completionRepo,
+    IVisionService visionService) : IDailyActivityService
 {
     public async Task<List<ActivityGroupResponse>> GetGroupsAsync(Guid accountId, CancellationToken ct = default)
     {
@@ -100,7 +101,9 @@ public class DailyActivityService(
             Icon = request.Icon,
             Color = request.Color,
             SortOrder = maxOrder + 1,
-            IsActive = true
+            IsActive = true,
+            VerificationTemplateId = request.VerificationTemplate.HasValue ? (int)request.VerificationTemplate.Value : null,
+            CustomVerificationCriteria = request.CustomVerificationCriteria
         };
 
         await itemRepo.AddAsync(item, ct);
@@ -125,6 +128,8 @@ public class DailyActivityService(
         if (request.Color is not null) item.Color = request.Color;
         if (request.SortOrder.HasValue) item.SortOrder = request.SortOrder.Value;
         if (request.IsActive.HasValue) item.IsActive = request.IsActive.Value;
+        if (request.VerificationTemplate.HasValue) item.VerificationTemplateId = (int)request.VerificationTemplate.Value;
+        if (request.CustomVerificationCriteria is not null) item.CustomVerificationCriteria = request.CustomVerificationCriteria;
 
         await itemRepo.UpdateAsync(item, ct);
         return MapItemResponse(item);
@@ -192,7 +197,11 @@ public class DailyActivityService(
                     Color = item.Color,
                     CurrentStreak = itemStreak,
                     IsCompleted = isCompleted,
-                    CompletedAtUtc = completion?.CompletedAtUtc
+                    CompletedAtUtc = completion?.CompletedAtUtc,
+                    VerificationTemplate = item.VerificationTemplateId.HasValue
+                        ? (VerificationTemplate)item.VerificationTemplateId.Value
+                        : null,
+                    CustomVerificationCriteria = item.CustomVerificationCriteria
                 });
             }
 
@@ -257,6 +266,37 @@ public class DailyActivityService(
         return true;
     }
 
+    public async Task<VerifyPhotoResponse> VerifyPhotoAsync(Guid accountId, VerifyPhotoRequest request, CancellationToken ct = default)
+    {
+        var item = await itemRepo.FirstOrDefaultAsync(i => i.Id == request.ActivityItemId, ct)
+            ?? throw new InvalidOperationException("Activity item not found.");
+
+        var group = await groupRepo.FirstOrDefaultAsync(g => g.Id == item.ActivityGroupId && g.AccountId == accountId, ct)
+            ?? throw new InvalidOperationException("Activity item not found.");
+
+        var imageBytes = Convert.FromBase64String(request.ImageBase64);
+        var template = item.VerificationTemplateId.HasValue
+            ? (VerificationTemplate)item.VerificationTemplateId.Value
+            : VerificationTemplate.Custom;
+
+        var result = await visionService.VerifyAsync(imageBytes, template, item.CustomVerificationCriteria, ct);
+
+        if (result.Status == VerificationStatus.Verified)
+        {
+            await ToggleCompletionAsync(accountId, new ToggleCompletionRequest
+            {
+                ActivityItemId = request.ActivityItemId,
+                Date = request.Date
+            }, ct);
+        }
+
+        return new VerifyPhotoResponse
+        {
+            Status = result.Status,
+            Explanation = result.Explanation
+        };
+    }
+
     private async Task<int> CalculateStreakAsync(Guid accountId, Guid groupId, DateOnly currentDate, CancellationToken ct)
     {
         var items = (await itemRepo.FindAsync(i => i.ActivityGroupId == groupId && i.IsActive, ct)).ToList();
@@ -311,7 +351,9 @@ public class DailyActivityService(
         Icon = item.Icon,
         Color = item.Color,
         SortOrder = item.SortOrder,
-        IsActive = item.IsActive
+        IsActive = item.IsActive,
+        VerificationTemplate = item.VerificationTemplateId.HasValue ? (VerificationTemplate)item.VerificationTemplateId.Value : null,
+        CustomVerificationCriteria = item.CustomVerificationCriteria
     };
 
     private async Task<int> CalculateItemStreakAsync(Guid accountId, Guid itemId, DateOnly currentDate, CancellationToken ct)

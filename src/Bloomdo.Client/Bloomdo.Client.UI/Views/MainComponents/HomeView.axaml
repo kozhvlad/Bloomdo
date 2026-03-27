@@ -244,8 +244,26 @@
 																		</StackPanel>
 																	</Border>
 
+																	<!-- Photo verification button -->
+																	<Button Grid.Column="3"
+																			Classes="Ghost" Padding="2"
+																			VerticalAlignment="Center"
+																			IsVisible="{Binding IsPhotoVerificationType}"
+																			Command="{Binding ((mainComponents1:HomeViewModel)DataContext).OpenPhotoVerificationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+																			CommandParameter="{Binding}">
+																		<Border Width="28" Height="28" CornerRadius="14"
+																				Background="#33FFFFFF">
+																			<TextBlock Text="📷"
+																					   FontFamily="{StaticResource EmojiFont}"
+																					   FontSize="14"
+																					   HorizontalAlignment="Center"
+																					   VerticalAlignment="Center"/>
+																		</Border>
+																	</Button>
+
 																	<!-- Timer button (only for timer type with duration) -->
-																	<Panel Grid.Column="3" VerticalAlignment="Center" Margin="2,0">
+																	<Panel Grid.Column="3" VerticalAlignment="Center" Margin="2,0"
+																		   IsVisible="{Binding !IsPhotoVerificationType}">
 																		<Button Classes="Ghost" Padding="2"
 																				IsVisible="{Binding HasDuration}"
 																				Command="{Binding ((mainComponents1:HomeViewModel)DataContext).StartTimerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"

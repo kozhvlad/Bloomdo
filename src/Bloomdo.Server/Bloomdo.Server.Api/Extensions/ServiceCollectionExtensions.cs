@@ -97,6 +97,7 @@ public static class ServiceCollectionExtensions
             serviceCollection.AddScoped<IAchievementService, AchievementService>();
             serviceCollection.AddScoped<IDailyActivityService, DailyActivityService>();
             serviceCollection.AddScoped<IChatService, ChatService>();
+            serviceCollection.AddScoped<IVisionService, GeminiVisionService>();
             serviceCollection.AddScoped<ISubscriptionService, SubscriptionService>();
         }
 

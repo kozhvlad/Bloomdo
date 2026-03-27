@@ -33,4 +33,6 @@ public class DailyActivityItemDto
     public int CurrentStreak { get; set; }
     public bool IsCompleted { get; set; }
     public DateTime? CompletedAtUtc { get; set; }
+    public VerificationTemplate? VerificationTemplate { get; set; }
+    public string? CustomVerificationCriteria { get; set; }
 }

@@ -277,8 +277,9 @@ public class SwipeRevealPanel : ContentControl
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
-        var props = e.GetCurrentPoint(this).Properties;
-        if (!props.IsLeftButtonPressed) return;
+        var point = e.GetCurrentPoint(this);
+        // Accept left mouse button OR touch/pen (for Android)
+        if (!point.Properties.IsLeftButtonPressed && point.Pointer.Type == PointerType.Mouse) return;
 
         if (_currentlyOpenPanel is not null && !ReferenceEquals(_currentlyOpenPanel, this))
             _currentlyOpenPanel.AnimateClose();

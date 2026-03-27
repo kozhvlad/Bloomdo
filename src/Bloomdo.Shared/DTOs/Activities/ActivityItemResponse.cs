@@ -13,4 +13,6 @@ public class ActivityItemResponse
     public string Color { get; set; } = string.Empty;
     public int SortOrder { get; set; }
     public bool IsActive { get; set; }
+    public VerificationTemplate? VerificationTemplate { get; set; }
+    public string? CustomVerificationCriteria { get; set; }
 }

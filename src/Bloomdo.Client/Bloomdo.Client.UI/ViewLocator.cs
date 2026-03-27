@@ -85,6 +85,9 @@ public class ViewLocator : IDataTemplate
             case TimerDialogViewModel:
                 return new TimerDialogView();
 
+            case PhotoVerificationViewModel:
+                return new PhotoVerificationView();
+
             default:
                 var message = data is null
                     ? "Data passed to ViewLocator was null."

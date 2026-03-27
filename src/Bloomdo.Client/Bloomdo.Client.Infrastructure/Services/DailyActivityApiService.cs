@@ -158,4 +158,21 @@ public class DailyActivityApiService(HttpClient httpClient) : IDailyActivityApiS
             return false;
         }
     }
+
+    public async Task<VerifyPhotoResponse?> VerifyPhotoAsync(VerifyPhotoRequest request, CancellationToken ct = default)
+    {
+        try
+        {
+            var response = await httpClient.PostAsJsonAsync(ApiRoutes.Activities.VerifyPhoto, request, ct);
+            if (response.IsSuccessStatusCode)
+                return await response.Content.ReadFromJsonAsync<VerifyPhotoResponse>(ct);
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"VerifyPhoto failed: {ex.Message}");
+            return null;
+        }
+    }
 }
