@@ -1,4 +1,4 @@
-﻿using Avalonia.Controls;
+using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Bloomdo.Client.Application.ViewModels;
 using Bloomdo.Client.Application.ViewModels.MainComponents;
@@ -84,6 +84,9 @@ public class ViewLocator : IDataTemplate
 
             case TimerDialogViewModel:
                 return new TimerDialogView();
+
+            case ConfirmDialogViewModel:
+                return new ConfirmDialogView();
 
             case PhotoVerificationViewModel:
                 return new PhotoVerificationView();

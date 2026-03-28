@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Net.Http;
 using Bloomdo.Client.Application.Services;
@@ -84,7 +84,8 @@ public static class DependencyContainer
         });
         services.AddSingleton<ITimerDialogService>(sp =>
             new TimerDialogService(sp.GetRequiredService<ShellViewModel>()));
-        services.AddSingleton<IConfirmDialogService, ConfirmDialogService>();
+        services.AddSingleton<IConfirmDialogService>(sp => 
+            new ConfirmDialogService(sp.GetRequiredService<ShellViewModel>()));
 
         // Theme service
         services.AddSingleton<IThemeService, ThemeService>();

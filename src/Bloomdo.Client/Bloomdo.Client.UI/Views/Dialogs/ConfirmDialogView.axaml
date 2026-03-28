@@ -1,0 +1,68 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:shad="clr-namespace:ShadUI;assembly=ShadUI"
+             xmlns:vm="clr-namespace:Bloomdo.Client.Application.ViewModels;assembly=Bloomdo.Client.Application"
+             mc:Ignorable="d" d:DesignWidth="320" d:DesignHeight="250"
+             x:DataType="vm:ConfirmDialogViewModel"
+             x:Class="Bloomdo.Client.UI.Dialogs.ConfirmDialogView">
+
+    <Border Background="#1A1A2E"
+            CornerRadius="24" Padding="24,24,24,24" MinWidth="280" MaxWidth="340">
+        <StackPanel Spacing="16" HorizontalAlignment="Center">
+
+            <!-- Title -->
+            <TextBlock Text="{Binding Title}"
+                       FontSize="20" FontWeight="Bold"
+                       Foreground="White"
+                       HorizontalAlignment="Center"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap" />
+
+            <!-- Message -->
+            <TextBlock Text="{Binding Message}"
+                       FontSize="14" Opacity="0.7"
+                       Foreground="White"
+                       HorizontalAlignment="Center"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap" />
+
+            <!-- Buttons row -->
+            <Grid ColumnDefinitions="*,12,*" Margin="0,16,0,0">
+                <!-- Cancel button -->
+                <Button Grid.Column="0" Classes="Ghost" Padding="0"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Command="{Binding CancelCommand}">
+                    <Border CornerRadius="12" Padding="0,12" Height="44"
+                            Background="#33FFFFFF"
+                            HorizontalAlignment="Stretch">
+                        <TextBlock Text="{Binding CancelText}"
+                                   FontSize="15" FontWeight="SemiBold"
+                                   Foreground="White"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                </Button>
+
+                <!-- Confirm (Destructive) button -->
+                <Button Grid.Column="2" Classes="Ghost" Padding="0"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Command="{Binding ConfirmCommand}">
+                    <Border CornerRadius="12" Padding="0,12" Height="44"
+                            Background="#EF5350"
+                            HorizontalAlignment="Stretch">
+                        <TextBlock Text="{Binding ConfirmText}"
+                                   FontSize="15" FontWeight="Bold"
+                                   Foreground="White"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                </Button>
+            </Grid>
+
+        </StackPanel>
+    </Border>
+</UserControl>
