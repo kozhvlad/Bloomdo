@@ -1,10 +1,11 @@
 using Bloomdo.Server.Api.Authorization;
+using Bloomdo.Server.Api.Services;
 using Bloomdo.Server.Infrastructure.Data;
 using Bloomdo.Server.Infrastructure.Data.Repositories;
 using Bloomdo.Server.Application.Interfaces;
 using Bloomdo.Server.Application.Services;
-using Bloomdo.Server.Application.Settings;
 using Bloomdo.Server.Infrastructure.Services;
+using Bloomdo.Server.Application.Settings;
 using Bloomdo.Server.Infrastructure.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -59,6 +60,15 @@ public static class ServiceCollectionExtensions
 
                     options.Events = new JwtBearerEvents
                     {
+                        OnMessageReceived = context =>
+                        {
+                            // SignalR passes token via query string for WebSocket/SSE
+                            var accessToken = context.Request.Query["access_token"];
+                            var path = context.HttpContext.Request.Path;
+                            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                                context.Token = accessToken;
+                            return Task.CompletedTask;
+                        },
                         OnAuthenticationFailed = context =>
                         {
                             Console.WriteLine($"[JWT] Auth FAILED: {context.Exception.GetType().Name}: {context.Exception.Message}");
@@ -99,6 +109,7 @@ public static class ServiceCollectionExtensions
             serviceCollection.AddScoped<IChatService, ChatService>();
             serviceCollection.AddScoped<IVisionService, GeminiVisionService>();
             serviceCollection.AddScoped<ISubscriptionService, SubscriptionService>();
+            serviceCollection.AddScoped<ISocialRealTimeNotifier, SocialRealTimeNotifier>();
             serviceCollection.AddScoped<ISocialService, SocialService>();
         }
 

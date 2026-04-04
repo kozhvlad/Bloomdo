@@ -48,6 +48,8 @@ public class NavigationService(
         shellViewModel.SetViewModel(viewModel);
     }
 
+    public void NavigateBack() => shellViewModel.NavigateBack();
+
     public void OnboardingComplete()
     {
         Debug.WriteLine("OnboardingComplete called - saving flag and navigating to LoginViewModel");

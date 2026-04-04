@@ -156,18 +156,18 @@
 											</StackPanel>
 										</Panel>
 
-										<!-- Edit group -->
+										<!-- Edit group (hidden for shared groups) -->
 										<Button Grid.Column="2" Classes="Ghost" Padding="6"
-												IsVisible="{Binding !IsEditing}"
+												IsVisible="{Binding !IsShared}"
 												Command="{Binding $parent[ItemsControl].((mainComponents1:HomeViewModel)DataContext).StartEditGroupCommand}"
 												CommandParameter="{Binding}">
 											<PathIcon Data="{x:Static shad:Icons.Marker}" Width="14" Height="14"
 													  Foreground="{DynamicResource ForegroundColor}" Opacity="0.4"/>
 										</Button>
 
-										<!-- Delete group -->
+										<!-- Delete group (hidden for shared groups) -->
 										<Button Grid.Column="3" Classes="Ghost" Padding="6"
-												IsVisible="{Binding !IsEditing}"
+												IsVisible="{Binding !IsShared}"
 												Command="{Binding $parent[ItemsControl].((mainComponents1:HomeViewModel)DataContext).DeleteGroupCommand}"
 												CommandParameter="{Binding}">
 											<PathIcon Data="{x:Static shad:Icons.Minus}" Width="14" Height="14"

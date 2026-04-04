@@ -17,13 +17,24 @@
 <Border Height="220" CornerRadius="0,0,24,24" ClipToBounds="True"
 Background="{Binding AvatarBackgroundHex, Converter={StaticResource StringToBrush}}">
 <Grid>
-<Button HorizontalAlignment="Right" VerticalAlignment="Top"
-Margin="0,12,16,0" Background="Transparent"
-BorderThickness="0" Padding="8" Cursor="Hand"
+<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top"
+Margin="0,12,16,0" Spacing="4">
+<Button Background="Transparent" BorderThickness="0" Padding="8" Cursor="Hand"
+                    Command="{Binding OpenNotificationsCommand}">
+                    <PathIcon Data="{StaticResource chat_regular}" Width="22" Height="22"
+                      Foreground="White" Opacity="0.9"/>
+</Button>
+<Button Background="Transparent" BorderThickness="0" Padding="8" Cursor="Hand"
+Command="{Binding OpenSearchCommand}">
+<PathIcon Data="{StaticResource search_regular}" Width="22" Height="22"
+  Foreground="White" Opacity="0.9"/>
+</Button>
+<Button Background="Transparent" BorderThickness="0" Padding="8" Cursor="Hand"
 Command="{Binding OpenSettingsCommand}">
 <PathIcon Data="{x:Static shad:Icons.Settings}" Width="22" Height="22"
   Foreground="White" Opacity="0.9"/>
 </Button>
+</StackPanel>
 <Viewbox Width="190" Height="190" Stretch="Uniform"
          VerticalAlignment="Bottom" HorizontalAlignment="Center">
         <Canvas Width="120" Height="120">
@@ -394,6 +405,26 @@ Background="{Binding AvatarHeadwearHex, Converter={StaticResource StringToBrush}
 <shad:Badge Classes="Secondary" HorizontalAlignment="Center" Margin="0,8,0,0">
 <TextBlock Text="{Binding Level}" FontSize="12"/>
 </shad:Badge>
+<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="24" Margin="0,14,0,0">
+<Button Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand"
+Command="{Binding OpenFollowersCommand}">
+<StackPanel Orientation="Horizontal" Spacing="6">
+<TextBlock Text="{Binding FollowersCount}" FontSize="16" FontWeight="Bold"
+   Foreground="{DynamicResource ForegroundColor}"/>
+<TextBlock Text="Followers" FontSize="14" Opacity="0.6"
+   Foreground="{DynamicResource ForegroundColor}" VerticalAlignment="Center"/>
+</StackPanel>
+</Button>
+<Button Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand"
+Command="{Binding OpenFollowingCommand}">
+<StackPanel Orientation="Horizontal" Spacing="6">
+<TextBlock Text="{Binding FollowingCount}" FontSize="16" FontWeight="Bold"
+   Foreground="{DynamicResource ForegroundColor}"/>
+<TextBlock Text="Following" FontSize="14" Opacity="0.6"
+   Foreground="{DynamicResource ForegroundColor}" VerticalAlignment="Center"/>
+</StackPanel>
+</Button>
+</StackPanel>
 </StackPanel>
 <Border Margin="16,20,16,0" CornerRadius="16" Padding="16,12"
 BorderThickness="1" BorderBrush="{DynamicResource OutlineColor}">

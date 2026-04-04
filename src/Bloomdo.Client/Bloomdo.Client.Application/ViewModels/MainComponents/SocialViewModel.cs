@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using Bloomdo.Client.Core.Interfaces;
-using Bloomdo.Shared.DTOs.Friends;
-using Bloomdo.Shared.Enums;
+using Bloomdo.Shared.DTOs.Social;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -9,63 +8,102 @@ namespace Bloomdo.Client.Application.ViewModels.MainComponents;
 
 public partial class SocialViewModel : PageViewModel
 {
-    private readonly IFriendsApiService _friendsApiService;
+    private readonly ISocialApiService _socialApiService;
     private readonly INavigationService _navigationService;
     private readonly IToastService _toastService;
-
-    [ObservableProperty]
-    private string _searchQuery = string.Empty;
+    private readonly IConfirmDialogService _confirmDialogService;
+    private readonly ISignalRClientService _signalR;
 
     [ObservableProperty]
     private bool _isLoading;
 
-    [ObservableProperty]
-    private bool _isSearching;
+    public ObservableCollection<SharedGroupDto> Groups { get; } = [];
 
-    public ObservableCollection<ProfileSummaryDto> SearchResults { get; } = [];
-    public ObservableCollection<FriendshipDto> Friends { get; } = [];
-    public ObservableCollection<FriendshipDto> PendingRequests { get; } = [];
-
-    public bool HasNoFriends => Friends.Count == 0;
-    public bool HasPendingRequests => PendingRequests.Count > 0;
+    public bool HasNoGroups => Groups.Count == 0;
 
     public SocialViewModel(
-        IFriendsApiService friendsApiService,
+        ISocialApiService socialApiService,
         INavigationService navigationService,
-        IToastService toastService)
+        IToastService toastService,
+        IConfirmDialogService confirmDialogService,
+        ISignalRClientService signalR)
     {
-        _friendsApiService = friendsApiService;
+        _socialApiService = socialApiService;
         _navigationService = navigationService;
         _toastService = toastService;
+        _confirmDialogService = confirmDialogService;
+        _signalR = signalR;
     }
 
     public override void OnAppearing()
     {
         base.OnAppearing();
-        _ = LoadSocialDataAsync();
+        SubscribeSignalR();
+        _ = LoadGroupsAsync();
+    }
+
+    public override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        UnsubscribeSignalR();
     }
 
     [RelayCommand]
-    private async Task LoadSocialDataAsync()
+    private async Task LoadGroupsAsync()
     {
         IsLoading = true;
         try
         {
-            var friendships = await _friendsApiService.GetFriendsAsync();
-            Friends.Clear();
-            PendingRequests.Clear();
+            var groups = await _socialApiService.GetSharedGroupsAsync();
+            Groups.Clear();
+            foreach (var g in groups)
+                Groups.Add(g);
 
-            foreach (var f in friendships)
+            OnPropertyChanged(nameof(HasNoGroups));
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    [RelayCommand]
+    private void ShowCreatePanel()
+    {
+        _navigationService.NavigateTo<SharedGroupEditorViewModel>(vm => vm.ConfigureForCreate());
+    }
+
+    [RelayCommand]
+    private void OpenGroupDetail(SharedGroupDto? group)
+    {
+        if (group == null) return;
+        _navigationService.NavigateTo<SharedGroupDetailViewModel>(vm => vm.Initialize(group.Id));
+    }
+
+    [RelayCommand]
+    private async Task DeleteGroupAsync(SharedGroupDto? group)
+    {
+        if (group == null) return;
+
+        var confirmed = await _confirmDialogService.ConfirmAsync(
+            "Delete Group",
+            $"Are you sure you want to delete \"{group.Title}\"? This will remove it for all members.");
+        if (!confirmed) return;
+
+        IsLoading = true;
+        try
+        {
+            var result = await _socialApiService.DeleteSharedGroupAsync(group.Id);
+            if (result)
             {
-                if (f.Status == FriendshipStatus.Accepted)
-                    Friends.Add(f);
-                else if (f.Status == FriendshipStatus.Pending && f.IsIncomingRequest)
-                    PendingRequests.Add(f);
+                Groups.Remove(group);
+                OnPropertyChanged(nameof(HasNoGroups));
+                _toastService.ShowSuccess("Group deleted.");
             }
-
-            // Notify computed properties
-            OnPropertyChanged(nameof(HasNoFriends));
-            OnPropertyChanged(nameof(HasPendingRequests));
+            else
+            {
+                _toastService.ShowError("Could not delete group.");
+            }
         }
         finally
         {
@@ -74,86 +112,34 @@ public partial class SocialViewModel : PageViewModel
     }
 
     [RelayCommand]
-    private async Task SearchAsync()
+    private void EditGroup(SharedGroupDto? group)
     {
-        if (string.IsNullOrWhiteSpace(SearchQuery))
-        {
-            SearchResults.Clear();
-            IsSearching = false;
-            return;
-        }
-
-        IsLoading = true;
-        IsSearching = true;
-        try
-        {
-            var results = await _friendsApiService.SearchUsersAsync(SearchQuery);
-            SearchResults.Clear();
-            foreach (var user in results)
-                SearchResults.Add(user);
-        }
-        finally
-        {
-            IsLoading = false;
-        }
+        if (group == null) return;
+        _navigationService.NavigateTo<SharedGroupEditorViewModel>(vm => vm.Initialize(group.Id));
     }
 
-    [RelayCommand]
-    private async Task SendRequestAsync(ProfileSummaryDto? user)
+    private void SubscribeSignalR()
     {
-        if (user == null) return;
-
-        var result = await _friendsApiService.SendFriendRequestAsync(user.Id);
-        if (result)
-        {
-            _toastService.ShowSuccess($"Friend request sent to @{user.Username}");
-            SearchQuery = string.Empty;
-            SearchResults.Clear();
-            IsSearching = false;
-            await LoadSocialDataAsync();
-        }
-        else
-        {
-            _toastService.ShowError("Could not send request. Maybe it already exists?");
-        }
+        _signalR.GroupInviteReceived += OnGroupInviteReceived;
+        _signalR.GroupDeletedReceived += OnGroupDeletedReceived;
     }
 
-    [RelayCommand]
-    private async Task AcceptRequestAsync(FriendshipDto? request)
+    private void UnsubscribeSignalR()
     {
-        if (request == null) return;
-
-        var result = await _friendsApiService.RespondToRequestAsync(request.Id, true);
-        if (result)
-        {
-            _toastService.ShowSuccess("Friend request accepted!");
-            await LoadSocialDataAsync();
-        }
+        _signalR.GroupInviteReceived -= OnGroupInviteReceived;
+        _signalR.GroupDeletedReceived -= OnGroupDeletedReceived;
     }
 
-    [RelayCommand]
-    private async Task DeclineRequestAsync(FriendshipDto? request)
+    private void OnGroupInviteReceived(SharedGroupDto group, Bloomdo.Shared.DTOs.Friends.ProfileSummaryDto inviter)
     {
-        if (request == null) return;
-
-        var result = await _friendsApiService.RespondToRequestAsync(request.Id, false);
-        if (result)
-        {
-            _toastService.ShowInfo("Friend request declined");
-            await LoadSocialDataAsync();
-        }
+        _toastService.ShowInfo($"@{inviter.Username} invited you to \"{group.Title}\"");
+        _ = LoadGroupsAsync();
     }
 
-    [RelayCommand]
-    private async Task RemoveFriendAsync(FriendshipDto? friendship)
+    private void OnGroupDeletedReceived(Guid groupId)
     {
-        if (friendship == null) return;
-
-        var result = await _friendsApiService.RemoveFriendAsync(friendship.Friend.Id);
-        if (result)
-        {
-            _toastService.ShowInfo("Removed from friends");
-            await LoadSocialDataAsync();
-        }
+        var existing = Groups.FirstOrDefault(g => g.Id == groupId);
+        if (existing != null) Groups.Remove(existing);
+        OnPropertyChanged(nameof(HasNoGroups));
     }
 }

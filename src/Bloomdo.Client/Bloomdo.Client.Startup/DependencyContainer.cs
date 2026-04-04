@@ -131,6 +131,9 @@ public static class DependencyContainer
 
         var apiBaseUrl = "https://10.0.2.2:7270/";
 
+        // SignalR client (singleton, connects after auth)
+        services.AddSingleton<ISignalRClientService>(new SignalRClientService(apiBaseUrl));
+
         // Auth endpoints (login, register, refresh) don't require authentication
         // so we don't add AuthHeaderHandler here to avoid circular dependency
         services.AddHttpClient<IAuthApiService, AuthApiService>(client =>
@@ -253,6 +256,21 @@ public static class DependencyContainer
 #endif
             return handler;
         });
+
+        services.AddHttpClient<ISocialApiService, SocialApiService>(client =>
+        {
+            client.BaseAddress = new Uri(apiBaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(30);
+        })
+        .AddHttpMessageHandler<AuthHeaderHandler>()
+        .ConfigurePrimaryHttpMessageHandler(() =>
+        {
+            var handler = new HttpClientHandler();
+#if DEBUG
+            handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+#endif
+            return handler;
+        });
     }
 
     private static void RegisterViewModels(IServiceCollection services)
@@ -320,12 +338,45 @@ public static class DependencyContainer
         services.AddTransient<ProfileViewModel>(sp => new ProfileViewModel(
             sp.GetRequiredService<IAccessTokenManager>(),
             sp.GetRequiredService<INavigationService>(),
-            sp.GetRequiredService<IProfileApiService>()));
+            sp.GetRequiredService<IProfileApiService>(),
+            sp.GetRequiredService<ISocialApiService>()));
 
         services.AddTransient<SocialViewModel>(sp => new SocialViewModel(
-            sp.GetRequiredService<IFriendsApiService>(),
+            sp.GetRequiredService<ISocialApiService>(),
+            sp.GetRequiredService<INavigationService>(),
+            sp.GetRequiredService<IToastService>(),
+            sp.GetRequiredService<IConfirmDialogService>(),
+            sp.GetRequiredService<ISignalRClientService>()));
+
+        services.AddTransient<UserSearchViewModel>(sp => new UserSearchViewModel(
+            sp.GetRequiredService<ISocialApiService>(),
             sp.GetRequiredService<INavigationService>(),
             sp.GetRequiredService<IToastService>()));
+
+        services.AddTransient<NotificationsViewModel>(sp => new NotificationsViewModel(
+            sp.GetRequiredService<ISocialApiService>(),
+            sp.GetRequiredService<INavigationService>()));
+
+        services.AddTransient<FollowListViewModel>(sp => new FollowListViewModel(
+            sp.GetRequiredService<ISocialApiService>(),
+            sp.GetRequiredService<INavigationService>(),
+            sp.GetRequiredService<IToastService>()));
+
+        services.AddTransient<SharedGroupDetailViewModel>(sp => new SharedGroupDetailViewModel(
+            sp.GetRequiredService<ISocialApiService>(),
+            sp.GetRequiredService<IDailyActivityApiService>(),
+            sp.GetRequiredService<ISignalRClientService>(),
+            sp.GetRequiredService<INavigationService>(),
+            sp.GetRequiredService<IToastService>(),
+            sp.GetRequiredService<IConfirmDialogService>()));
+
+        services.AddTransient<SharedGroupEditorViewModel>(sp => new SharedGroupEditorViewModel(
+            sp.GetRequiredService<ISocialApiService>(),
+            sp.GetRequiredService<IDailyActivityApiService>(),
+            sp.GetRequiredService<INavigationService>(),
+            sp.GetRequiredService<IToastService>(),
+            sp.GetRequiredService<IConfirmDialogService>(),
+            sp.GetRequiredService<ISubscriptionApiService>()));
 
         services.AddTransient<AvatarEditorViewModel>(sp => new AvatarEditorViewModel(
             sp.GetRequiredService<INavigationService>(),

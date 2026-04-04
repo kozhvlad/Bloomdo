@@ -22,6 +22,9 @@ public partial class ActivityGroupItemViewModel : ObservableObject
     private int _currentStreak;
 
     [ObservableProperty]
+    private bool _isShared;
+
+    [ObservableProperty]
     private bool _isExpanded = true;
 
     [ObservableProperty]

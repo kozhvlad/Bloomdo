@@ -165,6 +165,10 @@ public class DailyActivityService(
 
         var allGroups = ownedGroups.Concat(sharedGroups.Where(sg => sg.AccountId != accountId)).OrderBy(g => g.SortOrder).ToList();
 
+        // Determine which groups are shared (have memberships)
+        var allGroupIds = allGroups.Select(g => g.Id).ToList();
+        var allMemberships = await membershipRepo.FindAsync(m => allGroupIds.Contains(m.ActivityGroupId), ct);
+        var sharedGroupIdSet = allMemberships.Select(m => m.ActivityGroupId).ToHashSet();
 
         var response = new DailyActivitiesResponse
         {
@@ -228,6 +232,7 @@ public class DailyActivityService(
                 Color = group.Color,
                 SortOrder = group.SortOrder,
                 CurrentStreak = streak,
+                IsShared = sharedGroupIdSet.Contains(group.Id),
                 Items = dailyItems
             });
 

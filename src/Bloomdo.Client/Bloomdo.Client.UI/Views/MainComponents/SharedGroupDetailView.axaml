@@ -1,0 +1,192 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:shad="clr-namespace:ShadUI;assembly=ShadUI"
+             xmlns:controls="clr-namespace:Bloomdo.Client.UI.Controls"
+             xmlns:converters="clr-namespace:Bloomdo.Client.UI.Converters"
+             xmlns:vms="clr-namespace:Bloomdo.Client.Application.ViewModels.MainComponents;assembly=Bloomdo.Client.Application"
+             xmlns:act="clr-namespace:Bloomdo.Shared.DTOs.Activities;assembly=Bloomdo.Shared"
+             xmlns:dto="clr-namespace:Bloomdo.Shared.DTOs.Friends;assembly=Bloomdo.Shared"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="800"
+             x:DataType="vms:SharedGroupDetailViewModel"
+             x:Class="Bloomdo.Client.UI.MainComponents.SharedGroupDetailView">
+
+    <UserControl.Resources>
+        <converters:BlockTypeColorConverter x:Key="GroupColorConverter"/>
+        <converters:CompletedToOpacityConverter x:Key="CompletedToOpacity"/>
+    </UserControl.Resources>
+
+    <Grid RowDefinitions="Auto, *">
+
+        <!-- Header -->
+        <Border Grid.Row="0" Padding="16,48,20,16" Background="{DynamicResource Brush.Background}">
+            <Grid ColumnDefinitions="Auto, *, Auto">
+                <Button Grid.Column="0"
+                        Command="{Binding GoBackCommand}"
+                        Background="Transparent" BorderThickness="0"
+                        Padding="4,8,12,8">
+                    <PathIcon Data="{StaticResource arrow_left_regular}" Width="20" Height="20"/>
+                </Button>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding GroupIcon}" FontFamily="{StaticResource EmojiFont}" FontSize="20"/>
+                    <TextBlock Text="{Binding GroupTitle}"
+                               FontSize="20" FontWeight="Bold"
+                               Foreground="{DynamicResource ForegroundLeadColor}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Edit button (owner only) -->
+                <Button Grid.Column="2"
+                        Command="{Binding OpenEditorCommand}"
+                        IsVisible="{Binding IsOwner}"
+                        Background="Transparent" BorderThickness="0"
+                        Padding="8" ToolTip.Tip="Edit group">
+                    <PathIcon Data="{x:Static shad:Icons.Marker}" Width="20" Height="20"/>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Loading bar -->
+        <ProgressBar Grid.Row="0"
+                     IsIndeterminate="True"
+                     IsVisible="{Binding IsLoading}"
+                     VerticalAlignment="Bottom"
+                     HorizontalAlignment="Stretch"
+                     Height="3" Margin="0"/>
+
+        <!-- Content -->
+        <Grid Grid.Row="1">
+            <ScrollViewer>
+                <StackPanel Spacing="20" Margin="20,16,20,100">
+
+                    <!-- Members row -->
+                    <shad:Card Padding="14,12">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Members"
+                                       FontSize="13" FontWeight="SemiBold"
+                                       Opacity="0.6"/>
+                            <ItemsControl ItemsSource="{Binding Members}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="dto:GroupMembershipDto">
+                                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,16,0">
+                                            <Border Width="32" Height="32" CornerRadius="16"
+                                                    Background="{DynamicResource PrimaryColor}">
+                                                <TextBlock Text="{Binding Account.Username[0]}"
+                                                           Foreground="White"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           FontWeight="Bold" FontSize="13"/>
+                                            </Border>
+                                            <TextBlock Text="{Binding Account.Username, StringFormat='@{0}'}"
+                                                       FontSize="13" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </shad:Card>
+
+                    <!-- Tasks -->
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Tasks"
+                                   FontSize="13" FontWeight="SemiBold"
+                                   Opacity="0.6"
+                                   Margin="4,0,0,0"/>
+
+                        <ItemsControl ItemsSource="{Binding Items}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="act:DailyActivityItemDto">
+                                    <controls:SwipeRevealPanel Margin="0,0,0,4"
+                                        ActionCommand="{Binding ((vms:SharedGroupDetailViewModel)DataContext).DeleteTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        ActionCommandParameter="{Binding}"
+                                        EditCommand="{Binding ((vms:SharedGroupDetailViewModel)DataContext).EditTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        EditCommandParameter="{Binding}"
+                                        IsActionEnabled="{Binding ((vms:SharedGroupDetailViewModel)DataContext).IsOwner, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                        <Border CornerRadius="12" Padding="10,8"
+                                                Background="{Binding Color, Converter={StaticResource GroupColorConverter}}"
+                                                Opacity="{Binding IsCompleted, Converter={StaticResource CompletedToOpacity}}">
+                                            <Grid ColumnDefinitions="Auto, *, Auto">
+                                                <!-- Task icon circle -->
+                                                <Border Grid.Column="0"
+                                                        Width="40" Height="40"
+                                                        CornerRadius="20"
+                                                        Background="#33FFFFFF"
+                                                        Margin="0,0,12,0"
+                                                        VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Icon}"
+                                                               FontFamily="{StaticResource EmojiFont}"
+                                                               FontSize="18"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"/>
+                                                </Border>
+
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding Title}"
+                                                           FontSize="15" FontWeight="SemiBold"
+                                                           Foreground="White"
+                                                           VerticalAlignment="Center"/>
+
+                                                <!-- Checkbox (all members can check) -->
+                                                <CheckBox Grid.Column="2"
+                                                          IsChecked="{Binding IsCompleted}"
+                                                          VerticalAlignment="Center"
+                                                          Command="{Binding $parent[UserControl].((vms:SharedGroupDetailViewModel)DataContext).ToggleTaskCommand}"
+                                                          CommandParameter="{Binding}"/>
+                                            </Grid>
+                                        </Border>
+                                    </controls:SwipeRevealPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <!-- Progress per member -->
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Today's Progress"
+                                   FontSize="13" FontWeight="SemiBold"
+                                   Opacity="0.6"
+                                   Margin="4,0,0,0"/>
+
+                        <ItemsControl ItemsSource="{Binding MemberProgresses}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="act:GroupMemberProgressDto">
+                                    <shad:Card Margin="0,0,0,6" Padding="14,10">
+                                        <Grid ColumnDefinitions="Auto, *, Auto">
+                                            <Border Grid.Column="0" Width="32" Height="32" CornerRadius="16"
+                                                    Background="{DynamicResource PrimaryColor}"
+                                                    Margin="0,0,10,0">
+                                                <TextBlock Text="{Binding Account.Username[0]}"
+                                                           Foreground="White"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           FontWeight="Bold" FontSize="13"/>
+                                            </Border>
+                                            <TextBlock Grid.Column="1"
+                                                       Text="{Binding Account.Username, StringFormat='@{0}'}"
+                                                       VerticalAlignment="Center" FontSize="14"/>
+                                            <TextBlock Grid.Column="2"
+                                                       VerticalAlignment="Center"
+                                                       FontSize="14" FontWeight="SemiBold">
+                                                <Run Text="{Binding CompletedItems}"/>
+                                                <Run Text="/"/>
+                                                <Run Text="{Binding TotalItems}"/>
+                                            </TextBlock>
+                                        </Grid>
+                                    </shad:Card>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+    </Grid>
+</UserControl>

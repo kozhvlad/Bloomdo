@@ -1,4 +1,5 @@
 using Bloomdo.Server.Api.Extensions;
+using Bloomdo.Server.Api.Hubs;
 using Bloomdo.Server.Api.Middleware;
 using Bloomdo.Server.Application.Settings;
 using Bloomdo.Server.Infrastructure.Data;
@@ -75,6 +76,7 @@ public class Program
             });
         });
 
+        builder.Services.AddSignalR();
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen(c =>
@@ -114,6 +116,7 @@ public class Program
         app.UseAuthorization();
 
         app.MapControllers();
+        app.MapHub<SocialHub>("/hubs/social");
         await app.RunAsync();
     }
 }

@@ -107,7 +107,8 @@ public partial class HomeViewModel : PageViewModel
                     Title = group.Title,
                     Icon = group.Icon,
                     Color = group.Color,
-                    CurrentStreak = group.CurrentStreak
+                    CurrentStreak = group.CurrentStreak,
+                    IsShared = group.IsShared
                 };
 
                 foreach (var item in group.Items)

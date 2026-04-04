@@ -47,5 +47,6 @@
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.2" />
     <PackageVersion Include="Google.GenAI" Version="1.5.0" />
     <PackageVersion Include="Stripe.net" Version="50.4.1" />
+    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.2" />
   </ItemGroup>
 </Project>

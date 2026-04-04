@@ -18,4 +18,6 @@ public class AccountProfileResponse
     public DateTime? LastLoginAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public bool IsPrivateProfile { get; set; }
+    public int FollowersCount { get; set; }
+    public int FollowingCount { get; set; }
 }

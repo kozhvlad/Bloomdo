@@ -1,0 +1,116 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:shad="clr-namespace:ShadUI;assembly=ShadUI"
+             xmlns:vms="clr-namespace:Bloomdo.Client.Application.ViewModels.MainComponents;assembly=Bloomdo.Client.Application"
+             xmlns:dto="clr-namespace:Bloomdo.Shared.DTOs.Social;assembly=Bloomdo.Shared"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="800"
+             x:DataType="vms:FollowListViewModel"
+             x:Class="Bloomdo.Client.UI.MainComponents.FollowListView">
+
+    <Grid RowDefinitions="Auto, *">
+
+        <!-- Header -->
+        <Border Grid.Row="0" Padding="16,48,20,16" Background="{DynamicResource Brush.Background}">
+            <Grid ColumnDefinitions="Auto, *">
+                <Button Grid.Column="0"
+                        Command="{Binding GoBackCommand}"
+                        Background="Transparent" BorderThickness="0"
+                        Padding="4,8,12,8">
+                    <PathIcon Data="{StaticResource arrow_left_regular}" Width="20" Height="20"/>
+                </Button>
+                <TextBlock Grid.Column="1"
+                           Text="{Binding Title}"
+                           FontSize="22" FontWeight="Bold"
+                           Foreground="{DynamicResource ForegroundLeadColor}"
+                           VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <!-- Loading bar -->
+        <ProgressBar Grid.Row="0"
+                     IsIndeterminate="True"
+                     IsVisible="{Binding IsLoading}"
+                     VerticalAlignment="Bottom"
+                     HorizontalAlignment="Stretch"
+                     Height="3" Margin="0"/>
+
+        <!-- Content -->
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Margin="20,12,20,80" Spacing="8">
+
+                <!-- Empty state -->
+                <StackPanel IsVisible="{Binding !HasUsers}"
+                            HorizontalAlignment="Center"
+                            Margin="0,60,0,0"
+                            Spacing="8">
+                    <PathIcon Data="{StaticResource people_regular}"
+                              Width="48" Height="48"
+                              Opacity="0.2"
+                              HorizontalAlignment="Center"/>
+                    <TextBlock Text="No users yet"
+                               FontSize="16" FontWeight="SemiBold"
+                               HorizontalAlignment="Center"
+                               Opacity="0.4"/>
+                </StackPanel>
+
+                <!-- Users list -->
+                <ItemsControl ItemsSource="{Binding Users}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="dto:FollowStatusDto">
+                            <shad:Card Margin="0,0,0,8" Padding="14,12">
+                                <Grid ColumnDefinitions="Auto, *, Auto">
+                                    <!-- Avatar -->
+                                    <Border Grid.Column="0"
+                                            Width="44" Height="44"
+                                            CornerRadius="22"
+                                            Background="{DynamicResource PrimaryColor}"
+                                            Margin="0,0,12,0"
+                                            VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding User.Username[0]}"
+                                                   Foreground="White"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   FontWeight="Bold"
+                                                   FontSize="16"/>
+                                    </Border>
+
+                                    <!-- Name + username -->
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock FontSize="15" FontWeight="SemiBold">
+                                            <Run Text="{Binding User.FirstName}"/>
+                                            <Run Text="{Binding User.LastName}"/>
+                                        </TextBlock>
+                                        <TextBlock Text="{Binding User.Username, StringFormat='@{0}'}"
+                                                   FontSize="13" Opacity="0.6"/>
+                                    </StackPanel>
+
+                                    <!-- Follow/Unfollow button -->
+                                    <Panel Grid.Column="2" VerticalAlignment="Center">
+                                        <Button IsVisible="{Binding IsFollowing}"
+                                                Content="Unfollow"
+                                                Classes="Outline"
+                                                FontSize="12"
+                                                Padding="12,6"
+                                                Command="{Binding $parent[UserControl].((vms:FollowListViewModel)DataContext).UnfollowCommand}"
+                                                CommandParameter="{Binding}"/>
+                                        <Button IsVisible="{Binding !IsFollowing}"
+                                                Content="Follow"
+                                                Classes="Primary"
+                                                FontSize="12"
+                                                Padding="12,6"
+                                                Command="{Binding $parent[UserControl].((vms:FollowListViewModel)DataContext).FollowCommand}"
+                                                CommandParameter="{Binding}"/>
+                                    </Panel>
+                                </Grid>
+                            </shad:Card>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+            </StackPanel>
+        </ScrollViewer>
+
+    </Grid>
+</UserControl>

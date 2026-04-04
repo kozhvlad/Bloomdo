@@ -51,7 +51,22 @@ public class ViewLocator : IDataTemplate
 
             case SocialViewModel:
                 return new SocialView();
-                
+
+            case UserSearchViewModel:
+                return new UserSearchView();
+
+            case NotificationsViewModel:
+                return new NotificationsView();
+
+            case FollowListViewModel:
+                return new FollowListView();
+
+            case SharedGroupDetailViewModel:
+                return new SharedGroupDetailView();
+
+            case SharedGroupEditorViewModel:
+                return new SharedGroupEditorView();
+
             case BlocksViewModel:
                 return new BlocksView();
 

@@ -18,6 +18,8 @@ public partial class ShellViewModel : ObservableObject
 
     private const string OnboardingCompletedKey = "OnboardingCompleted";
 
+    private readonly Stack<IPage> _navigationHistory = new();
+
     [ObservableProperty]
     private IPage _currentViewModel = null!;
 
@@ -122,13 +124,26 @@ public partial class ShellViewModel : ObservableObject
         }
     }
 
-    public void SetViewModel(IPage viewModel)
+    public void SetViewModel(IPage viewModel, bool pushHistory = true)
     {
         Debug.WriteLine($"ShellViewModel.SetViewModel called with {viewModel?.GetType().Name ?? "null"}");
-        CurrentViewModel?.OnDisappearing();
+        if (CurrentViewModel != null)
+        {
+            if (pushHistory) _navigationHistory.Push(CurrentViewModel);
+            CurrentViewModel.OnDisappearing();
+        }
         CurrentViewModel = viewModel;
         CurrentViewModel.OnAppearing();
         Debug.WriteLine($"CurrentViewModel is now {CurrentViewModel?.GetType().Name ?? "null"}");
+    }
+
+    public void NavigateBack()
+    {
+        if (_navigationHistory.Count == 0) return;
+        var previous = _navigationHistory.Pop();
+        CurrentViewModel?.OnDisappearing();
+        CurrentViewModel = previous;
+        CurrentViewModel.OnAppearing();
     }
 
     public void CompleteOnboarding()

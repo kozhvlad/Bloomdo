@@ -4,41 +4,32 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:shad="clr-namespace:ShadUI;assembly=ShadUI"
              xmlns:vms="clr-namespace:Bloomdo.Client.Application.ViewModels.MainComponents;assembly=Bloomdo.Client.Application"
-             xmlns:dto="clr-namespace:Bloomdo.Shared.DTOs.Friends;assembly=Bloomdo.Shared"
+             xmlns:dto="clr-namespace:Bloomdo.Shared.DTOs.Social;assembly=Bloomdo.Shared"
+             xmlns:controls="clr-namespace:Bloomdo.Client.UI.Controls"
              mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="800"
              x:DataType="vms:SocialViewModel"
              x:Class="Bloomdo.Client.UI.MainComponents.SocialView">
 
     <Grid RowDefinitions="Auto, *">
+
         <!-- Header -->
         <Border Grid.Row="0" Padding="20,48,20,16" Background="{DynamicResource Brush.Background}">
-            <StackPanel Spacing="12">
-                <TextBlock Text="Social" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource ForegroundLeadColor}"/>
-
-                <!-- Search Bar -->
-                <shad:Card Padding="4,2">
-                    <Grid ColumnDefinitions="*, Auto">
-                        <TextBox Grid.Column="0"
-                                 Text="{Binding SearchQuery}"
-                                 Watermark="Search @username or email..."
-                                 BorderThickness="0"
-                                 Background="Transparent"
-                                 VerticalContentAlignment="Center"
-                                 Padding="10,6">
-                            <TextBox.KeyBindings>
-                                <KeyBinding Gesture="Enter" Command="{Binding SearchCommand}"/>
-                            </TextBox.KeyBindings>
-                        </TextBox>
-                        <Button Grid.Column="1"
-                                Command="{Binding SearchCommand}"
-                                Background="Transparent"
-                                BorderThickness="0"
-                                Padding="8">
-                            <PathIcon Data="{StaticResource search_regular}" Width="18" Height="18"/>
-                        </Button>
-                    </Grid>
-                </shad:Card>
-            </StackPanel>
+            <Grid ColumnDefinitions="*, Auto">
+                <TextBlock Text="Social" FontSize="26" FontWeight="Bold"
+                           Foreground="{DynamicResource ForegroundLeadColor}"
+                           VerticalAlignment="Center"/>
+                <Button Grid.Column="1"
+                        Command="{Binding ShowCreatePanelCommand}"
+                        Classes="Primary"
+                        Padding="16,8"
+                        CornerRadius="20">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <PathIcon Data="{StaticResource add_regular}" Width="14" Height="14"
+                                  Foreground="White"/>
+                        <TextBlock Text="New Group" FontSize="13" Foreground="White"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
         </Border>
 
         <!-- Loading bar -->
@@ -47,186 +38,96 @@
                      IsVisible="{Binding IsLoading}"
                      VerticalAlignment="Bottom"
                      HorizontalAlignment="Stretch"
-                     Height="3"
-                     Margin="0"/>
+                     Height="3" Margin="0"/>
 
         <!-- Content -->
-        <ScrollViewer Grid.Row="1">
-            <StackPanel Spacing="24" Margin="20,16,20,100">
-
-                <!-- Search Results Section -->
-                <StackPanel IsVisible="{Binding IsSearching}" Spacing="10">
-                    <TextBlock Text="Search Results"
-                               FontSize="13" FontWeight="SemiBold"
-                               Foreground="{DynamicResource ForegroundLeadColor}"
-                               Opacity="0.6"
-                               Margin="4,0,0,4"/>
-
-                    <ItemsControl ItemsSource="{Binding SearchResults}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="dto:ProfileSummaryDto">
-                                <shad:Card Margin="0,0,0,8" Padding="14,12">
-                                    <Grid ColumnDefinitions="Auto, *, Auto">
-                                        <!-- Avatar -->
-                                        <Border Grid.Column="0"
-                                                Width="42" Height="42"
-                                                CornerRadius="21"
-                                                Background="{DynamicResource PrimaryColor}"
-                                                Margin="0,0,12,0"
-                                                VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Username[0]}"
-                                                       Foreground="White"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center"
-                                                       FontWeight="Bold"
-                                                       FontSize="16"/>
-                                        </Border>
-
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                            <TextBlock Text="{Binding Username, StringFormat='@{0}'}"
-                                                       FontWeight="SemiBold" FontSize="15"/>
-                                            <TextBlock Text="{Binding FirstName}"
-                                                       FontSize="12" Opacity="0.6"/>
-                                        </StackPanel>
-
-                                        <Button Grid.Column="2"
-                                                Content="Add Friend"
-                                                Classes="Primary"
-                                                FontSize="12"
-                                                Padding="12,6"
-                                                VerticalAlignment="Center"
-                                                Command="{Binding $parent[UserControl].((vms:SocialViewModel)DataContext).SendRequestCommand}"
-                                                CommandParameter="{Binding}"/>
-                                    </Grid>
-                                </shad:Card>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-
-                    <Rectangle Height="1" Fill="{DynamicResource OutlineColor}" Opacity="0.5" Margin="0,4"/>
-                </StackPanel>
-
-                <!-- Pending Friend Requests -->
-                <StackPanel IsVisible="{Binding HasPendingRequests}" Spacing="10">
-                    <TextBlock Text="Friend Requests"
-                               FontSize="13" FontWeight="SemiBold"
-                               Foreground="{DynamicResource ForegroundLeadColor}"
-                               Opacity="0.6"
-                               Margin="4,0,0,4"/>
-
-                    <ItemsControl ItemsSource="{Binding PendingRequests}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="dto:FriendshipDto">
-                                <shad:Card Margin="0,0,0,8" Padding="14,12">
-                                    <Grid ColumnDefinitions="Auto, *, Auto">
-                                        <Border Grid.Column="0"
-                                                Width="42" Height="42" CornerRadius="21"
-                                                Background="#FF9800"
-                                                Margin="0,0,12,0"
-                                                VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Friend.Username[0]}"
-                                                       Foreground="White"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center"
-                                                       FontWeight="Bold"
-                                                       FontSize="16"/>
-                                        </Border>
-
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                            <TextBlock Text="{Binding Friend.Username, StringFormat='@{0}'}"
-                                                       FontWeight="SemiBold" FontSize="15"/>
-                                            <TextBlock Text="Wants to be friends"
-                                                       FontSize="12" Opacity="0.6"/>
-                                        </StackPanel>
-
-                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                            <Button Background="Transparent" BorderThickness="0" Padding="6"
-                                                    Command="{Binding $parent[UserControl].((vms:SocialViewModel)DataContext).DeclineRequestCommand}"
-                                                    CommandParameter="{Binding}">
-                                                <PathIcon Data="{StaticResource dismiss_regular}" Width="16" Height="16" Foreground="#EF5350"/>
-                                            </Button>
-                                            <Button Background="Transparent" BorderThickness="0" Padding="6"
-                                                    Command="{Binding $parent[UserControl].((vms:SocialViewModel)DataContext).AcceptRequestCommand}"
-                                                    CommandParameter="{Binding}">
-                                                <PathIcon Data="{StaticResource checkmark_regular}" Width="16" Height="16" Foreground="#66BB6A"/>
-                                            </Button>
-                                        </StackPanel>
-                                    </Grid>
-                                </shad:Card>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
-
-                <!-- Friends List -->
-                <StackPanel Spacing="10">
-                    <TextBlock Text="My Friends"
-                               FontSize="13" FontWeight="SemiBold"
-                               Foreground="{DynamicResource ForegroundLeadColor}"
-                               Opacity="0.6"
-                               Margin="4,0,0,4"/>
+        <Grid Grid.Row="1">
+            <ScrollViewer>
+                <StackPanel Spacing="12" Margin="20,16,20,100">
 
                     <!-- Empty state -->
-                    <StackPanel IsVisible="{Binding HasNoFriends}"
+                    <StackPanel IsVisible="{Binding HasNoGroups}"
                                 HorizontalAlignment="Center"
-                                Margin="0,30,0,0"
-                                Spacing="8">
-                        <PathIcon Data="{StaticResource people_regular}"
-                                  Width="48" Height="48"
+                                Margin="0,60,0,0"
+                                Spacing="10">
+                        <PathIcon Data="{StaticResource people_community_regular}"
+                                  Width="56" Height="56"
                                   Opacity="0.2"
                                   HorizontalAlignment="Center"/>
-                        <TextBlock Text="No friends yet"
-                                   FontSize="16" FontWeight="SemiBold"
+                        <TextBlock Text="No shared groups yet"
+                                   FontSize="17" FontWeight="SemiBold"
                                    HorizontalAlignment="Center"
                                    Opacity="0.4"/>
-                        <TextBlock Text="Search for people above to add them!"
+                        <TextBlock Text="Create a group and invite your followers!"
                                    FontSize="13"
                                    HorizontalAlignment="Center"
                                    Opacity="0.3"/>
                     </StackPanel>
 
-                    <!-- Friends Items -->
-                    <ItemsControl ItemsSource="{Binding Friends}">
+                    <!-- Groups list -->
+                    <ItemsControl ItemsSource="{Binding Groups}">
                         <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="dto:FriendshipDto">
-                                <shad:Card Margin="0,0,0,8" Padding="14,12">
-                                    <Grid ColumnDefinitions="Auto, *, Auto">
-                                        <Border Grid.Column="0"
-                                                Width="44" Height="44" CornerRadius="22"
-                                                Background="{DynamicResource PrimaryColor}"
-                                                Margin="0,0,12,0"
-                                                VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Friend.Username[0]}"
-                                                       Foreground="White"
-                                                       HorizontalAlignment="Center"
-                                                       VerticalAlignment="Center"
-                                                       FontWeight="Bold"
-                                                       FontSize="17"/>
-                                        </Border>
+                            <DataTemplate x:DataType="dto:SharedGroupDto">
+                                <controls:SwipeRevealPanel Margin="0,0,0,10"
+                                    HorizontalAlignment="Stretch"
+                                    TapCommand="{Binding ((vms:SocialViewModel)DataContext).OpenGroupDetailCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    TapCommandParameter="{Binding}"
+                                    ActionCommand="{Binding ((vms:SocialViewModel)DataContext).DeleteGroupCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    ActionCommandParameter="{Binding}"
+                                    EditCommand="{Binding ((vms:SocialViewModel)DataContext).EditGroupCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    EditCommandParameter="{Binding}">
+                                    <shad:Card Padding="16,14">
+                                        <Grid ColumnDefinitions="Auto, *, Auto">
+                                            <!-- Group icon circle -->
+                                            <Border Grid.Column="0"
+                                                    Width="46" Height="46"
+                                                    CornerRadius="12"
+                                                    Background="{Binding Color}"
+                                                    Margin="0,0,14,0"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Icon}"
+                                                           FontFamily="{StaticResource EmojiFont}"
+                                                           FontSize="22"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"/>
+                                            </Border>
 
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                            <TextBlock Text="{Binding Friend.Username, StringFormat='@{0}'}"
-                                                       FontWeight="SemiBold" FontSize="15"/>
-                                            <TextBlock Text="{Binding Friend.FirstName}"
-                                                       FontSize="12" Opacity="0.6"/>
-                                        </StackPanel>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
+                                                <TextBlock Text="{Binding Title}"
+                                                           FontWeight="SemiBold" FontSize="15"/>
+                                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                                    <TextBlock FontSize="12" Opacity="0.6">
+                                                        <Run Text="{Binding MembersCount}"/>
+                                                        <Run Text="members"/>
+                                                    </TextBlock>
+                                                    <TextBlock FontSize="12" Opacity="0.6">
+                                                        <Run Text="{Binding TasksCount}"/>
+                                                        <Run Text="tasks"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </StackPanel>
 
-                                        <Button Grid.Column="2"
-                                                Background="Transparent" BorderThickness="0"
-                                                Padding="6"
-                                                VerticalAlignment="Center"
-                                                Command="{Binding $parent[UserControl].((vms:SocialViewModel)DataContext).RemoveFriendCommand}"
-                                                CommandParameter="{Binding}">
-                                            <PathIcon Data="{StaticResource delete_regular}" Width="16" Height="16" Opacity="0.4"/>
-                                        </Button>
-                                    </Grid>
-                                </shad:Card>
+                                            <!-- Owner badge -->
+                                            <Border Grid.Column="2"
+                                                    IsVisible="{Binding IsOwner}"
+                                                    Background="{DynamicResource PrimaryColor}"
+                                                    CornerRadius="8"
+                                                    Padding="8,4"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="Admin"
+                                                           FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="White"/>
+                                            </Border>
+                                        </Grid>
+                                    </shad:Card>
+                                </controls:SwipeRevealPanel>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                </StackPanel>
 
-            </StackPanel>
-        </ScrollViewer>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
     </Grid>
 </UserControl>

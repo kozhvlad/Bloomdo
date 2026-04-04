@@ -78,6 +78,24 @@ public class SwipeRevealPanel : ContentControl
         set => SetValue(IsActionEnabledProperty, value);
     }
 
+    public static readonly StyledProperty<ICommand?> TapCommandProperty =
+        AvaloniaProperty.Register<SwipeRevealPanel, ICommand?>(nameof(TapCommand));
+
+    public ICommand? TapCommand
+    {
+        get => GetValue(TapCommandProperty);
+        set => SetValue(TapCommandProperty, value);
+    }
+
+    public static readonly StyledProperty<object?> TapCommandParameterProperty =
+        AvaloniaProperty.Register<SwipeRevealPanel, object?>(nameof(TapCommandParameter));
+
+    public object? TapCommandParameter
+    {
+        get => GetValue(TapCommandParameterProperty);
+        set => SetValue(TapCommandParameterProperty, value);
+    }
+
     private static SwipeRevealPanel? _currentlyOpenPanel;
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
@@ -333,6 +351,21 @@ public class SwipeRevealPanel : ContentControl
 
         if (!_isTracking || !_isHorizontal)
         {
+            // Tap detection: pointer was pressed and released without a swipe
+            if (_isTracking && !_directionLocked)
+            {
+                if (_isOpen)
+                {
+                    AnimateClose();
+                }
+                else
+                {
+                    var cmd = TapCommand;
+                    var param = TapCommandParameter;
+                    if (cmd?.CanExecute(param) == true)
+                        cmd.Execute(param);
+                }
+            }
             _isTracking = false;
             return;
         }

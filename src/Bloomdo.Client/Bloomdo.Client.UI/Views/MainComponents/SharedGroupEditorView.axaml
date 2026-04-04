@@ -1,0 +1,765 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:shad="clr-namespace:ShadUI;assembly=ShadUI"
+             xmlns:controls="clr-namespace:Bloomdo.Client.UI.Controls"
+             xmlns:converters="clr-namespace:Bloomdo.Client.UI.Converters"
+             xmlns:vms="clr-namespace:Bloomdo.Client.Application.ViewModels.MainComponents;assembly=Bloomdo.Client.Application"
+             xmlns:act="clr-namespace:Bloomdo.Shared.DTOs.Activities;assembly=Bloomdo.Shared"
+             xmlns:dto="clr-namespace:Bloomdo.Shared.DTOs.Friends;assembly=Bloomdo.Shared"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="900"
+             x:DataType="vms:SharedGroupEditorViewModel"
+             x:Class="Bloomdo.Client.UI.MainComponents.SharedGroupEditorView">
+
+    <UserControl.Resources>
+        <converters:BlockTypeColorConverter x:Key="GroupColorConverter"/>
+    </UserControl.Resources>
+
+    <Grid RowDefinitions="Auto, *, Auto" Background="{DynamicResource Brush.Background}">
+
+        <!-- Header -->
+        <Grid ColumnDefinitions="Auto, *, Auto" Margin="16,48,16,0">
+            <Button Command="{Binding CancelCommand}"
+                    Background="Transparent" BorderThickness="0"
+                    Padding="8" Cursor="Hand">
+                <PathIcon Data="{StaticResource arrow_left_regular}" Width="20" Height="20"/>
+            </Button>
+            <TextBlock Grid.Column="1" Text="{Binding PageTitle}"
+                       FontSize="22" FontWeight="Bold"
+                       VerticalAlignment="Center" Margin="12,0,0,0"/>
+            <Button Grid.Column="2"
+                    IsVisible="{Binding IsEditMode}"
+                    Command="{Binding DeleteGroupCommand}"
+                    Background="Transparent" BorderThickness="0"
+                    Padding="8" ToolTip.Tip="Delete group">
+                <PathIcon Data="{StaticResource delete_regular}" Width="20" Height="20" Foreground="#EF5350"/>
+            </Button>
+        </Grid>
+
+        <!-- Loading bar -->
+        <ProgressBar Grid.Row="0"
+                     IsIndeterminate="True"
+                     IsVisible="{Binding IsLoading}"
+                     VerticalAlignment="Bottom"
+                     HorizontalAlignment="Stretch"
+                     Height="3" Margin="0"/>
+
+        <!-- Content -->
+        <ScrollViewer Grid.Row="1" Margin="0,8,0,0">
+            <StackPanel Margin="20,0,20,24" Spacing="14">
+
+                <!-- Live Preview Card -->
+                <Border CornerRadius="16" Padding="16,14"
+                        Background="{Binding EditColor, Converter={StaticResource GroupColorConverter}}">
+                    <Grid ColumnDefinitions="Auto, *">
+                        <Border Width="48" Height="48" CornerRadius="24"
+                                Background="#33FFFFFF" Margin="0,0,14,0"
+                                VerticalAlignment="Center">
+                            <TextBlock Text="{Binding EditIcon}"
+                                       FontFamily="{StaticResource EmojiFont}"
+                                       FontSize="22"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock Text="{Binding EditTitle, TargetNullValue='Group Name'}"
+                                       FontSize="18" FontWeight="Bold" Foreground="White"/>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Border Background="#33FFFFFF" CornerRadius="8" Padding="8,3">
+                                    <TextBlock FontSize="10" Foreground="White" FontWeight="SemiBold"
+                                               Text="{Binding Members.Count, StringFormat='{}{0} members'}"/>
+                                </Border>
+                                <Border Background="#33FFFFFF" CornerRadius="8" Padding="8,3">
+                                    <TextBlock FontSize="10" Foreground="White" FontWeight="SemiBold"
+                                               Text="{Binding Tasks.Count, StringFormat='{}{0} tasks'}"/>
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Emoji Picker Section -->
+                <Panel>
+                <shad:Card Padding="14" Background="{DynamicResource Brush.Card}">
+                    <StackPanel Spacing="10">
+                        <TextBlock Text="Group Icon" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ForegroundColor}"/>
+                        <Button Command="{Binding ToggleEmojiPickerCommand}"
+                                Background="#15FFFFFF" CornerRadius="12"
+                                Padding="10,8" BorderThickness="0" Cursor="Hand"
+                                HorizontalAlignment="Left"
+                                IsEnabled="{Binding CanCustomizeEmoji}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="{Binding EditIcon}"
+                                           FontFamily="{StaticResource EmojiFont}"
+                                           FontSize="24" VerticalAlignment="Center"/>
+                                <TextBlock Text="Change icon"
+                                           FontSize="12" Opacity="0.6"
+                                           Foreground="{DynamicResource ForegroundColor}" VerticalAlignment="Center"/>
+                                <PathIcon Data="{x:Static shad:Icons.ChevronDown}" Width="12" Height="12"
+                                          Foreground="{DynamicResource ForegroundColor}" Opacity="0.4"/>
+                            </StackPanel>
+                        </Button>
+                        <Border IsVisible="{Binding IsEmojiPickerOpen}"
+                                Background="#0AFFFFFF" CornerRadius="12" Padding="8">
+                            <ItemsControl ItemsSource="{x:Static vms:SharedGroupEditorViewModel.AvailableEmojis}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="x:String">
+                                        <Button Classes="Ghost" Padding="4" Margin="2"
+                                                Width="40" Height="40"
+                                                HorizontalContentAlignment="Center"
+                                                VerticalContentAlignment="Center"
+                                                Command="{Binding ((vms:SharedGroupEditorViewModel)DataContext).SelectEmojiCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}">
+                                            <TextBlock Text="{Binding}"
+                                                       FontFamily="{StaticResource EmojiFont}"
+                                                       FontSize="20"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Border>
+                    </StackPanel>
+                </shad:Card>
+                <Border IsVisible="{Binding !CanCustomizeEmoji}" CornerRadius="12"
+                        Background="#AA000000" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                        IsHitTestVisible="False">
+                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="&#x1F512;" FontFamily="{StaticResource EmojiFont}" FontSize="14"
+                                   Foreground="White" VerticalAlignment="Center"/>
+                        <TextBlock Text="Bloomdo Plus" FontSize="12" FontWeight="Medium"
+                                   Foreground="White" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+                </Panel>
+
+                <!-- Group Name -->
+                <shad:Card Padding="14" Background="{DynamicResource Brush.Card}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Group Name" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ForegroundColor}"/>
+                        <TextBox Text="{Binding EditTitle}"
+                                 Watermark="e.g. Morning Routine..."
+                                 FontSize="14"/>
+                    </StackPanel>
+                </shad:Card>
+
+                <!-- Color Palette -->
+                <Panel>
+                <shad:Card Padding="14" Background="{DynamicResource Brush.Card}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Color" FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ForegroundColor}"/>
+                        <ItemsControl ItemsSource="{x:Static vms:SharedGroupEditorViewModel.AvailableColors}"
+                                      IsEnabled="{Binding CanCustomizeColors}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <Button Classes="Ghost" Padding="3" Margin="3"
+                                            Width="36" Height="36"
+                                            Command="{Binding ((vms:SharedGroupEditorViewModel)DataContext).SelectColorCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}">
+                                        <Border Width="28" Height="28" CornerRadius="14"
+                                                Background="{Binding Converter={StaticResource GroupColorConverter}}"/>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </shad:Card>
+                <Border IsVisible="{Binding !CanCustomizeColors}" CornerRadius="12"
+                        Background="#AA000000" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                        IsHitTestVisible="False">
+                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="&#x1F512;" FontFamily="{StaticResource EmojiFont}" FontSize="14"
+                                   Foreground="White" VerticalAlignment="Center"/>
+                        <TextBlock Text="Bloomdo Plus" FontSize="12" FontWeight="Medium"
+                                   Foreground="White" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+                </Panel>
+
+                <!-- Members / Invite Section -->
+                <shad:Card Padding="14" Background="{DynamicResource Brush.Card}">
+                    <StackPanel Spacing="10">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <TextBlock Text="Members" FontSize="16" FontWeight="Bold"
+                                       VerticalAlignment="Center"
+                                       IsVisible="{Binding IsEditMode}"/>
+                            <TextBlock Text="Invite Members" FontSize="16" FontWeight="Bold"
+                                       VerticalAlignment="Center"
+                                       IsVisible="{Binding IsCreateMode}"/>
+                            <Button Grid.Column="1"
+                                    IsVisible="{Binding IsOwner}"
+                                    Command="{Binding ToggleInviteSectionCommand}"
+                                    Padding="0"
+                                    Width="34" Height="34"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center"
+                                    CornerRadius="17"
+                                    Background="#66BB6A">
+                                <PathIcon Data="{StaticResource person_add_regular}" Width="14" Height="14"
+                                          Foreground="White"/>
+                            </Button>
+                        </Grid>
+
+                        <!-- Existing members (edit mode) -->
+                        <ItemsControl ItemsSource="{Binding Members}"
+                                      IsVisible="{Binding IsEditMode}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="dto:GroupMembershipDto">
+                                    <Border CornerRadius="12" Padding="10,8" Margin="0,3"
+                                            Background="{DynamicResource GhostColor}">
+                                        <Grid ColumnDefinitions="Auto, *, Auto">
+                                            <Border Grid.Column="0" Width="36" Height="36" CornerRadius="18"
+                                                    Background="{DynamicResource PrimaryColor}"
+                                                    Margin="0,0,10,0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Account.Username[0]}"
+                                                           Foreground="White"
+                                                           HorizontalAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           FontWeight="Bold" FontSize="14"/>
+                                            </Border>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+                                                <TextBlock Text="{Binding Account.Username, StringFormat='@{0}'}"
+                                                           FontSize="14" FontWeight="Medium"/>
+                                                <TextBlock Text="{Binding Role}"
+                                                           FontSize="11" Opacity="0.5"/>
+                                            </StackPanel>
+                                            <Button Grid.Column="2"
+                                                    IsVisible="{Binding ((vms:SharedGroupEditorViewModel)DataContext).IsOwner, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    Command="{Binding ((vms:SharedGroupEditorViewModel)DataContext).RemoveMemberCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Background="Transparent" BorderThickness="0"
+                                                    Padding="6" VerticalAlignment="Center">
+                                                <PathIcon Data="{StaticResource dismiss_regular}" Width="14" Height="14"
+                                                          Foreground="#EF5350"/>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Pending invites (create mode) -->
+                        <StackPanel IsVisible="{Binding IsCreateMode}" Spacing="6">
+                            <StackPanel IsVisible="{Binding !HasPendingInvites}"
+                                        HorizontalAlignment="Center" Margin="0,8">
+                                <TextBlock Text="No invites yet — tap + to add people"
+                                           FontSize="13" Opacity="0.4"
+                                           HorizontalAlignment="Center"/>
+                            </StackPanel>
+                            <ItemsControl ItemsSource="{Binding PendingInvites}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="dto:ProfileSummaryDto">
+                                        <Border CornerRadius="12" Padding="10,8" Margin="0,3"
+                                                Background="{DynamicResource GhostColor}">
+                                            <Grid ColumnDefinitions="Auto, *, Auto">
+                                                <Border Grid.Column="0" Width="36" Height="36" CornerRadius="18"
+                                                        Background="{DynamicResource PrimaryColor}"
+                                                        Margin="0,0,10,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Username[0]}"
+                                                               Foreground="White"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"
+                                                               FontWeight="Bold" FontSize="14"/>
+                                                </Border>
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+                                                    <TextBlock Text="{Binding Username, StringFormat='@{0}'}"
+                                                               FontSize="14" FontWeight="Medium"/>
+                                                    <TextBlock Text="Will be invited"
+                                                               FontSize="11" Opacity="0.5"
+                                                               Foreground="#66BB6A"/>
+                                                </StackPanel>
+                                                <Button Grid.Column="2"
+                                                        Command="{Binding ((vms:SharedGroupEditorViewModel)DataContext).RemovePendingInviteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Background="Transparent" BorderThickness="0"
+                                                        Padding="6" VerticalAlignment="Center">
+                                                    <PathIcon Data="{StaticResource dismiss_regular}" Width="14" Height="14"
+                                                              Foreground="#EF5350"/>
+                                                </Button>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+
+                        <!-- Invite section (expandable) -->
+                        <StackPanel IsVisible="{Binding IsInviteSectionVisible}" Spacing="8">
+                            <Border Height="1" Background="{DynamicResource BorderColor30}" Margin="0,4"/>
+                            <TextBlock Text="Invite Mutual Followers"
+                                       FontSize="13" FontWeight="SemiBold" Opacity="0.6"/>
+                            <ItemsControl ItemsSource="{Binding MutualFollowers}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="dto:ProfileSummaryDto">
+                                        <Border CornerRadius="12" Padding="10,8" Margin="0,3"
+                                                Background="{DynamicResource GhostColor}">
+                                            <Grid ColumnDefinitions="Auto, *, Auto">
+                                                <Border Grid.Column="0" Width="36" Height="36" CornerRadius="18"
+                                                        Background="{DynamicResource PrimaryColor}"
+                                                        Margin="0,0,10,0">
+                                                    <TextBlock Text="{Binding Username[0]}"
+                                                               Foreground="White"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"
+                                                               FontWeight="Bold" FontSize="14"/>
+                                                </Border>
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{Binding Username, StringFormat='@{0}'}"
+                                                           VerticalAlignment="Center" FontSize="14"/>
+                                                <Button Grid.Column="2"
+                                                        Content="Invite"
+                                                        Classes="Primary"
+                                                        FontSize="12"
+                                                        Padding="12,6"
+                                                        Command="{Binding $parent[UserControl].((vms:SharedGroupEditorViewModel)DataContext).InviteUserCommand}"
+                                                        CommandParameter="{Binding}"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </StackPanel>
+                </shad:Card>
+
+                <!-- Tasks Section -->
+                <shad:Card Padding="14" Background="{DynamicResource Brush.Card}">
+                    <StackPanel Spacing="10">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="Tasks" FontSize="16" FontWeight="Bold"
+                                       Foreground="{DynamicResource ForegroundColor}" VerticalAlignment="Center"/>
+                            <Button Grid.Column="1" Padding="0"
+                                    Width="34" Height="34"
+                                    HorizontalContentAlignment="Center"
+                                    VerticalContentAlignment="Center"
+                                    CornerRadius="17"
+                                    Background="#66BB6A"
+                                    IsVisible="{Binding !IsAddingTask}"
+                                    Command="{Binding ShowAddTaskCommand}">
+                                <PathIcon Data="{x:Static shad:Icons.Cross}" Width="12" Height="12"
+                                          Foreground="White">
+                                    <PathIcon.RenderTransform>
+                                        <RotateTransform Angle="45"/>
+                                    </PathIcon.RenderTransform>
+                                </PathIcon>
+                            </Button>
+                        </Grid>
+
+                        <StackPanel IsVisible="{Binding !Tasks.Count}" Spacing="6"
+                                    HorizontalAlignment="Center" Margin="0,12">
+                            <TextBlock Text="No tasks yet" FontSize="13" Opacity="0.4"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+
+                        <ItemsControl ItemsSource="{Binding Tasks}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="act:DailyActivityItemDto">
+                                    <Border CornerRadius="12" Padding="10,8" Margin="0,3"
+                                            Background="{Binding Color, Converter={StaticResource GroupColorConverter}}">
+                                        <Grid ColumnDefinitions="Auto, *, Auto">
+                                            <Border Width="34" Height="34" CornerRadius="17"
+                                                    Background="#33FFFFFF"
+                                                    VerticalAlignment="Center" Margin="0,0,10,0">
+                                                <TextBlock Text="{Binding Icon}"
+                                                           FontFamily="{StaticResource EmojiFont}"
+                                                           FontSize="15"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <TextBlock Grid.Column="1" Text="{Binding Title}"
+                                                       FontSize="14" FontWeight="SemiBold"
+                                                       Foreground="White" VerticalAlignment="Center"/>
+                                            <Button Grid.Column="2"
+                                                    IsVisible="{Binding ((vms:SharedGroupEditorViewModel)DataContext).IsOwner, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    Command="{Binding ((vms:SharedGroupEditorViewModel)DataContext).DeleteTaskCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Background="Transparent" BorderThickness="0"
+                                                    Padding="6" VerticalAlignment="Center">
+                                                <PathIcon Data="{StaticResource dismiss_regular}" Width="14" Height="14"
+                                                          Foreground="White" Opacity="0.7"/>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- Add task inline form -->
+                        <Border IsVisible="{Binding IsAddingTask}"
+                                Background="#0AFFFFFF" CornerRadius="12"
+                                Padding="12" Margin="0,4"
+                                BorderBrush="#22FFFFFF" BorderThickness="1">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="New Task" FontSize="14" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource ForegroundColor}"/>
+
+                                <!-- Task emoji -->
+                                <Panel>
+                                <StackPanel Spacing="6">
+                                <Button Command="{Binding ToggleTaskEmojiPickerCommand}"
+                                        Background="#15FFFFFF" CornerRadius="10"
+                                        Padding="8,6" BorderThickness="0" Cursor="Hand"
+                                        HorizontalAlignment="Left"
+                                        IsEnabled="{Binding CanCustomizeEmoji}">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Text="{Binding NewTaskIcon}"
+                                                   FontFamily="{StaticResource EmojiFont}"
+                                                   FontSize="20" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Icon" FontSize="11" Opacity="0.5"
+                                                   Foreground="{DynamicResource ForegroundColor}" VerticalAlignment="Center"/>
+                                        <PathIcon Data="{x:Static shad:Icons.ChevronDown}" Width="10" Height="10"
+                                                  Foreground="{DynamicResource ForegroundColor}" Opacity="0.4"/>
+                                    </StackPanel>
+                                </Button>
+                                <Border IsVisible="{Binding IsTaskEmojiPickerOpen}"
+                                        Background="#08FFFFFF" CornerRadius="10" Padding="6">
+                                    <ItemsControl ItemsSource="{x:Static vms:SharedGroupEditorViewModel.AvailableEmojis}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="x:String">
+                                                <Button Classes="Ghost" Padding="3" Margin="1"
+                                                        Width="36" Height="36"
+                                                        HorizontalContentAlignment="Center"
+                                                        VerticalContentAlignment="Center"
+                                                        Command="{Binding ((vms:SharedGroupEditorViewModel)DataContext).SelectTaskEmojiCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}">
+                                                    <TextBlock Text="{Binding}"
+                                                               FontFamily="{StaticResource EmojiFont}"
+                                                               FontSize="17"
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Border>
+                                </StackPanel>
+                                <Border IsVisible="{Binding !CanCustomizeEmoji}" CornerRadius="10"
+                                        Background="#AA000000" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                        IsHitTestVisible="False">
+                                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <TextBlock Text="&#x1F512;" FontFamily="{StaticResource EmojiFont}" FontSize="12"
+                                                   Foreground="White" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Plus" FontSize="11" FontWeight="Medium"
+                                                   Foreground="White" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                                </Panel>
+
+                                <TextBox Text="{Binding NewTaskTitle}"
+                                         Watermark="Task name..."
+                                         FontSize="13"/>
+
+                                <TextBox Text="{Binding NewTaskDescription}"
+                                         Watermark="Description (optional)"
+                                         FontSize="12"/>
+
+                                <!-- Task Type -->
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Type" FontSize="11" Opacity="0.5"
+                                               Foreground="{DynamicResource ForegroundColor}"/>
+                                    <Grid ColumnDefinitions="*,6,*" RowDefinitions="Auto,6,Auto,6,Auto">
+                                        <Button Grid.Column="0" Grid.Row="0" Padding="6"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Center"
+                                                CornerRadius="8"
+                                                Command="{Binding SelectNewTaskTypeCommand}"
+                                                CommandParameter="Timer">
+                                            <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
+                                                <TextBlock Text="&#x23F1;&#xFE0F;" FontFamily="{StaticResource EmojiFont}" FontSize="14" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Timer" FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource ForegroundColor}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Grid.Column="2" Grid.Row="0" Padding="6"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Center"
+                                                CornerRadius="8"
+                                                Command="{Binding SelectNewTaskTypeCommand}"
+                                                CommandParameter="Count">
+                                            <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
+                                                <TextBlock Text="&#x1F522;" FontFamily="{StaticResource EmojiFont}" FontSize="14" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Count" FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource ForegroundColor}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Grid.Column="0" Grid.Row="2" Padding="6"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Center"
+                                                CornerRadius="8"
+                                                Command="{Binding SelectNewTaskTypeCommand}"
+                                                CommandParameter="Steps">
+                                            <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
+                                                <TextBlock Text="&#x1F6B6;" FontFamily="{StaticResource EmojiFont}" FontSize="14" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Steps" FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource ForegroundColor}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Grid.Column="2" Grid.Row="2" Padding="6"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Center"
+                                                CornerRadius="8"
+                                                Command="{Binding SelectNewTaskTypeCommand}"
+                                                CommandParameter="Checkbox">
+                                            <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
+                                                <TextBlock Text="&#x2705;" FontFamily="{StaticResource EmojiFont}" FontSize="14" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Checkbox" FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource ForegroundColor}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Grid.Column="0" Grid.Row="4" Grid.ColumnSpan="3" Padding="6"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Center"
+                                                CornerRadius="8"
+                                                Command="{Binding SelectNewTaskTypeCommand}"
+                                                CommandParameter="Photo">
+                                            <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
+                                                <TextBlock Text="&#x1F4F7;" FontFamily="{StaticResource EmojiFont}" FontSize="14" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Photo Verification" FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource ForegroundColor}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                </StackPanel>
+
+                                <!-- Duration (Timer type) -->
+                                <Grid ColumnDefinitions="Auto,Auto,Auto,Auto"
+                                      IsVisible="{Binding IsNewTaskTimer}">
+                                    <TextBlock Text="Duration:" FontSize="12"
+                                               VerticalAlignment="Center"
+                                               Foreground="{DynamicResource ForegroundColor}" Opacity="0.6"
+                                               Margin="0,0,8,0"/>
+                                    <Button Grid.Column="1" Classes="Ghost" Padding="6"
+                                            Width="32" Height="32"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            Command="{Binding DecrementDurationCommand}">
+                                        <PathIcon Data="{x:Static shad:Icons.Minus}" Width="10" Height="10"
+                                                  Foreground="{DynamicResource ForegroundColor}"/>
+                                    </Button>
+                                    <Border Grid.Column="2" CornerRadius="6" Padding="10,4"
+                                            Background="#15FFFFFF" MinWidth="60"
+                                            HorizontalAlignment="Center">
+                                        <TextBlock Text="{Binding NewTaskDurationMinutes, StringFormat='{}{0} min'}"
+                                                   FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource ForegroundColor}"
+                                                   HorizontalAlignment="Center"/>
+                                    </Border>
+                                    <Button Grid.Column="3" Classes="Ghost" Padding="6"
+                                            Width="32" Height="32"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            Command="{Binding IncrementDurationCommand}">
+                                        <PathIcon Data="{x:Static shad:Icons.Cross}" Width="10" Height="10"
+                                                  Foreground="{DynamicResource ForegroundColor}">
+                                            <PathIcon.RenderTransform>
+                                                <RotateTransform Angle="45"/>
+                                            </PathIcon.RenderTransform>
+                                        </PathIcon>
+                                    </Button>
+                                </Grid>
+
+                                <!-- Target Count (Count type) -->
+                                <Grid ColumnDefinitions="Auto,Auto,Auto,Auto"
+                                      IsVisible="{Binding IsNewTaskCount}">
+                                    <TextBlock Text="Target:" FontSize="12"
+                                               VerticalAlignment="Center"
+                                               Foreground="{DynamicResource ForegroundColor}" Opacity="0.6"
+                                               Margin="0,0,8,0"/>
+                                    <Button Grid.Column="1" Classes="Ghost" Padding="6"
+                                            Width="32" Height="32"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            Command="{Binding DecrementTargetCountCommand}">
+                                        <PathIcon Data="{x:Static shad:Icons.Minus}" Width="10" Height="10"
+                                                  Foreground="{DynamicResource ForegroundColor}"/>
+                                    </Button>
+                                    <Border Grid.Column="2" CornerRadius="6" Padding="10,4"
+                                            Background="#15FFFFFF" MinWidth="60"
+                                            HorizontalAlignment="Center">
+                                        <TextBlock Text="{Binding NewTaskTargetCount}"
+                                                   FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource ForegroundColor}"
+                                                   HorizontalAlignment="Center"/>
+                                    </Border>
+                                    <Button Grid.Column="3" Classes="Ghost" Padding="6"
+                                            Width="32" Height="32"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            Command="{Binding IncrementTargetCountCommand}">
+                                        <PathIcon Data="{x:Static shad:Icons.Cross}" Width="10" Height="10"
+                                                  Foreground="{DynamicResource ForegroundColor}">
+                                            <PathIcon.RenderTransform>
+                                                <RotateTransform Angle="45"/>
+                                            </PathIcon.RenderTransform>
+                                        </PathIcon>
+                                    </Button>
+                                </Grid>
+
+                                <!-- Target Steps (Steps type) -->
+                                <Grid ColumnDefinitions="Auto,Auto,Auto,Auto"
+                                      IsVisible="{Binding IsNewTaskSteps}">
+                                    <TextBlock Text="Goal:" FontSize="12"
+                                               VerticalAlignment="Center"
+                                               Foreground="{DynamicResource ForegroundColor}" Opacity="0.6"
+                                               Margin="0,0,8,0"/>
+                                    <Button Grid.Column="1" Classes="Ghost" Padding="6"
+                                            Width="32" Height="32"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            Command="{Binding DecrementTargetStepsCommand}">
+                                        <PathIcon Data="{x:Static shad:Icons.Minus}" Width="10" Height="10"
+                                                  Foreground="{DynamicResource ForegroundColor}"/>
+                                    </Button>
+                                    <Border Grid.Column="2" CornerRadius="6" Padding="10,4"
+                                            Background="#15FFFFFF" MinWidth="70"
+                                            HorizontalAlignment="Center">
+                                        <TextBlock Text="{Binding NewTaskTargetCount, StringFormat='{}{0} steps'}"
+                                                   FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource ForegroundColor}"
+                                                   HorizontalAlignment="Center"/>
+                                    </Border>
+                                    <Button Grid.Column="3" Classes="Ghost" Padding="6"
+                                            Width="32" Height="32"
+                                            HorizontalContentAlignment="Center"
+                                            VerticalContentAlignment="Center"
+                                            Command="{Binding IncrementTargetStepsCommand}">
+                                        <PathIcon Data="{x:Static shad:Icons.Cross}" Width="10" Height="10"
+                                                  Foreground="{DynamicResource ForegroundColor}">
+                                            <PathIcon.RenderTransform>
+                                                <RotateTransform Angle="45"/>
+                                            </PathIcon.RenderTransform>
+                                        </PathIcon>
+                                    </Button>
+                                </Grid>
+
+                                <!-- Task color -->
+                                <Panel>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Color" FontSize="11" Opacity="0.5"
+                                               Foreground="{DynamicResource ForegroundColor}"/>
+                                    <ItemsControl ItemsSource="{x:Static vms:SharedGroupEditorViewModel.AvailableColors}"
+                                                  IsEnabled="{Binding CanCustomizeColors}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="x:String">
+                                                <Button Classes="Ghost" Padding="2" Margin="2"
+                                                        Width="28" Height="28"
+                                                        Command="{Binding ((vms:SharedGroupEditorViewModel)DataContext).SelectTaskColorCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}">
+                                                    <Border Width="22" Height="22" CornerRadius="11"
+                                                            Background="{Binding Converter={StaticResource GroupColorConverter}}"/>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                                <Border IsVisible="{Binding !CanCustomizeColors}" CornerRadius="8"
+                                        Background="#AA000000" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                        IsHitTestVisible="False">
+                                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <TextBlock Text="&#x1F512;" FontFamily="{StaticResource EmojiFont}" FontSize="12"
+                                                   Foreground="White" VerticalAlignment="Center"/>
+                                        <TextBlock Text="Plus" FontSize="11" FontWeight="Medium"
+                                                   Foreground="White" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                                </Panel>
+
+                                <!-- Task preview -->
+                                <Border CornerRadius="10" Padding="8,6"
+                                        Background="{Binding NewTaskColor, Converter={StaticResource GroupColorConverter}}">
+                                    <Grid ColumnDefinitions="Auto,*">
+                                        <Border Width="28" Height="28" CornerRadius="14"
+                                                Background="#33FFFFFF" Margin="0,0,8,0">
+                                            <TextBlock Text="{Binding NewTaskIcon}"
+                                                       FontFamily="{StaticResource EmojiFont}"
+                                                       FontSize="13"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding NewTaskTitle, FallbackValue='Task preview'}"
+                                                       FontSize="13" FontWeight="SemiBold"
+                                                       Foreground="White"/>
+                                            <TextBlock FontSize="10" Foreground="White" Opacity="0.7"
+                                                       Text="{Binding NewTaskPreviewSubtitle}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Actions -->
+                                <Grid ColumnDefinitions="*,*" Margin="0,2,0,0">
+                                    <Button Grid.Column="0" Classes="Ghost" Padding="8"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Center"
+                                            Command="{Binding HideAddTaskCommand}">
+                                        <TextBlock Text="Cancel" FontSize="13"
+                                                   Foreground="{DynamicResource ForegroundColor}" Opacity="0.5"/>
+                                    </Button>
+                                    <Button Grid.Column="1" Padding="8"
+                                            HorizontalAlignment="Stretch"
+                                            HorizontalContentAlignment="Center"
+                                            Background="#66BB6A" CornerRadius="8"
+                                            Command="{Binding AddTaskCommand}">
+                                        <TextBlock Text="Add Task" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="White"/>
+                                    </Button>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </shad:Card>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Bottom Save Button -->
+        <Border Grid.Row="2" Padding="20,12,20,24"
+                Background="{DynamicResource Brush.Background}">
+            <Grid ColumnDefinitions="*, 12, *">
+                <Button Grid.Column="0"
+                        Command="{Binding CancelCommand}"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        Padding="0,14"
+                        Height="48"
+                        CornerRadius="14"
+                        Background="{DynamicResource OutlineColor}">
+                    <TextBlock Text="Cancel" HorizontalAlignment="Center"
+                               FontWeight="SemiBold" FontSize="15"/>
+                </Button>
+                <Button Grid.Column="2"
+                        Command="{Binding SaveCommand}"
+                        Classes="Primary"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Center"
+                        Padding="0,14"
+                        Height="48"
+                        CornerRadius="14">
+                    <TextBlock Text="{Binding SaveButtonText}" HorizontalAlignment="Center"
+                               FontWeight="SemiBold" FontSize="15" Foreground="White"/>
+                </Button>
+            </Grid>
+        </Border>
+
+    </Grid>
+</UserControl>

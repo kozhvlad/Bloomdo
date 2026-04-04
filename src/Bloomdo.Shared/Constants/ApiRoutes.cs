@@ -87,10 +87,30 @@ public static class ApiRoutes
     {
         private const string BaseRoute = $"{Base}/social";
 
-        public const string Friends = $"{BaseRoute}/friends";
+        // Search
         public const string Search = $"{BaseRoute}/search";
-        public const string Request = $"{BaseRoute}/request";
-        public const string Respond = $"{BaseRoute}/respond/{{id}}";
-        public const string Remove = $"{BaseRoute}/friends/{{id}}";
+
+        // Followers / Following
+        public const string Followers = $"{BaseRoute}/followers";
+        public const string Following = $"{BaseRoute}/following";
+        public const string Follow = $"{BaseRoute}/follow/{{userId}}";
+        public const string Unfollow = $"{BaseRoute}/unfollow/{{userId}}";
+        public const string MutualFollowers = $"{BaseRoute}/mutual";
+
+        // Follow requests (for private profiles)
+        public const string FollowRequests = $"{BaseRoute}/follow-requests";
+        public const string RespondFollowRequest = $"{BaseRoute}/follow-requests/{{id}}";
+
+        // Notifications
+        public const string Notifications = $"{BaseRoute}/notifications";
+        public const string ReadNotification = $"{BaseRoute}/notifications/{{id}}/read";
+
+        // Shared groups
+        public const string SharedGroups = $"{BaseRoute}/groups";
+        public const string SharedGroupById = $"{BaseRoute}/groups/{{id}}";
+        public const string SharedGroupUpdate = $"{BaseRoute}/groups/{{id}}";
+        public const string SharedGroupInvite = $"{BaseRoute}/groups/{{id}}/invite";
+        public const string SharedGroupInviteRespond = $"{BaseRoute}/groups/{{id}}/invite/respond";
+        public const string SharedGroupMemberRemove = $"{BaseRoute}/groups/{{id}}/members/{{memberId}}";
     }
 }

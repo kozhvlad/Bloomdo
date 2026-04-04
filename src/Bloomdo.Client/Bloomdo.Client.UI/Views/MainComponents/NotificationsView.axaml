@@ -1,0 +1,103 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:shad="clr-namespace:ShadUI;assembly=ShadUI"
+             xmlns:vms="clr-namespace:Bloomdo.Client.Application.ViewModels.MainComponents;assembly=Bloomdo.Client.Application"
+             xmlns:dto="clr-namespace:Bloomdo.Shared.DTOs.Social;assembly=Bloomdo.Shared"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="800"
+             x:DataType="vms:NotificationsViewModel"
+             x:Class="Bloomdo.Client.UI.MainComponents.NotificationsView">
+
+    <Grid RowDefinitions="Auto, *">
+
+        <!-- Header -->
+        <Border Grid.Row="0" Padding="16,48,20,16" Background="{DynamicResource Brush.Background}">
+            <Grid ColumnDefinitions="Auto, *">
+                <Button Grid.Column="0"
+                        Command="{Binding GoBackCommand}"
+                        Background="Transparent" BorderThickness="0"
+                        Padding="4,8,12,8">
+                    <PathIcon Data="{StaticResource arrow_left_regular}" Width="20" Height="20"/>
+                </Button>
+                <TextBlock Grid.Column="1"
+                           Text="Notifications"
+                           FontSize="22" FontWeight="Bold"
+                           Foreground="{DynamicResource ForegroundLeadColor}"
+                           VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+
+        <!-- Loading bar -->
+        <ProgressBar Grid.Row="0"
+                     IsIndeterminate="True"
+                     IsVisible="{Binding IsLoading}"
+                     VerticalAlignment="Bottom"
+                     HorizontalAlignment="Stretch"
+                     Height="3" Margin="0"/>
+
+        <!-- Content -->
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Margin="20,12,20,80" Spacing="8">
+
+                <!-- Empty state -->
+                <StackPanel IsVisible="{Binding !HasNotifications}"
+                            HorizontalAlignment="Center"
+                            Margin="0,60,0,0"
+                            Spacing="8">
+                    <PathIcon Data="{StaticResource alert_regular}"
+                              Width="48" Height="48"
+                              Opacity="0.2"
+                              HorizontalAlignment="Center"/>
+                    <TextBlock Text="No notifications yet"
+                               FontSize="16" FontWeight="SemiBold"
+                               HorizontalAlignment="Center"
+                               Opacity="0.4"/>
+                </StackPanel>
+
+                <ItemsControl ItemsSource="{Binding Notifications}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="dto:NotificationDto">
+                            <shad:Card Margin="0,0,0,8" Padding="14,12"
+                                       Opacity="{Binding IsRead, Converter={StaticResource BoolToOpacityConverter}, ConverterParameter='0.5|1.0'}">
+                                <Grid ColumnDefinitions="Auto, *, Auto">
+                                    <!-- Actor avatar -->
+                                    <Border Grid.Column="0"
+                                            Width="40" Height="40"
+                                            CornerRadius="20"
+                                            Background="{DynamicResource PrimaryColor}"
+                                            Margin="0,0,12,0"
+                                            VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Actor.Username[0]}"
+                                                   Foreground="White"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   FontWeight="Bold"
+                                                   FontSize="15"/>
+                                    </Border>
+
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="{Binding ., Converter={StaticResource NotificationTextConverter}}"
+                                                   FontSize="14" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding CreatedAt, StringFormat='{}{0:HH:mm · dd MMM}'}"
+                                                   FontSize="11" Opacity="0.5"/>
+                                    </StackPanel>
+
+                                    <!-- Unread dot -->
+                                    <Ellipse Grid.Column="2"
+                                             IsVisible="{Binding !IsRead}"
+                                             Width="8" Height="8"
+                                             Fill="{DynamicResource PrimaryColor}"
+                                             VerticalAlignment="Center"
+                                             Margin="8,0,0,0"/>
+                                </Grid>
+                            </shad:Card>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+            </StackPanel>
+        </ScrollViewer>
+
+    </Grid>
+</UserControl>

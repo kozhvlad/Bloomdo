@@ -1,0 +1,117 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:shad="clr-namespace:ShadUI;assembly=ShadUI"
+             xmlns:vms="clr-namespace:Bloomdo.Client.Application.ViewModels.MainComponents;assembly=Bloomdo.Client.Application"
+             xmlns:dto="clr-namespace:Bloomdo.Shared.DTOs.Social;assembly=Bloomdo.Shared"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="800"
+             x:DataType="vms:UserSearchViewModel"
+             x:Class="Bloomdo.Client.UI.MainComponents.UserSearchView">
+
+    <Grid RowDefinitions="Auto, *">
+
+        <!-- Header -->
+        <Border Grid.Row="0" Padding="16,48,20,16" Background="{DynamicResource Brush.Background}">
+            <Grid ColumnDefinitions="Auto, *">
+                <Button Grid.Column="0"
+                        Command="{Binding GoBackCommand}"
+                        Background="Transparent" BorderThickness="0"
+                        Padding="4,8,12,8">
+                    <PathIcon Data="{StaticResource arrow_left_regular}" Width="20" Height="20"/>
+                </Button>
+                <shad:Card Grid.Column="1" Padding="4,2">
+                    <Grid ColumnDefinitions="*, Auto">
+                        <TextBox Grid.Column="0"
+                                 Text="{Binding SearchQuery}"
+                                 Watermark="Search by @username or name..."
+                                 BorderThickness="0"
+                                 Background="Transparent"
+                                 VerticalContentAlignment="Center"
+                                 Padding="10,6">
+                            <TextBox.KeyBindings>
+                                <KeyBinding Gesture="Enter" Command="{Binding SearchCommand}"/>
+                            </TextBox.KeyBindings>
+                        </TextBox>
+                        <Button Grid.Column="1"
+                                Command="{Binding SearchCommand}"
+                                Background="Transparent" BorderThickness="0"
+                                Padding="8">
+                            <PathIcon Data="{StaticResource search_regular}" Width="18" Height="18"/>
+                        </Button>
+                    </Grid>
+                </shad:Card>
+            </Grid>
+        </Border>
+
+        <!-- Loading bar -->
+        <ProgressBar Grid.Row="0"
+                     IsIndeterminate="True"
+                     IsVisible="{Binding IsLoading}"
+                     VerticalAlignment="Bottom"
+                     HorizontalAlignment="Stretch"
+                     Height="3" Margin="0"/>
+
+        <!-- Results -->
+        <ScrollViewer Grid.Row="1">
+            <ItemsControl ItemsSource="{Binding SearchResults}" Margin="20,12,20,80">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="dto:FollowStatusDto">
+                        <shad:Card Margin="0,0,0,8" Padding="14,12">
+                            <Grid ColumnDefinitions="Auto, *, Auto">
+                                <!-- Avatar -->
+                                <Border Grid.Column="0"
+                                        Width="44" Height="44"
+                                        CornerRadius="22"
+                                        Background="{DynamicResource PrimaryColor}"
+                                        Margin="0,0,12,0"
+                                        VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding User.Username[0]}"
+                                               Foreground="White"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               FontWeight="Bold"
+                                               FontSize="17"/>
+                                </Border>
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                    <TextBlock Text="{Binding User.Username, StringFormat='@{0}'}"
+                                               FontWeight="SemiBold" FontSize="15"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Text="{Binding User.FirstName}" FontSize="12" Opacity="0.6"/>
+                                        <Border IsVisible="{Binding IsPrivateProfile}"
+                                                Background="{DynamicResource OutlineColor}"
+                                                CornerRadius="6" Padding="6,2">
+                                            <TextBlock Text="Private" FontSize="10" Opacity="0.7"/>
+                                        </Border>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- Follow / Unfollow button -->
+                                <Button Grid.Column="2"
+                                        VerticalAlignment="Center"
+                                        IsVisible="{Binding !IsFollowing}"
+                                        Content="{Binding IsPending, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Pending|Follow'}"
+                                        Classes="Primary"
+                                        FontSize="12"
+                                        Padding="14,6"
+                                        Command="{Binding $parent[UserControl].((vms:UserSearchViewModel)DataContext).FollowCommand}"
+                                        CommandParameter="{Binding}"/>
+
+                                <Button Grid.Column="2"
+                                        VerticalAlignment="Center"
+                                        IsVisible="{Binding IsFollowing}"
+                                        Content="Following"
+                                        FontSize="12"
+                                        Padding="14,6"
+                                        Command="{Binding $parent[UserControl].((vms:UserSearchViewModel)DataContext).UnfollowCommand}"
+                                        CommandParameter="{Binding}"/>
+                            </Grid>
+                        </shad:Card>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+    </Grid>
+</UserControl>

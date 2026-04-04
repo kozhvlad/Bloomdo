@@ -2,6 +2,7 @@ using Bloomdo.Client.Core.Interfaces;
 using Bloomdo.Shared.DTOs.Profile;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Collections.ObjectModel;
 
 namespace Bloomdo.Client.Application.ViewModels.MainComponents;
 
@@ -10,6 +11,7 @@ public partial class ProfileViewModel : PageViewModel
     private readonly IAccessTokenManager _tokenManager;
     private readonly INavigationService _navigationService;
     private readonly IProfileApiService _profileApiService;
+    private readonly ISocialApiService _socialApiService;
 
     [ObservableProperty]
     private string _name = string.Empty;
@@ -107,14 +109,22 @@ public partial class ProfileViewModel : PageViewModel
     [ObservableProperty]
     private int _achievementsUnlocked;
 
+    [ObservableProperty]
+    private int _followersCount;
+
+    [ObservableProperty]
+    private int _followingCount;
+
     public ProfileViewModel(
         IAccessTokenManager tokenManager,
         INavigationService navigationService,
-        IProfileApiService profileApiService)
+        IProfileApiService profileApiService,
+        ISocialApiService socialApiService)
     {
         _tokenManager = tokenManager;
         _navigationService = navigationService;
         _profileApiService = profileApiService;
+        _socialApiService = socialApiService;
     }
 
     public override void OnAppearing()
@@ -148,6 +158,12 @@ public partial class ProfileViewModel : PageViewModel
 
                 ApplyAvatar(profile.Avatar);
             }
+
+            // Load followers/following counts
+            var followers = await _socialApiService.GetFollowersAsync();
+            var following = await _socialApiService.GetFollowingAsync();
+            FollowersCount = followers.Count;
+            FollowingCount = following.Count;
 
             // Load stats
             var stats = await _profileApiService.GetProfileStatsAsync();
@@ -366,6 +382,30 @@ public partial class ProfileViewModel : PageViewModel
         9 => "#ECEFF1",
         _ => "#EF5350"
     };
+
+    [RelayCommand]
+    private void OpenSearch()
+    {
+        _navigationService.NavigateTo<UserSearchViewModel>();
+    }
+
+    [RelayCommand]
+    private void OpenNotifications()
+    {
+        _navigationService.NavigateTo<NotificationsViewModel>();
+    }
+
+    [RelayCommand]
+    private void OpenFollowers()
+    {
+        _navigationService.NavigateTo<FollowListViewModel>(vm => vm.Initialize(FollowListMode.Followers));
+    }
+
+    [RelayCommand]
+    private void OpenFollowing()
+    {
+        _navigationService.NavigateTo<FollowListViewModel>(vm => vm.Initialize(FollowListMode.Following));
+    }
 
     [RelayCommand]
     private void EditProfile()

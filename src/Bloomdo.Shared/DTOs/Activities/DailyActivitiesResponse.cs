@@ -16,6 +16,7 @@ public class DailyActivityGroupDto
     public string Color { get; set; } = string.Empty;
     public int SortOrder { get; set; }
     public int CurrentStreak { get; set; }
+    public bool IsShared { get; set; }
     public List<GroupMemberProgressDto> MemberProgresses { get; set; } = [];
     public List<DailyActivityItemDto> Items { get; set; } = [];
 }
