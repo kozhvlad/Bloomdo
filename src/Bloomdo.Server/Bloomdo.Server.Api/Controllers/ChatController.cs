@@ -44,7 +44,7 @@ public class ChatController(IChatService chatService) : ControllerBase
 
         try
         {
-            var response = await chatService.SendMessageAsync(accountId.Value, null, request.Message, ct);
+            var response = await chatService.SendMessageAsync(accountId.Value, null, request.Message, request.TodayContext, ct);
             return Ok(response);
         }
         catch (ChatLimitExceededException ex)
@@ -62,7 +62,7 @@ public class ChatController(IChatService chatService) : ControllerBase
 
         try
         {
-            var response = await chatService.SendMessageAsync(accountId.Value, id, request.Message, ct);
+            var response = await chatService.SendMessageAsync(accountId.Value, id, request.Message, request.TodayContext, ct);
             return Ok(response);
         }
         catch (ChatLimitExceededException ex)

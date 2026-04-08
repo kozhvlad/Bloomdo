@@ -12,7 +12,7 @@
              x:Class="Bloomdo.Client.UI.MainComponents.AiChatView">
     <UserControl.Styles>
         <Style Selector="Border.UserBubble">
-            <Setter Property="Background" Value="{DynamicResource ButtonBackground}"/>
+            <Setter Property="Background" Value="{DynamicResource PrimaryColor}"/>
             <Setter Property="CornerRadius" Value="16,16,4,16"/>
             <Setter Property="Padding" Value="14,10"/>
             <Setter Property="MaxWidth" Value="280"/>
@@ -20,7 +20,7 @@
             <Setter Property="Margin" Value="50,2,0,2"/>
         </Style>
         <Style Selector="Border.AssistantBubble">
-            <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
+            <Setter Property="Background" Value="{DynamicResource GhostColor}"/>
             <Setter Property="CornerRadius" Value="16,16,16,4"/>
             <Setter Property="Padding" Value="14,10"/>
             <Setter Property="HorizontalAlignment" Value="Left"/>
@@ -32,7 +32,7 @@
             <Setter Property="Margin" Value="0,4"/>
         </Style>
         <Style Selector="Border.ConversationItem:pointerover">
-            <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
+            <Setter Property="Background" Value="{DynamicResource GhostColor}"/>
         </Style>
     </UserControl.Styles>
 
@@ -42,13 +42,13 @@
             <Border Grid.Row="0" BorderBrush="{DynamicResource OutlineColor}" BorderThickness="0,0,0,1" Padding="16,12">
                 <Grid ColumnDefinitions="Auto,*,Auto">
                     <Button Grid.Column="0" Classes="Ghost" Padding="8" Command="{Binding ToggleHistoryCommand}">
-                        <PathIcon Data="{StaticResource chat_regular}" Width="20" Height="20" Foreground="{DynamicResource ButtonForeground}"/>
+                        <PathIcon Data="{StaticResource chat_regular}" Width="20" Height="20" Foreground="{DynamicResource ForegroundColor}"/>
                     </Button>
                     <TextBlock Grid.Column="1" Text="{Binding CurrentTitle}" FontSize="16" FontWeight="SemiBold"
                                VerticalAlignment="Center" HorizontalAlignment="Center"
                                TextTrimming="CharacterEllipsis" MaxWidth="200"/>
                     <Button Grid.Column="2" Classes="Ghost" Padding="8" Command="{Binding NewChatCommand}">
-                        <TextBlock Text="+" FontSize="22" FontWeight="Light" Foreground="{DynamicResource ButtonForeground}"/>
+                        <TextBlock Text="+" FontSize="22" FontWeight="Light" Foreground="{DynamicResource ForegroundColor}"/>
                     </Button>
                 </Grid>
             </Border>
@@ -71,7 +71,7 @@
                                     <!-- User message -->
                                     <Border Classes="UserBubble" IsVisible="{Binding IsUser}">
                                         <SelectableTextBlock Text="{Binding Content}" FontSize="14"
-                                                             Foreground="{DynamicResource ButtonForeground}" TextWrapping="Wrap"/>
+                                                             Foreground="{DynamicResource PrimaryForegroundColor}" TextWrapping="Wrap"/>
                                     </Border>
 
                                     <!-- Assistant message with copy button -->
@@ -109,7 +109,7 @@
 
             <!-- Typing indicator -->
             <Border Grid.Row="1" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="16,0,16,8"
-                    IsVisible="{Binding IsSending}" Background="{DynamicResource CardBackground}"
+                    IsVisible="{Binding IsSending}" Background="{DynamicResource GhostColor}"
                     CornerRadius="16,16,16,4" Padding="16,10">
                 <StackPanel Orientation="Horizontal" Spacing="6">
                     <Ellipse Width="6" Height="6" Fill="{DynamicResource ForegroundLeadColor}" Opacity="0.5"/>
@@ -157,7 +157,7 @@
                     Command="{Binding ToggleHistoryCommand}"/>
 
             <!-- Sidebar panel -->
-            <Border Background="{DynamicResource Brush.Background}" HorizontalAlignment="Left"
+            <Border Background="{DynamicResource SidebarBackgroundColor}" HorizontalAlignment="Left"
                     Width="300" CornerRadius="0,16,16,0">
                 <Grid RowDefinitions="Auto,*">
                     <Border Grid.Row="0" Padding="16,14" BorderBrush="{DynamicResource OutlineColor}" BorderThickness="0,0,0,1">
@@ -202,7 +202,7 @@
         </Panel>
 
         <!-- Loading overlay -->
-        <Border Background="#20000000" IsVisible="{Binding IsLoading}">
+        <Border Background="{DynamicResource BusyAreaOverlayColor}" IsVisible="{Binding IsLoading}">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8">
                 <TextBlock Text="Loading..." FontSize="14" Opacity="0.6" HorizontalAlignment="Center"/>
             </StackPanel>

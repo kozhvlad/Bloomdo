@@ -83,7 +83,7 @@ public partial class SocialViewModel : PageViewModel
     [RelayCommand]
     private async Task DeleteGroupAsync(SharedGroupDto? group)
     {
-        if (group == null) return;
+        if (group is null || !group.IsOwner) return;
 
         var confirmed = await _confirmDialogService.ConfirmAsync(
             "Delete Group",
@@ -114,7 +114,7 @@ public partial class SocialViewModel : PageViewModel
     [RelayCommand]
     private void EditGroup(SharedGroupDto? group)
     {
-        if (group == null) return;
+        if (group is null || !group.IsOwner) return;
         _navigationService.NavigateTo<SharedGroupEditorViewModel>(vm => vm.Initialize(group.Id));
     }
 

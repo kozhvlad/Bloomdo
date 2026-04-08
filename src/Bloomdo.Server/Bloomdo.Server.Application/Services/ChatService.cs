@@ -78,7 +78,7 @@ public class ChatService(
         };
     }
 
-    public async Task<SendMessageResponse> SendMessageAsync(Guid accountId, Guid? conversationId, string message, CancellationToken ct = default)
+    public async Task<SendMessageResponse> SendMessageAsync(Guid accountId, Guid? conversationId, string message, TodayLocalContext? todayContext = null, CancellationToken ct = default)
     {
         // Enforce daily message limit for free users
         var isPremium = await subscriptionService.IsPremiumAsync(accountId, ct);
@@ -120,7 +120,7 @@ public class ChatService(
         userMessage = await chatRepository.AddMessageAsync(userMessage, ct);
 
         // Build context and call Gemini
-        var systemPrompt = await BuildSystemPromptAsync(accountId, ct);
+        var systemPrompt = await BuildSystemPromptAsync(accountId, todayContext, ct);
         var history = conversation.Messages
             .Where(m => !m.IsDeleted)
             .OrderBy(m => m.CreatedAt)
@@ -168,7 +168,7 @@ public class ChatService(
         return await chatRepository.DeleteConversationAsync(conversationId, accountId, ct);
     }
 
-    private async Task<string> BuildSystemPromptAsync(Guid accountId, CancellationToken ct)
+    private async Task<string> BuildSystemPromptAsync(Guid accountId, TodayLocalContext? todayContext, CancellationToken ct)
     {
         var sb = new StringBuilder();
 
@@ -194,6 +194,27 @@ public class ChatService(
                 var hours = snap.TotalScreenTimeSeconds / 3600;
                 var mins = (snap.TotalScreenTimeSeconds % 3600) / 60;
                 sb.AppendLine($"- {snap.Date:yyyy-MM-dd}: {hours}h {mins}m screen time, {snap.Pickups} pickups, goal met: {snap.GoalMet}");
+            }
+            sb.AppendLine();
+        }
+
+        // Today's live data from user's device (not yet synced to server)
+        if (todayContext is not null)
+        {
+            var todayHours = todayContext.TotalScreenTimeSeconds / 3600;
+            var todayMins = (todayContext.TotalScreenTimeSeconds % 3600) / 60;
+            sb.AppendLine("=== TODAY'S LIVE DATA (from device) ===");
+            sb.AppendLine($"- Screen time so far: {todayHours}h {todayMins}m");
+            sb.AppendLine($"- Pickups so far: {todayContext.Pickups}");
+            if (todayContext.TopApps.Count > 0)
+            {
+                sb.AppendLine("- Top apps today:");
+                foreach (var app in todayContext.TopApps)
+                {
+                    var h = app.ForegroundSeconds / 3600;
+                    var m = (app.ForegroundSeconds % 3600) / 60;
+                    sb.AppendLine($"  - {app.AppName}: {h}h {m}m");
+                }
             }
             sb.AppendLine();
         }

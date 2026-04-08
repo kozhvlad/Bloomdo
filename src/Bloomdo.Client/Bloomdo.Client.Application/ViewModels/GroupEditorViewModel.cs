@@ -24,10 +24,10 @@ public partial class GroupEditorViewModel : PageViewModel
     private string _pageTitle = "New Group";
 
     [ObservableProperty]
-    private bool _canCustomizeEmoji = true;
+    private bool _canCustomizeEmoji;
 
     [ObservableProperty]
-    private bool _canCustomizeColors = true;
+    private bool _canCustomizeColors;
 
     // --- Group fields ---
 
@@ -217,8 +217,13 @@ public partial class GroupEditorViewModel : PageViewModel
     }
 
     [RelayCommand]
-    private void SelectGroupEmoji(string emoji)
+    private async Task SelectGroupEmoji(string emoji)
     {
+        if (!CanCustomizeEmoji)
+        {
+            await PromptPremiumUpgradeAsync();
+            return;
+        }
         GroupIcon = emoji;
         IsEmojiPickerOpen = false;
     }
@@ -231,8 +236,13 @@ public partial class GroupEditorViewModel : PageViewModel
     }
 
     [RelayCommand]
-    private void SelectTaskEmoji(string emoji)
+    private async Task SelectTaskEmoji(string emoji)
     {
+        if (!CanCustomizeEmoji)
+        {
+            await PromptPremiumUpgradeAsync();
+            return;
+        }
         NewTaskIcon = emoji;
         IsTaskEmojiPickerOpen = false;
     }
@@ -276,10 +286,26 @@ public partial class GroupEditorViewModel : PageViewModel
     // --- Color ---
 
     [RelayCommand]
-    private void SelectGroupColor(string color) => GroupColor = color;
+    private async Task SelectGroupColor(string color)
+    {
+        if (!CanCustomizeColors)
+        {
+            await PromptPremiumUpgradeAsync();
+            return;
+        }
+        GroupColor = color;
+    }
 
     [RelayCommand]
-    private void SelectTaskColor(string color) => NewTaskColor = color;
+    private async Task SelectTaskColor(string color)
+    {
+        if (!CanCustomizeColors)
+        {
+            await PromptPremiumUpgradeAsync();
+            return;
+        }
+        NewTaskColor = color;
+    }
 
     // --- Task duration ---
 
@@ -474,5 +500,21 @@ public partial class GroupEditorViewModel : PageViewModel
     private void Cancel()
     {
         _navigationService.NavigateTo<MainComponents.MainViewModel>();
+    }
+
+    private async Task PromptPremiumUpgradeAsync()
+    {
+        if (_confirmDialogService is null) return;
+
+        var upgrade = await _confirmDialogService.ConfirmAsync(
+            "Bloomdo Plus",
+            "Custom icons and colors are available with Bloomdo Plus. Would you like to subscribe?",
+            "Subscribe",
+            "Not now");
+
+        if (upgrade)
+        {
+            _navigationService.NavigateTo<MainComponents.MainViewModel>(vm => vm.SelectedTabIndex = 5);
+        }
     }
 }

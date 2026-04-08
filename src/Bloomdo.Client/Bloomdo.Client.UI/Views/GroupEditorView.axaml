@@ -14,6 +14,21 @@
         <converters:BlockTypeColorConverter x:Key="ColorConverter"/>
     </UserControl.Resources>
 
+    <UserControl.Styles>
+        <Style Selector="Border.PulseLock">
+            <Style.Animations>
+                <Animation Duration="0:0:2" IterationCount="INFINITE" PlaybackDirection="Alternate" Easing="SineEaseInOut">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="Opacity" Value="0.65"/>
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="Opacity" Value="1.0"/>
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+    </UserControl.Styles>
+
     <Grid RowDefinitions="Auto,*,Auto" Background="{DynamicResource Brush.Background}">
 
         <!-- Header -->
@@ -71,8 +86,7 @@
                         <Button Command="{Binding ToggleEmojiPickerCommand}"
                                 Background="#15FFFFFF" CornerRadius="12"
                                 Padding="10,8" BorderThickness="0" Cursor="Hand"
-                                HorizontalAlignment="Left"
-                                IsEnabled="{Binding CanCustomizeEmoji}">
+                                HorizontalAlignment="Left">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <TextBlock Text="{Binding GroupIcon}"
                                            FontFamily="{StaticResource EmojiFont}"
@@ -113,15 +127,18 @@
                         </Border>
                     </StackPanel>
                 </shad:Card>
-                <Border IsVisible="{Binding !CanCustomizeEmoji}" CornerRadius="12"
-                        Background="#AA000000" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                <Border Classes="PulseLock" IsVisible="{Binding !CanCustomizeEmoji}"
+                        HorizontalAlignment="Right" VerticalAlignment="Top"
+                        Margin="0,-4,-4,0" Width="28" Height="28" CornerRadius="14"
                         IsHitTestVisible="False">
-                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock Text="🔒" FontFamily="{StaticResource EmojiFont}" FontSize="14"
-                                   Foreground="White" VerticalAlignment="Center"/>
-                        <TextBlock Text="Bloomdo Plus" FontSize="12" FontWeight="Medium"
-                                   Foreground="White" VerticalAlignment="Center"/>
-                    </StackPanel>
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                            <GradientStop Color="#FFD54F" Offset="0"/>
+                            <GradientStop Color="#FF9800" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <TextBlock Text="🔒" FontFamily="{StaticResource EmojiFont}" FontSize="12"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
                 </Panel>
 
@@ -154,8 +171,7 @@
                     <StackPanel Spacing="8">
                         <TextBlock Text="Color" FontSize="14" FontWeight="SemiBold"
                                    Foreground="{DynamicResource ForegroundColor}"/>
-                        <ItemsControl ItemsSource="{x:Static vm:GroupEditorViewModel.AvailableColors}"
-                                      IsEnabled="{Binding CanCustomizeColors}">
+                        <ItemsControl ItemsSource="{x:Static vm:GroupEditorViewModel.AvailableColors}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <WrapPanel/>
@@ -175,15 +191,18 @@
                         </ItemsControl>
                     </StackPanel>
                 </shad:Card>
-                <Border IsVisible="{Binding !CanCustomizeColors}" CornerRadius="12"
-                        Background="#AA000000" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                <Border Classes="PulseLock" IsVisible="{Binding !CanCustomizeColors}"
+                        HorizontalAlignment="Right" VerticalAlignment="Top"
+                        Margin="0,-4,-4,0" Width="28" Height="28" CornerRadius="14"
                         IsHitTestVisible="False">
-                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <TextBlock Text="🔒" FontFamily="{StaticResource EmojiFont}" FontSize="14"
-                                   Foreground="White" VerticalAlignment="Center"/>
-                        <TextBlock Text="Bloomdo Plus" FontSize="12" FontWeight="Medium"
-                                   Foreground="White" VerticalAlignment="Center"/>
-                    </StackPanel>
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                            <GradientStop Color="#FFD54F" Offset="0"/>
+                            <GradientStop Color="#FF9800" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <TextBlock Text="🔒" FontFamily="{StaticResource EmojiFont}" FontSize="12"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Border>
                 </Panel>
 
@@ -277,8 +296,7 @@
                                 <Button Command="{Binding ToggleTaskEmojiPickerCommand}"
                                         Background="#15FFFFFF" CornerRadius="10"
                                         Padding="8,6" BorderThickness="0" Cursor="Hand"
-                                        HorizontalAlignment="Left"
-                                        IsEnabled="{Binding CanCustomizeEmoji}">
+                                        HorizontalAlignment="Left">
                                     <StackPanel Orientation="Horizontal" Spacing="6">
                                         <TextBlock Text="{Binding NewTaskIcon}"
                                                    FontFamily="{StaticResource EmojiFont}"
@@ -317,15 +335,18 @@
                                     </ItemsControl>
                                 </Border>
                                 </StackPanel>
-                                <Border IsVisible="{Binding !CanCustomizeEmoji}" CornerRadius="10"
-                                        Background="#AA000000" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                <Border Classes="PulseLock" IsVisible="{Binding !CanCustomizeEmoji}"
+                                        HorizontalAlignment="Right" VerticalAlignment="Top"
+                                        Margin="0,-4,-4,0" Width="24" Height="24" CornerRadius="12"
                                         IsHitTestVisible="False">
-                                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                        <TextBlock Text="🔒" FontFamily="{StaticResource EmojiFont}" FontSize="12"
-                                                   Foreground="White" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Plus" FontSize="11" FontWeight="Medium"
-                                                   Foreground="White" VerticalAlignment="Center"/>
-                                    </StackPanel>
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                                            <GradientStop Color="#FFD54F" Offset="0"/>
+                                            <GradientStop Color="#FF9800" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <TextBlock Text="🔒" FontFamily="{StaticResource EmojiFont}" FontSize="10"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 </Panel>
 
@@ -521,8 +542,7 @@
                                 <StackPanel Spacing="4">
                                     <TextBlock Text="Color" FontSize="11" Opacity="0.5"
                                                Foreground="{DynamicResource ForegroundColor}"/>
-                                    <ItemsControl ItemsSource="{x:Static vm:GroupEditorViewModel.AvailableColors}"
-                                                  IsEnabled="{Binding CanCustomizeColors}">
+                                    <ItemsControl ItemsSource="{x:Static vm:GroupEditorViewModel.AvailableColors}">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
                                                 <WrapPanel/>
@@ -541,15 +561,18 @@
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
                                 </StackPanel>
-                                <Border IsVisible="{Binding !CanCustomizeColors}" CornerRadius="8"
-                                        Background="#AA000000" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                <Border Classes="PulseLock" IsVisible="{Binding !CanCustomizeColors}"
+                                        HorizontalAlignment="Right" VerticalAlignment="Top"
+                                        Margin="0,-4,-4,0" Width="24" Height="24" CornerRadius="12"
                                         IsHitTestVisible="False">
-                                    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                        <TextBlock Text="🔒" FontFamily="{StaticResource EmojiFont}" FontSize="12"
-                                                   Foreground="White" VerticalAlignment="Center"/>
-                                        <TextBlock Text="Plus" FontSize="11" FontWeight="Medium"
-                                                   Foreground="White" VerticalAlignment="Center"/>
-                                    </StackPanel>
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                                            <GradientStop Color="#FFD54F" Offset="0"/>
+                                            <GradientStop Color="#FF9800" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <TextBlock Text="🔒" FontFamily="{StaticResource EmojiFont}" FontSize="10"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 </Panel>
 

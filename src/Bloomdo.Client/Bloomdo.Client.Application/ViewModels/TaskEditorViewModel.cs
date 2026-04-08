@@ -12,6 +12,7 @@ public partial class TaskEditorViewModel : PageViewModel
     private readonly INavigationService _navigationService;
     private readonly IToastService? _toastService;
     private readonly ISubscriptionApiService? _subscriptionApiService;
+    private readonly IConfirmDialogService? _confirmDialogService;
 
     private Guid? _editingTaskId;
     private Guid _parentGroupId;
@@ -24,10 +25,10 @@ public partial class TaskEditorViewModel : PageViewModel
     private string _pageTitle = "New Task";
 
     [ObservableProperty]
-    private bool _canCustomizeEmoji = true;
+    private bool _canCustomizeEmoji;
 
     [ObservableProperty]
-    private bool _canCustomizeColors = true;
+    private bool _canCustomizeColors;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(PreviewTitle))]
@@ -112,12 +113,14 @@ public partial class TaskEditorViewModel : PageViewModel
         IDailyActivityApiService? activityApi,
         INavigationService navigationService,
         IToastService? toastService = null,
-        ISubscriptionApiService? subscriptionApiService = null)
+        ISubscriptionApiService? subscriptionApiService = null,
+        IConfirmDialogService? confirmDialogService = null)
     {
         _activityApi = activityApi;
         _navigationService = navigationService;
         _toastService = toastService;
         _subscriptionApiService = subscriptionApiService;
+        _confirmDialogService = confirmDialogService;
         _ = LoadCustomizationPermissionsAsync();
     }
 
@@ -201,14 +204,27 @@ public partial class TaskEditorViewModel : PageViewModel
     private void ToggleEmojiPicker() => IsEmojiPickerOpen = !IsEmojiPickerOpen;
 
     [RelayCommand]
-    private void SelectEmoji(string emoji)
+    private async Task SelectEmoji(string emoji)
     {
+        if (!CanCustomizeEmoji)
+        {
+            await PromptPremiumUpgradeAsync();
+            return;
+        }
         TaskIcon = emoji;
         IsEmojiPickerOpen = false;
     }
 
     [RelayCommand]
-    private void SelectColor(string color) => TaskColor = color;
+    private async Task SelectColor(string color)
+    {
+        if (!CanCustomizeColors)
+        {
+            await PromptPremiumUpgradeAsync();
+            return;
+        }
+        TaskColor = color;
+    }
 
     [RelayCommand]
     private void IncrementDuration() => TaskDurationMinutes = Math.Min(TaskDurationMinutes + 5, 480);
@@ -317,5 +333,21 @@ public partial class TaskEditorViewModel : PageViewModel
             _onComplete();
         else
             _navigationService.NavigateTo<MainComponents.MainViewModel>();
+    }
+
+    private async Task PromptPremiumUpgradeAsync()
+    {
+        if (_confirmDialogService is null) return;
+
+        var upgrade = await _confirmDialogService.ConfirmAsync(
+            "Bloomdo Plus",
+            "Custom icons and colors are available with Bloomdo Plus. Would you like to subscribe?",
+            "Subscribe",
+            "Not now");
+
+        if (upgrade)
+        {
+            _navigationService.NavigateTo<MainComponents.MainViewModel>(vm => vm.SelectedTabIndex = 5);
+        }
     }
 }

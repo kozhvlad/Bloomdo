@@ -11,6 +11,7 @@ public partial class AiChatViewModel : PageViewModel
 {
     private readonly IChatApiService _chatApiService;
     private readonly ISubscriptionApiService? _subscriptionApiService;
+    private readonly IAppUsageService? _appUsageService;
 
     private Guid? _currentConversationId;
 
@@ -48,10 +49,11 @@ public partial class AiChatViewModel : PageViewModel
 
     public Func<string, Task>? CopyToClipboardFunc { get; set; }
 
-    public AiChatViewModel(IChatApiService chatApiService, ISubscriptionApiService? subscriptionApiService = null)
+    public AiChatViewModel(IChatApiService chatApiService, ISubscriptionApiService? subscriptionApiService = null, IAppUsageService? appUsageService = null)
     {
         _chatApiService = chatApiService;
         _subscriptionApiService = subscriptionApiService;
+        _appUsageService = appUsageService;
     }
 
     public override async void OnAppearing()
@@ -152,15 +154,18 @@ public partial class AiChatViewModel : PageViewModel
 
         try
         {
+            // Gather today's local data to provide AI with current-day context
+            var todayContext = await GatherTodayContextAsync();
+
             SendMessageResponse? response;
 
             if (_currentConversationId.HasValue)
             {
-                response = await _chatApiService.SendMessageAsync(_currentConversationId.Value, text);
+                response = await _chatApiService.SendMessageAsync(_currentConversationId.Value, text, todayContext);
             }
             else
             {
-                response = await _chatApiService.CreateConversationAsync(text);
+                response = await _chatApiService.CreateConversationAsync(text, todayContext);
             }
 
             if (response is not null)
@@ -239,6 +244,41 @@ public partial class AiChatViewModel : PageViewModel
     }
 
     private bool CanSendMessage() => !IsSending && !IsLimitReached && !string.IsNullOrWhiteSpace(MessageText);
+
+    private async Task<TodayLocalContext?> GatherTodayContextAsync()
+    {
+        if (_appUsageService is null) return null;
+
+        try
+        {
+            var usageList = await _appUsageService.GetTodayUsageAsync();
+            var pickups = await _appUsageService.GetPickupsTodayAsync();
+
+            var totalSeconds = (int)usageList.Sum(u => u.ForegroundTime.TotalSeconds);
+
+            var topApps = usageList
+                .OrderByDescending(u => u.ForegroundTime)
+                .Take(5)
+                .Select(u => new TodayAppUsageDto
+                {
+                    AppName = u.AppLabel ?? u.PackageName,
+                    ForegroundSeconds = (int)u.ForegroundTime.TotalSeconds
+                })
+                .ToList();
+
+            return new TodayLocalContext
+            {
+                TotalScreenTimeSeconds = totalSeconds,
+                Pickups = pickups,
+                TopApps = topApps
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"GatherTodayContext failed: {ex.Message}");
+            return null;
+        }
+    }
 
     partial void OnMessageTextChanged(string value)
     {

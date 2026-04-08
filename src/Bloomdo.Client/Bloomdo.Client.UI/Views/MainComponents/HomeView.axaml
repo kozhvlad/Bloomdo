@@ -45,11 +45,29 @@
 							<PathIcon.RenderTransform>
 								<RotateTransform Angle="45"/>
 							</PathIcon.RenderTransform>
-						</PathIcon>
-					</Button>
-				</Grid>
+							</PathIcon>
+							</Button>
+						</Grid>
 
-				<!-- Daily Progress Card -->
+						<!-- Search & toolbar -->
+						<Grid ColumnDefinitions="*,Auto,Auto" Margin="0,-8,0,-8">
+							<TextBox Text="{Binding SearchText}"
+									 Watermark="Search groups, tasks..."
+									 FontSize="13"/>
+							<Button Grid.Column="1" Classes="Ghost" Padding="8,6" Margin="4,0,0,0"
+									Command="{Binding ToggleSortCommand}">
+								<TextBlock Text="{Binding SortButtonText}" FontSize="12" FontWeight="SemiBold"
+										   Foreground="{DynamicResource ForegroundColor}" Opacity="0.7"/>
+							</Button>
+							<Button Grid.Column="2" Classes="Ghost" Padding="8,6" Margin="2,0,0,0"
+									Command="{Binding ToggleAllExpandedCommand}"
+									ToolTip.Tip="Collapse / Expand all">
+								<PathIcon Data="{x:Static shad:Icons.ChevronUpDown}" Width="14" Height="14"
+										  Foreground="{DynamicResource ForegroundColor}" Opacity="0.5"/>
+							</Button>
+						</Grid>
+
+						<!-- Daily Progress Card -->
 				<shad:Card Padding="14" Background="{DynamicResource Brush.Card}">
 					<StackPanel Spacing="8">
 						<Grid ColumnDefinitions="*,Auto">
@@ -118,9 +136,19 @@
 										<!-- Title / Edit Mode -->
 										<Panel Grid.Column="1" VerticalAlignment="Center">
 											<StackPanel IsVisible="{Binding !IsEditing}" Spacing="1">
-												<TextBlock Text="{Binding Title}"
-														   FontSize="17" FontWeight="SemiBold"
-														   Foreground="{DynamicResource ForegroundColor}"/>
+												<StackPanel Orientation="Horizontal" Spacing="8">
+													<TextBlock Text="{Binding Title}"
+															   FontSize="17" FontWeight="SemiBold"
+															   Foreground="{DynamicResource ForegroundColor}"/>
+													<Border IsVisible="{Binding IsShared}"
+															Background="{DynamicResource PrimaryColor}"
+															CornerRadius="6" Padding="6,2"
+															VerticalAlignment="Center">
+														<TextBlock Text="Group"
+																   FontSize="10" FontWeight="SemiBold"
+																   Foreground="{DynamicResource PrimaryForegroundColor}"/>
+													</Border>
+												</StackPanel>
 												<StackPanel Orientation="Horizontal" Spacing="6">
 													<TextBlock Text="{Binding ProgressText}"
 															   FontSize="11" Opacity="0.5"
@@ -199,6 +227,7 @@
 													<StackPanel Spacing="4">
 														<!-- Swipe-to-delete+edit wrapper -->
 														<controls:SwipeRevealPanel Margin="0,2"
+															IsActionEnabled="{Binding !$parent[ItemsControl].((items:ActivityGroupItemViewModel)DataContext).IsShared}"
 															ActionCommand="{Binding ((mainComponents1:HomeViewModel)DataContext).DeleteItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
 															ActionCommandParameter="{Binding}"
 															EditCommand="{Binding ((mainComponents1:HomeViewModel)DataContext).StartEditItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -384,8 +413,8 @@
 											</ItemsControl.ItemTemplate>
 										</ItemsControl>
 
-										<!-- Add activity button -->
-										<Panel>
+										<!-- Add activity button (hidden for shared groups) -->
+										<Panel IsVisible="{Binding !IsShared}">
 											<Button Classes="Ghost" Padding="8,6"
 													HorizontalAlignment="Left"
 													IsVisible="{Binding !IsAddingItem}"
@@ -431,6 +460,7 @@
 																		HorizontalAlignment="Stretch"
 																		HorizontalContentAlignment="Center"
 																		CornerRadius="8"
+																		Background="{DynamicResource BorderColor30}"
 																		Command="{Binding $parent[ItemsControl].((mainComponents1:HomeViewModel)DataContext).SelectNewItemTaskTypeCommand}"
 																		CommandParameter="Timer">
 																	<StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
@@ -443,6 +473,7 @@
 																		HorizontalAlignment="Stretch"
 																		HorizontalContentAlignment="Center"
 																		CornerRadius="8"
+																		Background="{DynamicResource BorderColor30}"
 																		Command="{Binding $parent[ItemsControl].((mainComponents1:HomeViewModel)DataContext).SelectNewItemTaskTypeCommand}"
 																		CommandParameter="Count">
 																	<StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
@@ -455,6 +486,7 @@
 																		HorizontalAlignment="Stretch"
 																		HorizontalContentAlignment="Center"
 																		CornerRadius="8"
+																		Background="{DynamicResource BorderColor30}"
 																		Command="{Binding $parent[ItemsControl].((mainComponents1:HomeViewModel)DataContext).SelectNewItemTaskTypeCommand}"
 																		CommandParameter="Steps">
 																	<StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
@@ -467,6 +499,7 @@
 																		HorizontalAlignment="Stretch"
 																		HorizontalContentAlignment="Center"
 																		CornerRadius="8"
+																		Background="{DynamicResource BorderColor30}"
 																		Command="{Binding $parent[ItemsControl].((mainComponents1:HomeViewModel)DataContext).SelectNewItemTaskTypeCommand}"
 																		CommandParameter="Checkbox">
 																	<StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">

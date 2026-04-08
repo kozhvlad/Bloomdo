@@ -325,7 +325,7 @@ public class SwipeRevealPanel : ContentControl
             _directionLocked = true;
             _isHorizontal = Math.Abs(dx) > Math.Abs(dy) * DirectionLockAngle;
 
-            if (!_isHorizontal)
+            if (!_isHorizontal || !IsActionEnabled)
             {
                 _isTracking = false;
                 return;

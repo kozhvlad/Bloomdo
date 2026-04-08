@@ -332,7 +332,8 @@ public static class DependencyContainer
         });
         services.AddTransient<AiChatViewModel>(sp => new AiChatViewModel(
             sp.GetRequiredService<IChatApiService>(),
-            sp.GetRequiredService<ISubscriptionApiService>()));
+            sp.GetRequiredService<ISubscriptionApiService>(),
+            sp.GetService<IAppUsageService>()));
         services.AddTransient<SubscriptionViewModel>(sp => new SubscriptionViewModel(
             sp.GetRequiredService<ISubscriptionApiService>(),
             sp.GetRequiredService<IToastService>(),

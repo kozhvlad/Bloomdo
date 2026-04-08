@@ -50,10 +50,10 @@ public partial class SharedGroupEditorViewModel : PageViewModel
     private bool _isEmojiPickerOpen;
 
     [ObservableProperty]
-    private bool _canCustomizeEmoji = true;
+    private bool _canCustomizeEmoji;
 
     [ObservableProperty]
-    private bool _canCustomizeColors = true;
+    private bool _canCustomizeColors;
 
     // --- Add Task fields ---
 
@@ -309,8 +309,13 @@ public partial class SharedGroupEditorViewModel : PageViewModel
     }
 
     [RelayCommand]
-    private void SelectEmoji(string emoji)
+    private async Task SelectEmoji(string emoji)
     {
+        if (!CanCustomizeEmoji)
+        {
+            await PromptPremiumUpgradeAsync();
+            return;
+        }
         EditIcon = emoji;
         IsEmojiPickerOpen = false;
     }
@@ -318,7 +323,15 @@ public partial class SharedGroupEditorViewModel : PageViewModel
     // --- Color ---
 
     [RelayCommand]
-    private void SelectColor(string color) => EditColor = color;
+    private async Task SelectColor(string color)
+    {
+        if (!CanCustomizeColors)
+        {
+            await PromptPremiumUpgradeAsync();
+            return;
+        }
+        EditColor = color;
+    }
 
     // --- Members ---
 
@@ -528,14 +541,27 @@ public partial class SharedGroupEditorViewModel : PageViewModel
     }
 
     [RelayCommand]
-    private void SelectTaskEmoji(string emoji)
+    private async Task SelectTaskEmoji(string emoji)
     {
+        if (!CanCustomizeEmoji)
+        {
+            await PromptPremiumUpgradeAsync();
+            return;
+        }
         NewTaskIcon = emoji;
         IsTaskEmojiPickerOpen = false;
     }
 
     [RelayCommand]
-    private void SelectTaskColor(string color) => NewTaskColor = color;
+    private async Task SelectTaskColor(string color)
+    {
+        if (!CanCustomizeColors)
+        {
+            await PromptPremiumUpgradeAsync();
+            return;
+        }
+        NewTaskColor = color;
+    }
 
     [RelayCommand]
     private void IncrementDuration() => NewTaskDurationMinutes = Math.Min(NewTaskDurationMinutes + 5, 480);
@@ -576,6 +602,20 @@ public partial class SharedGroupEditorViewModel : PageViewModel
         else
         {
             _toastService.ShowError("Could not delete group.");
+        }
+    }
+
+    private async Task PromptPremiumUpgradeAsync()
+    {
+        var upgrade = await _confirmDialogService.ConfirmAsync(
+            "Bloomdo Plus",
+            "Custom icons and colors are available with Bloomdo Plus. Would you like to subscribe?",
+            "Subscribe",
+            "Not now");
+
+        if (upgrade)
+        {
+            _navigationService.NavigateTo<MainViewModel>(vm => vm.SelectedTabIndex = 5);
         }
     }
 }

@@ -41,11 +41,11 @@ public class ChatApiService(HttpClient httpClient) : IChatApiService
         }
     }
 
-    public async Task<SendMessageResponse?> CreateConversationAsync(string message, CancellationToken ct = default)
+    public async Task<SendMessageResponse?> CreateConversationAsync(string message, TodayLocalContext? todayContext = null, CancellationToken ct = default)
     {
         try
         {
-            var request = new SendMessageRequest { Message = message };
+            var request = new SendMessageRequest { Message = message, TodayContext = todayContext };
             var response = await httpClient.PostAsJsonAsync(ApiRoutes.Chat.Conversations, request, ct);
             if (response.IsSuccessStatusCode)
                 return await response.Content.ReadFromJsonAsync<SendMessageResponse>(ct);
@@ -61,12 +61,12 @@ public class ChatApiService(HttpClient httpClient) : IChatApiService
         }
     }
 
-    public async Task<SendMessageResponse?> SendMessageAsync(Guid conversationId, string message, CancellationToken ct = default)
+    public async Task<SendMessageResponse?> SendMessageAsync(Guid conversationId, string message, TodayLocalContext? todayContext = null, CancellationToken ct = default)
     {
         try
         {
             var url = ApiRoutes.Chat.Messages.Replace("{id}", conversationId.ToString());
-            var request = new SendMessageRequest { Message = message };
+            var request = new SendMessageRequest { Message = message, TodayContext = todayContext };
             var response = await httpClient.PostAsJsonAsync(url, request, ct);
             if (response.IsSuccessStatusCode)
                 return await response.Content.ReadFromJsonAsync<SendMessageResponse>(ct);

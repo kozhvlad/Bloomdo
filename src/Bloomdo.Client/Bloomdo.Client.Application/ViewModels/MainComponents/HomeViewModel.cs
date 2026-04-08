@@ -49,6 +49,19 @@ public partial class HomeViewModel : PageViewModel
     [ObservableProperty]
     private string _newGroupColor = "#7E57C2";
 
+    [ObservableProperty]
+    private string _searchText = string.Empty;
+
+    private bool? _sortDirection;
+    private List<ActivityGroupItemViewModel> _allGroups = [];
+
+    public string SortButtonText => _sortDirection switch
+    {
+        true => "A → Z",
+        false => "Z → A",
+        _ => "Sort"
+    };
+
     public ObservableCollection<ActivityGroupItemViewModel> Groups { get; } = [];
 
     public string ProgressText => TotalItems > 0 ? $"{CompletedItems}/{TotalItems}" : "0/0";
@@ -98,7 +111,7 @@ public partial class HomeViewModel : PageViewModel
             var daily = await _activityApi.GetDailyAsync();
             if (daily is null) return;
 
-            Groups.Clear();
+            _allGroups.Clear();
             foreach (var group in daily.Groups)
             {
                 var vm = new ActivityGroupItemViewModel
@@ -132,12 +145,12 @@ public partial class HomeViewModel : PageViewModel
                     });
                 }
 
-                Groups.Add(vm);
+                _allGroups.Add(vm);
             }
 
             TotalItems = daily.TotalItems;
             CompletedItems = daily.CompletedItems;
-            HasNoGroups = Groups.Count == 0;
+            ApplyFilterAndSort();
             OnPropertyChanged(nameof(ProgressText));
             OnPropertyChanged(nameof(ProgressPercent));
             OnPropertyChanged(nameof(ProgressFraction));
@@ -225,16 +238,16 @@ public partial class HomeViewModel : PageViewModel
         var result = await _activityApi.CreateGroupAsync(request);
         if (result is not null)
         {
-            Groups.Add(new ActivityGroupItemViewModel
+            var newVm = new ActivityGroupItemViewModel
             {
                 Id = result.Id,
                 Title = result.Title,
                 Icon = result.Icon,
                 Color = result.Color,
                 CurrentStreak = 0
-            });
-
-            HasNoGroups = false;
+            };
+            _allGroups.Add(newVm);
+            ApplyFilterAndSort();
             IsAddingGroup = false;
             NewGroupTitle = string.Empty;
         }
@@ -303,7 +316,7 @@ public partial class HomeViewModel : PageViewModel
     [RelayCommand]
     private void ShowAddItem(ActivityGroupItemViewModel? group)
     {
-        if (group is null) return;
+        if (group is null || group.IsShared) return;
         _navigationService?.NavigateTo<TaskEditorViewModel>(vm => vm.ConfigureForCreate(group.Id, group.Color));
     }
 
@@ -439,6 +452,10 @@ public partial class HomeViewModel : PageViewModel
     {
         if (task is null || _activityApi is null) return;
 
+        // Block deletion for shared group tasks
+        var parentGroup = Groups.FirstOrDefault(g => g.Tasks.Contains(task));
+        if (parentGroup?.IsShared == true) return;
+
         if (_confirmDialogService is not null)
         {
             var confirmed = await _confirmDialogService.ConfirmAsync(
@@ -461,6 +478,11 @@ public partial class HomeViewModel : PageViewModel
     private void StartEditItem(ActivityTaskItemViewModel? task)
     {
         if (task is null) return;
+
+        // Block editing for shared group tasks
+        var parentGroup = Groups.FirstOrDefault(g => g.Tasks.Contains(task));
+        if (parentGroup?.IsShared == true) return;
+
         _navigationService?.NavigateTo<TaskEditorViewModel>(vm => vm.ConfigureForEdit(task));
     }
 
@@ -622,14 +644,65 @@ public partial class HomeViewModel : PageViewModel
 
     // --- Helpers ---
 
+    partial void OnSearchTextChanged(string value) => ApplyFilterAndSort();
+
+    [RelayCommand]
+    private void ToggleSort()
+    {
+        _sortDirection = _sortDirection switch
+        {
+            null => true,
+            true => false,
+            false => null
+        };
+        OnPropertyChanged(nameof(SortButtonText));
+        ApplyFilterAndSort();
+    }
+
+    [RelayCommand]
+    private void ToggleAllExpanded()
+    {
+        var shouldExpand = Groups.Any(g => !g.IsExpanded);
+        foreach (var g in Groups)
+            g.IsExpanded = shouldExpand;
+    }
+
+    private void ApplyFilterAndSort()
+    {
+        var filtered = _allGroups.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(SearchText))
+        {
+            var search = SearchText.Trim();
+            filtered = filtered.Where(g =>
+                g.Title.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                g.Tasks.Any(t =>
+                    t.Title.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                    (!string.IsNullOrEmpty(t.Description) && t.Description.Contains(search, StringComparison.OrdinalIgnoreCase))));
+        }
+
+        filtered = _sortDirection switch
+        {
+            true => filtered.OrderBy(g => g.Title, StringComparer.OrdinalIgnoreCase),
+            false => filtered.OrderByDescending(g => g.Title, StringComparer.OrdinalIgnoreCase),
+            _ => filtered
+        };
+
+        Groups.Clear();
+        foreach (var g in filtered)
+            Groups.Add(g);
+
+        HasNoGroups = Groups.Count == 0;
+    }
+
     private void RecalculateProgress()
     {
-        CompletedItems = Groups.Sum(g => g.Tasks.Count(t => t.IsCompleted));
-        TotalItems = Groups.Sum(g => g.Tasks.Count);
+        CompletedItems = _allGroups.Sum(g => g.Tasks.Count(t => t.IsCompleted));
+        TotalItems = _allGroups.Sum(g => g.Tasks.Count);
         OnPropertyChanged(nameof(ProgressText));
         OnPropertyChanged(nameof(ProgressFraction));
         OnPropertyChanged(nameof(ProgressPercent));
-        foreach (var group in Groups)
+        foreach (var group in _allGroups)
             group.RefreshProgress();
     }
 
@@ -640,7 +713,7 @@ public partial class HomeViewModel : PageViewModel
             if (_groupCompletionStore is not null)
             {
                 var status = new Dictionary<Guid, bool>();
-                foreach (var group in Groups)
+                foreach (var group in _allGroups)
                 {
                     var allCompleted = group.Tasks.Count > 0 && group.Tasks.All(t => t.IsCompleted);
                     status[group.Id] = allCompleted;
