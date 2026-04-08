@@ -1,7 +1,7 @@
-using System.Text.Json;
 using Bloomdo.Server.Application.Interfaces;
 using Bloomdo.Server.Application.Settings;
 using Bloomdo.Server.Domain.Entities;
+using Bloomdo.Shared.DTOs.Activities;
 using Bloomdo.Shared.DTOs.Stats;
 using Bloomdo.Shared.Enums;
 
@@ -9,7 +9,10 @@ namespace Bloomdo.Server.Application.Services;
 
 public class StatsService(
     IStatsRepository statsRepository,
-    IRepository<BlockRule> blockRuleRepository,
+    IRepository<ActivityGroup> groupRepository,
+    IRepository<ActivityItem> itemRepository,
+    IRepository<ActivityCompletion> completionRepository,
+    IRepository<GroupMembership> membershipRepository,
     ISubscriptionService subscriptionService,
     IRepository<StreakFreeze> streakFreezeRepository,
     IFreeLimitsSettings freeLimitsSettings) : IStatsService
@@ -41,7 +44,7 @@ public class StatsService(
         var totalSeconds = request.Apps.Sum(a => a.ForegroundSeconds);
         var snapshot = await statsRepository.GetSnapshotAsync(accountId, request.Date, ct);
 
-        var goalMet = await EvaluateBlockComplianceAsync(accountId, request, ct);
+        var goalMet = await EvaluateAllTasksCompletedAsync(accountId, request.Date, ct);
 
         if (snapshot is not null)
         {
@@ -355,34 +358,79 @@ public class StatsService(
         return [.. freezes.Select(f => f.Date)];
     }
 
-    /// <summary>
-    /// Evaluates whether the user complied with their active block rules for the given day.
-    /// GoalMet = true when the user has at least one active block rule AND
-    /// all Limit-type rules are respected (blocked apps stayed under the daily limit).
-    /// Schedule/Focus/Bloomdo rules are enforced client-side;
-    /// the server only verifies Limit compliance from actual usage data.
-    /// </summary>
-    private async Task<bool> EvaluateBlockComplianceAsync(Guid accountId, SyncUsageRequest request, CancellationToken ct)
+    public async Task RecalculateGoalMetAsync(Guid accountId, DateOnly date, CancellationToken ct = default)
     {
-        var rules = await blockRuleRepository.FindAsync(r => r.AccountId == accountId && r.IsActive, ct);
-        var activeRules = rules.ToList();
+        var goalMet = await EvaluateAllTasksCompletedAsync(accountId, date, ct);
+        var snapshot = await statsRepository.GetSnapshotAsync(accountId, date, ct);
 
-        if (activeRules.Count == 0)
+        if (snapshot is not null)
+        {
+            snapshot.GoalMet = goalMet;
+        }
+        else
+        {
+            await statsRepository.AddSnapshotAsync(new DailySnapshot
+            {
+                AccountId = accountId,
+                Date = date,
+                TotalScreenTimeSeconds = 0,
+                Pickups = 0,
+                GoalMet = goalMet
+            }, ct);
+        }
+
+        await statsRepository.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// GoalMet = true when the user has at least one active task AND
+    /// every active task across all owned and shared groups is completed for the given date.
+    /// Count/Steps tasks require currentCount >= targetCount; other types require a completion record.
+    /// </summary>
+    private async Task<bool> EvaluateAllTasksCompletedAsync(Guid accountId, DateOnly date, CancellationToken ct)
+    {
+        var ownedGroups = await groupRepository.FindAsync(g => g.AccountId == accountId && g.IsActive, ct);
+
+        var memberships = await membershipRepository.FindAsync(
+            m => m.AccountId == accountId && m.Status == GroupMemberStatus.Accepted, ct);
+        var sharedGroupIds = memberships.Select(m => m.ActivityGroupId).ToHashSet();
+        var sharedGroups = sharedGroupIds.Count > 0
+            ? await groupRepository.FindAsync(g => sharedGroupIds.Contains(g.Id) && g.IsActive && g.AccountId != accountId, ct)
+            : [];
+
+        var allGroupIds = ownedGroups.Concat(sharedGroups).Select(g => g.Id).ToList();
+        if (allGroupIds.Count == 0)
             return false;
 
-        var usageLookup = request.Apps.ToDictionary(a => a.PackageName, a => a.ForegroundSeconds);
-
-        foreach (var rule in activeRules)
+        var allItems = new List<ActivityItem>();
+        foreach (var gid in allGroupIds)
         {
-            if (rule.Type != BlockType.Limit || !rule.DailyLimitMinutes.HasValue)
-                continue;
+            var items = await itemRepository.FindAsync(i => i.ActivityGroupId == gid && i.IsActive, ct);
+            allItems.AddRange(items);
+        }
 
-            var blockedPackages = JsonSerializer.Deserialize<List<string>>(rule.BlockedPackagesJson) ?? [];
-            var limitSeconds = rule.DailyLimitMinutes.Value * 60;
+        if (allItems.Count == 0)
+            return false;
 
-            foreach (var pkg in blockedPackages)
+        var itemIds = allItems.Select(i => i.Id).ToHashSet();
+        var completions = await completionRepository.FindAsync(
+            c => c.AccountId == accountId && c.Date == date && itemIds.Contains(c.ActivityItemId), ct);
+        var completionByItem = completions.ToDictionary(c => c.ActivityItemId);
+
+        foreach (var item in allItems)
+        {
+            var isCountBased = item.TaskType == (int)ActivityItemType.Count
+                            || item.TaskType == (int)ActivityItemType.Steps;
+
+            if (isCountBased)
             {
-                if (usageLookup.TryGetValue(pkg, out var usedSeconds) && usedSeconds > limitSeconds)
+                var currentCount = completionByItem.TryGetValue(item.Id, out var comp) ? comp.CountValue ?? 0 : 0;
+                if (!item.TargetCount.HasValue || currentCount < item.TargetCount.Value)
+                    return false;
+            }
+            else
+            {
+                if (!completionByItem.ContainsKey(item.Id))
                     return false;
             }
         }

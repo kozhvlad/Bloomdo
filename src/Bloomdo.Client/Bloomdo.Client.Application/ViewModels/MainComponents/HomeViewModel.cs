@@ -18,6 +18,8 @@ public partial class HomeViewModel : PageViewModel
     private readonly IConfirmDialogService? _confirmDialogService;
     private readonly IPhotoVerificationDialogService? _photoVerificationDialogService;
     private readonly IToastService? _toastService;
+    private readonly IConnectivityService? _connectivityService;
+    private readonly ILocalActivityCache? _localActivityCache;
 
     [ObservableProperty]
     private string _welcomeMessage = "Welcome to Bloomdo!";
@@ -52,6 +54,9 @@ public partial class HomeViewModel : PageViewModel
     [ObservableProperty]
     private string _searchText = string.Empty;
 
+    [ObservableProperty]
+    private bool _isOffline;
+
     private bool? _sortDirection;
     private List<ActivityGroupItemViewModel> _allGroups = [];
 
@@ -80,7 +85,9 @@ public partial class HomeViewModel : PageViewModel
         ITimerDialogService? timerDialogService = null,
         IConfirmDialogService? confirmDialogService = null,
         IPhotoVerificationDialogService? photoVerificationDialogService = null,
-        IToastService? toastService = null)
+        IToastService? toastService = null,
+        IConnectivityService? connectivityService = null,
+        ILocalActivityCache? localActivityCache = null)
     {
         _activityApi = activityApi;
         _groupCompletionStore = groupCompletionStore;
@@ -91,6 +98,8 @@ public partial class HomeViewModel : PageViewModel
         _confirmDialogService = confirmDialogService;
         _photoVerificationDialogService = photoVerificationDialogService;
         _toastService = toastService;
+        _connectivityService = connectivityService;
+        _localActivityCache = localActivityCache;
     }
 
     public override void OnAppearing()
@@ -106,9 +115,37 @@ public partial class HomeViewModel : PageViewModel
         if (_activityApi is null) return;
 
         IsLoading = true;
+        IsOffline = _connectivityService is not null && !_connectivityService.IsOnline;
+
         try
         {
-            var daily = await _activityApi.GetDailyAsync();
+            DailyActivitiesResponse? daily = null;
+
+            // Try server first
+            if (!IsOffline)
+            {
+                try
+                {
+                    daily = await _activityApi.GetDailyAsync();
+
+                    // Cache for offline use
+                    if (daily is not null && _localActivityCache is not null)
+                        await _localActivityCache.SaveDailyAsync(daily, DateOnly.FromDateTime(DateTime.Today));
+                }
+                catch (HttpRequestException)
+                {
+                    IsOffline = true;
+                }
+                catch (TaskCanceledException)
+                {
+                    IsOffline = true;
+                }
+            }
+
+            // Fallback to local cache
+            if (daily is null && _localActivityCache is not null)
+                daily = await _localActivityCache.LoadDailyAsync(DateOnly.FromDateTime(DateTime.Today));
+
             if (daily is null) return;
 
             _allGroups.Clear();
@@ -155,7 +192,8 @@ public partial class HomeViewModel : PageViewModel
             OnPropertyChanged(nameof(ProgressPercent));
             OnPropertyChanged(nameof(ProgressFraction));
 
-            await SyncGroupCompletionAsync();
+            if (!IsOffline)
+                await SyncGroupCompletionAsync();
         }
         finally
         {
@@ -182,20 +220,61 @@ public partial class HomeViewModel : PageViewModel
                 Date = DateOnly.FromDateTime(DateTime.UtcNow)
             };
 
-            var result = await _activityApi.ToggleCompletionAsync(request);
-            if (result)
-            {
-                task.IsCompleted = !task.IsCompleted;
-                task.CompletedAtUtc = task.IsCompleted ? DateTime.UtcNow : null;
+            var isOnline = _connectivityService?.IsOnline ?? true;
 
-                RecalculateProgress();
-                await SyncGroupCompletionAsync();
+            if (isOnline)
+            {
+                try
+                {
+                    var result = await _activityApi.ToggleCompletionAsync(request);
+                    if (result)
+                    {
+                        task.IsCompleted = !task.IsCompleted;
+                        task.CompletedAtUtc = task.IsCompleted ? DateTime.UtcNow : null;
+
+                        RecalculateProgress();
+                        await SyncGroupCompletionAsync();
+                    }
+                }
+                catch (HttpRequestException)
+                {
+                    // Network failed mid-request — apply optimistically and queue
+                    await ApplyToggleOfflineAsync(task, request);
+                }
+                catch (TaskCanceledException)
+                {
+                    await ApplyToggleOfflineAsync(task, request);
+                }
+            }
+            else
+            {
+                await ApplyToggleOfflineAsync(task, request);
             }
         }
         finally
         {
             task.IsToggling = false;
         }
+    }
+
+    private async Task ApplyToggleOfflineAsync(ActivityTaskItemViewModel task, ToggleCompletionRequest request)
+    {
+        task.IsCompleted = !task.IsCompleted;
+        task.CompletedAtUtc = task.IsCompleted ? DateTime.UtcNow : null;
+        RecalculateProgress();
+
+        if (_localActivityCache is not null)
+        {
+            await _localActivityCache.EnqueueToggleAsync(new PendingActivityToggle
+            {
+                ActivityItemId = request.ActivityItemId,
+                Date = request.Date,
+                CountValue = request.CountValue,
+                CreatedAtUtc = DateTime.UtcNow
+            });
+        }
+
+        _toastService?.ShowInfo("Saved offline — will sync when connected");
     }
 
     // --- Photo verification ---
@@ -524,15 +603,30 @@ public partial class HomeViewModel : PageViewModel
                 CountValue = newCount
             };
 
-            var result = await _activityApi.ToggleCompletionAsync(request);
-            if (result)
+            var isOnline = _connectivityService?.IsOnline ?? true;
+
+            if (isOnline)
             {
-                task.CurrentCount = newCount;
-                task.IsCompleted = task.TargetCount.HasValue && newCount >= task.TargetCount.Value;
-                task.CompletedAtUtc = task.IsCompleted ? DateTime.UtcNow : null;
-                task.RefreshCountProperties();
-                RecalculateProgress();
-                await SyncGroupCompletionAsync();
+                try
+                {
+                    var result = await _activityApi.ToggleCompletionAsync(request);
+                    if (result)
+                    {
+                        ApplyCountChange(task, newCount);
+                    }
+                }
+                catch (HttpRequestException)
+                {
+                    await ApplyCountOfflineAsync(task, newCount, request);
+                }
+                catch (TaskCanceledException)
+                {
+                    await ApplyCountOfflineAsync(task, newCount, request);
+                }
+            }
+            else
+            {
+                await ApplyCountOfflineAsync(task, newCount, request);
             }
         }
         finally
@@ -557,15 +651,30 @@ public partial class HomeViewModel : PageViewModel
                 CountValue = newCount
             };
 
-            var result = await _activityApi.ToggleCompletionAsync(request);
-            if (result)
+            var isOnline = _connectivityService?.IsOnline ?? true;
+
+            if (isOnline)
             {
-                task.CurrentCount = newCount;
-                task.IsCompleted = task.TargetCount.HasValue && newCount >= task.TargetCount.Value;
-                task.CompletedAtUtc = task.IsCompleted ? DateTime.UtcNow : null;
-                task.RefreshCountProperties();
-                RecalculateProgress();
-                await SyncGroupCompletionAsync();
+                try
+                {
+                    var result = await _activityApi.ToggleCompletionAsync(request);
+                    if (result)
+                    {
+                        ApplyCountChange(task, newCount);
+                    }
+                }
+                catch (HttpRequestException)
+                {
+                    await ApplyCountOfflineAsync(task, newCount, request);
+                }
+                catch (TaskCanceledException)
+                {
+                    await ApplyCountOfflineAsync(task, newCount, request);
+                }
+            }
+            else
+            {
+                await ApplyCountOfflineAsync(task, newCount, request);
             }
         }
         finally
@@ -592,15 +701,30 @@ public partial class HomeViewModel : PageViewModel
                 CountValue = newCount
             };
 
-            var result = await _activityApi.ToggleCompletionAsync(request);
-            if (result)
+            var isOnline = _connectivityService?.IsOnline ?? true;
+
+            if (isOnline)
             {
-                task.CurrentCount = newCount;
-                task.IsCompleted = task.TargetCount.HasValue && newCount >= task.TargetCount.Value;
-                task.CompletedAtUtc = task.IsCompleted ? DateTime.UtcNow : null;
-                task.RefreshCountProperties();
-                RecalculateProgress();
-                await SyncGroupCompletionAsync();
+                try
+                {
+                    var result = await _activityApi.ToggleCompletionAsync(request);
+                    if (result)
+                    {
+                        ApplyCountChange(task, newCount);
+                    }
+                }
+                catch (HttpRequestException)
+                {
+                    await ApplyCountOfflineAsync(task, newCount, request);
+                }
+                catch (TaskCanceledException)
+                {
+                    await ApplyCountOfflineAsync(task, newCount, request);
+                }
+            }
+            else
+            {
+                await ApplyCountOfflineAsync(task, newCount, request);
             }
         }
         finally
@@ -625,21 +749,63 @@ public partial class HomeViewModel : PageViewModel
                 CountValue = newCount
             };
 
-            var result = await _activityApi.ToggleCompletionAsync(request);
-            if (result)
+            var isOnline = _connectivityService?.IsOnline ?? true;
+
+            if (isOnline)
             {
-                task.CurrentCount = newCount;
-                task.IsCompleted = task.TargetCount.HasValue && newCount >= task.TargetCount.Value;
-                task.CompletedAtUtc = task.IsCompleted ? DateTime.UtcNow : null;
-                task.RefreshCountProperties();
-                RecalculateProgress();
-                await SyncGroupCompletionAsync();
+                try
+                {
+                    var result = await _activityApi.ToggleCompletionAsync(request);
+                    if (result)
+                    {
+                        ApplyCountChange(task, newCount);
+                    }
+                }
+                catch (HttpRequestException)
+                {
+                    await ApplyCountOfflineAsync(task, newCount, request);
+                }
+                catch (TaskCanceledException)
+                {
+                    await ApplyCountOfflineAsync(task, newCount, request);
+                }
+            }
+            else
+            {
+                await ApplyCountOfflineAsync(task, newCount, request);
             }
         }
         finally
         {
             task.IsToggling = false;
         }
+    }
+
+    private void ApplyCountChange(ActivityTaskItemViewModel task, int newCount)
+    {
+        task.CurrentCount = newCount;
+        task.IsCompleted = task.TargetCount.HasValue && newCount >= task.TargetCount.Value;
+        task.CompletedAtUtc = task.IsCompleted ? DateTime.UtcNow : null;
+        task.RefreshCountProperties();
+        RecalculateProgress();
+    }
+
+    private async Task ApplyCountOfflineAsync(ActivityTaskItemViewModel task, int newCount, ToggleCompletionRequest request)
+    {
+        ApplyCountChange(task, newCount);
+
+        if (_localActivityCache is not null)
+        {
+            await _localActivityCache.EnqueueToggleAsync(new PendingActivityToggle
+            {
+                ActivityItemId = request.ActivityItemId,
+                Date = request.Date,
+                CountValue = request.CountValue,
+                CreatedAtUtc = DateTime.UtcNow
+            });
+        }
+
+        _toastService?.ShowInfo("Saved offline — will sync when connected");
     }
 
     // --- Helpers ---

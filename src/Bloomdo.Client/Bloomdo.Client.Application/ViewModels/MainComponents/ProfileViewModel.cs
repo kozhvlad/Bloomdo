@@ -1,5 +1,6 @@
 using Bloomdo.Client.Application.Helpers;
 using Bloomdo.Client.Core.Interfaces;
+using Bloomdo.Client.Domain.Models;
 using Bloomdo.Shared.DTOs.Profile;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -14,6 +15,8 @@ public partial class ProfileViewModel : PageViewModel
     private readonly IProfileApiService _profileApiService;
     private readonly ISocialApiService _socialApiService;
     private readonly ISubscriptionApiService _subscriptionApiService;
+    private readonly IConnectivityService? _connectivityService;
+    private readonly ILocalProfileStore? _localProfileStore;
 
     [ObservableProperty]
     private string _name = string.Empty;
@@ -131,13 +134,17 @@ public partial class ProfileViewModel : PageViewModel
         INavigationService navigationService,
         IProfileApiService profileApiService,
         ISocialApiService socialApiService,
-        ISubscriptionApiService subscriptionApiService)
+        ISubscriptionApiService subscriptionApiService,
+        IConnectivityService? connectivityService = null,
+        ILocalProfileStore? localProfileStore = null)
     {
         _tokenManager = tokenManager;
         _navigationService = navigationService;
         _profileApiService = profileApiService;
         _socialApiService = socialApiService;
         _subscriptionApiService = subscriptionApiService;
+        _connectivityService = connectivityService;
+        _localProfileStore = localProfileStore;
     }
 
     public override void OnAppearing()
@@ -154,6 +161,13 @@ public partial class ProfileViewModel : PageViewModel
             // Load profile from cached user first
             ApplyUserData();
 
+            var isOnline = _connectivityService?.IsOnline ?? true;
+            if (!isOnline)
+            {
+                await RestoreFromLocalCacheAsync();
+                return;
+            }
+
             // Refresh from server
             var profile = await _profileApiService.GetProfileAsync();
             if (profile != null)
@@ -169,14 +183,11 @@ public partial class ProfileViewModel : PageViewModel
                 else if (!string.IsNullOrEmpty(profile.FirstName))
                     Initials = $"{profile.FirstName[0]}".ToUpper();
 
+                FollowersCount = profile.FollowersCount;
+                FollowingCount = profile.FollowingCount;
+
                 ApplyAvatar(profile.Avatar);
             }
-
-            // Load followers/following counts
-            var followers = await _socialApiService.GetFollowersAsync();
-            var following = await _socialApiService.GetFollowingAsync();
-            FollowersCount = followers.Count;
-            FollowingCount = following.Count;
 
             // Load unread notification count
             var notifications = await _socialApiService.GetNotificationsAsync();
@@ -205,6 +216,9 @@ public partial class ProfileViewModel : PageViewModel
                     _ => "Beginner"
                 };
             }
+
+            // Persist snapshot for offline use
+            await SaveToLocalCacheAsync();
         }
         catch (Exception ex)
         {
@@ -213,6 +227,70 @@ public partial class ProfileViewModel : PageViewModel
         finally
         {
             IsLoading = false;
+        }
+    }
+
+    private async Task SaveToLocalCacheAsync()
+    {
+        if (_localProfileStore is null) return;
+        try
+        {
+            var snapshot = new LocalProfileSnapshot
+            {
+                LastUpdatedUtc = DateTime.UtcNow,
+                Name = Name,
+                Email = Email,
+                Username = Username,
+                Bio = Bio,
+                Initials = Initials,
+                JoinedDateText = JoinedDateText,
+                Avatar = CurrentAvatar,
+                FollowersCount = FollowersCount,
+                FollowingCount = FollowingCount,
+                StreakDays = StreakDays,
+                TasksCompleted = TasksCompleted,
+                FocusHours = FocusHours,
+                TotalBlocksCreated = TotalBlocksCreated,
+                AchievementsUnlocked = AchievementsUnlocked,
+                Level = Level,
+                IsPremium = IsPremium
+            };
+            await _localProfileStore.SaveAsync(snapshot);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Save profile cache failed: {ex.Message}");
+        }
+    }
+
+    private async Task RestoreFromLocalCacheAsync()
+    {
+        if (_localProfileStore is null) return;
+        try
+        {
+            var snapshot = await _localProfileStore.LoadAsync();
+            if (snapshot is null) return;
+
+            Name = snapshot.Name;
+            Email = snapshot.Email;
+            Username = snapshot.Username;
+            Bio = snapshot.Bio;
+            Initials = snapshot.Initials;
+            JoinedDateText = snapshot.JoinedDateText;
+            FollowersCount = snapshot.FollowersCount;
+            FollowingCount = snapshot.FollowingCount;
+            StreakDays = snapshot.StreakDays;
+            TasksCompleted = snapshot.TasksCompleted;
+            FocusHours = snapshot.FocusHours;
+            TotalBlocksCreated = snapshot.TotalBlocksCreated;
+            AchievementsUnlocked = snapshot.AchievementsUnlocked;
+            Level = snapshot.Level;
+            IsPremium = snapshot.IsPremium;
+            ApplyAvatar(snapshot.Avatar);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Restore profile cache failed: {ex.Message}");
         }
     }
 

@@ -13,9 +13,13 @@ public partial class SocialViewModel : PageViewModel
     private readonly IToastService _toastService;
     private readonly IConfirmDialogService _confirmDialogService;
     private readonly ISignalRClientService _signalR;
+    private readonly IConnectivityService? _connectivityService;
 
     [ObservableProperty]
     private bool _isLoading;
+
+    [ObservableProperty]
+    private bool _isOffline;
 
     public ObservableCollection<SharedGroupDto> Groups { get; } = [];
 
@@ -26,18 +30,22 @@ public partial class SocialViewModel : PageViewModel
         INavigationService navigationService,
         IToastService toastService,
         IConfirmDialogService confirmDialogService,
-        ISignalRClientService signalR)
+        ISignalRClientService signalR,
+        IConnectivityService? connectivityService = null)
     {
         _socialApiService = socialApiService;
         _navigationService = navigationService;
         _toastService = toastService;
         _confirmDialogService = confirmDialogService;
         _signalR = signalR;
+        _connectivityService = connectivityService;
     }
 
     public override void OnAppearing()
     {
         base.OnAppearing();
+        IsOffline = _connectivityService is not null && !_connectivityService.IsOnline;
+        if (IsOffline) return;
         SubscribeSignalR();
         _ = LoadGroupsAsync();
     }

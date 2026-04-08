@@ -12,6 +12,7 @@ public partial class AiChatViewModel : PageViewModel
     private readonly IChatApiService _chatApiService;
     private readonly ISubscriptionApiService? _subscriptionApiService;
     private readonly IAppUsageService? _appUsageService;
+    private readonly IConnectivityService? _connectivityService;
 
     private Guid? _currentConversationId;
 
@@ -45,20 +46,26 @@ public partial class AiChatViewModel : PageViewModel
     [ObservableProperty]
     private bool _isLimitReached;
 
+    [ObservableProperty]
+    private bool _isOffline;
+
     public bool HasLimit => RemainingMessages >= 0;
 
     public Func<string, Task>? CopyToClipboardFunc { get; set; }
 
-    public AiChatViewModel(IChatApiService chatApiService, ISubscriptionApiService? subscriptionApiService = null, IAppUsageService? appUsageService = null)
+    public AiChatViewModel(IChatApiService chatApiService, ISubscriptionApiService? subscriptionApiService = null, IAppUsageService? appUsageService = null, IConnectivityService? connectivityService = null)
     {
         _chatApiService = chatApiService;
         _subscriptionApiService = subscriptionApiService;
         _appUsageService = appUsageService;
+        _connectivityService = connectivityService;
     }
 
     public override async void OnAppearing()
     {
         base.OnAppearing();
+        IsOffline = _connectivityService is not null && !_connectivityService.IsOnline;
+        if (IsOffline) return;
         await LoadSubscriptionLimitsAsync();
         await LoadConversationsAsync();
     }

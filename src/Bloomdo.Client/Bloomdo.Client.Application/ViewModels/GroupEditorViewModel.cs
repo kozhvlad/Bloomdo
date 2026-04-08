@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Bloomdo.Client.Application.ViewModels.Items;
 using Bloomdo.Client.Core.Interfaces;
 using Bloomdo.Shared.DTOs.Activities;
+using Bloomdo.Shared.DTOs.Subscription;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -14,6 +15,7 @@ public partial class GroupEditorViewModel : PageViewModel
     private readonly IToastService? _toastService;
     private readonly ISubscriptionApiService? _subscriptionApiService;
     private readonly IConfirmDialogService? _confirmDialogService;
+    private readonly ILocalSubscriptionStore? _localSubscriptionStore;
 
     private Guid? _editingGroupId;
 
@@ -134,32 +136,42 @@ public partial class GroupEditorViewModel : PageViewModel
         INavigationService navigationService,
         IToastService? toastService = null,
         ISubscriptionApiService? subscriptionApiService = null,
-        IConfirmDialogService? confirmDialogService = null)
+        IConfirmDialogService? confirmDialogService = null,
+        ILocalSubscriptionStore? localSubscriptionStore = null)
     {
         _activityApi = activityApi;
         _navigationService = navigationService;
         _toastService = toastService;
         _subscriptionApiService = subscriptionApiService;
         _confirmDialogService = confirmDialogService;
+        _localSubscriptionStore = localSubscriptionStore;
         _ = LoadCustomizationPermissionsAsync();
     }
 
     private async Task LoadCustomizationPermissionsAsync()
     {
-        if (_subscriptionApiService is null) return;
+        SubscriptionStatusResponse? status = null;
 
-        try
+        if (_subscriptionApiService is not null)
         {
-            var status = await _subscriptionApiService.GetStatusAsync();
-            if (status?.Limits is not null)
+            try
             {
-                CanCustomizeEmoji = status.Limits.CanCustomizeEmoji;
-                CanCustomizeColors = status.Limits.CanCustomizeColors;
+                status = await _subscriptionApiService.GetStatusAsync();
+                if (status is not null && _localSubscriptionStore is not null)
+                    _ = _localSubscriptionStore.SaveAsync(status);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"LoadCustomizationPermissions error: {ex}");
             }
         }
-        catch (Exception ex)
+
+        status ??= _localSubscriptionStore is not null ? await _localSubscriptionStore.LoadAsync() : null;
+
+        if (status?.Limits is not null)
         {
-            System.Diagnostics.Debug.WriteLine($"LoadCustomizationPermissions error: {ex}");
+            CanCustomizeEmoji = status.Limits.CanCustomizeEmoji;
+            CanCustomizeColors = status.Limits.CanCustomizeColors;
         }
     }
 

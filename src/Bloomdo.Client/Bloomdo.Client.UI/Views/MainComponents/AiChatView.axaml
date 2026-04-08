@@ -36,25 +36,35 @@
         </Style>
     </UserControl.Styles>
 
-    <Grid Background="{DynamicResource Brush.Background}">
-        <Grid RowDefinitions="Auto,*,Auto">
-            <!-- Header -->
-            <Border Grid.Row="0" BorderBrush="{DynamicResource OutlineColor}" BorderThickness="0,0,0,1" Padding="16,12">
-                <Grid ColumnDefinitions="Auto,*,Auto">
-                    <Button Grid.Column="0" Classes="Ghost" Padding="8" Command="{Binding ToggleHistoryCommand}">
-                        <PathIcon Data="{StaticResource chat_regular}" Width="20" Height="20" Foreground="{DynamicResource ForegroundColor}"/>
-                    </Button>
-                    <TextBlock Grid.Column="1" Text="{Binding CurrentTitle}" FontSize="16" FontWeight="SemiBold"
-                               VerticalAlignment="Center" HorizontalAlignment="Center"
-                               TextTrimming="CharacterEllipsis" MaxWidth="200"/>
-                    <Button Grid.Column="2" Classes="Ghost" Padding="8" Command="{Binding NewChatCommand}">
-                        <TextBlock Text="+" FontSize="22" FontWeight="Light" Foreground="{DynamicResource ForegroundColor}"/>
-                    </Button>
-                </Grid>
-            </Border>
+    <Grid RowDefinitions="Auto, *">
+        <!-- Header -->
+        <Border Grid.Row="0" BorderBrush="{DynamicResource OutlineColor}" BorderThickness="0,0,0,1" Padding="16,12">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0" Classes="Ghost" Padding="8" Command="{Binding ToggleHistoryCommand}">
+                    <PathIcon Data="{StaticResource chat_regular}" Width="20" Height="20" Foreground="{DynamicResource ForegroundColor}"/>
+                </Button>
+                <TextBlock Grid.Column="1" Text="{Binding CurrentTitle}" FontSize="16" FontWeight="SemiBold"
+                           VerticalAlignment="Center" HorizontalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" MaxWidth="200"/>
+                <Button Grid.Column="2" Classes="Ghost" Padding="8" Command="{Binding NewChatCommand}">
+                    <TextBlock Text="+" FontSize="22" FontWeight="Light" Foreground="{DynamicResource ForegroundColor}"/>
+                </Button>
+            </Grid>
+        </Border>
 
+        <!-- Offline overlay -->
+        <Border Grid.Row="1" IsVisible="{Binding IsOffline}" Background="{DynamicResource WindowBackgroundColor}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+                <PathIcon Data="{StaticResource chat_regular}" Width="48" Height="48" Opacity="0.2" HorizontalAlignment="Center"/>
+                <TextBlock Text="AI Chat Unavailable" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center" Opacity="0.6"/>
+                <TextBlock Text="Connect to the internet to use AI Chat." FontSize="13" Opacity="0.4" HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Content -->
+        <Grid Grid.Row="1" RowDefinitions="*,Auto" IsVisible="{Binding !IsOffline}">
             <!-- Messages -->
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Name="MessageScrollViewer">
+            <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Name="MessageScrollViewer">
                 <Panel>
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12"
                                 IsVisible="{Binding !Messages.Count}">
@@ -108,7 +118,7 @@
             </ScrollViewer>
 
             <!-- Typing indicator -->
-            <Border Grid.Row="1" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="16,0,16,8"
+            <Border Grid.Row="0" VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="16,0,16,8"
                     IsVisible="{Binding IsSending}" Background="{DynamicResource GhostColor}"
                     CornerRadius="16,16,16,4" Padding="16,10">
                 <StackPanel Orientation="Horizontal" Spacing="6">
@@ -119,7 +129,7 @@
             </Border>
 
             <!-- Input bar -->
-            <Border Grid.Row="2" BorderBrush="{DynamicResource OutlineColor}" BorderThickness="0,1,0,0" Padding="12,10">
+            <Border Grid.Row="1" BorderBrush="{DynamicResource OutlineColor}" BorderThickness="0,1,0,0" Padding="12,10">
                 <StackPanel Spacing="6">
                     <!-- Remaining messages counter -->
                     <TextBlock IsVisible="{Binding HasLimit}"

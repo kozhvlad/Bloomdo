@@ -1,4 +1,5 @@
 using Bloomdo.Client.Core.Interfaces;
+using Bloomdo.Shared.DTOs.Subscription;
 using Bloomdo.Shared.Enums;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -10,6 +11,8 @@ public partial class SubscriptionViewModel : PageViewModel
     private readonly ISubscriptionApiService _subscriptionApiService;
     private readonly IToastService _toastService;
     private readonly IBrowserService _browserService;
+    private readonly IConnectivityService? _connectivityService;
+    private readonly ILocalSubscriptionStore? _localSubscriptionStore;
 
     [ObservableProperty]
     private bool _isLoading;
@@ -38,20 +41,31 @@ public partial class SubscriptionViewModel : PageViewModel
     [ObservableProperty]
     private bool _isCheckoutLoading;
 
+    [ObservableProperty]
+    private bool _isOffline;
+
     public SubscriptionViewModel(
         ISubscriptionApiService subscriptionApiService,
         IToastService toastService,
-        IBrowserService browserService)
+        IBrowserService browserService,
+        IConnectivityService? connectivityService = null,
+        ILocalSubscriptionStore? localSubscriptionStore = null)
     {
         _subscriptionApiService = subscriptionApiService;
         _toastService = toastService;
         _browserService = browserService;
+        _connectivityService = connectivityService;
+        _localSubscriptionStore = localSubscriptionStore;
     }
 
     public override void OnAppearing()
     {
         base.OnAppearing();
-        _ = LoadStatusAsync();
+        IsOffline = _connectivityService is not null && !_connectivityService.IsOnline;
+        if (IsOffline)
+            _ = LoadStatusFromCacheAsync();
+        else
+            _ = LoadStatusAsync();
     }
 
     private async Task LoadStatusAsync()
@@ -62,36 +76,10 @@ public partial class SubscriptionViewModel : PageViewModel
             var status = await _subscriptionApiService.GetStatusAsync();
             if (status is not null)
             {
-                IsPremium = status.IsPremium;
-                WillCancel = status.WillCancel;
+                ApplyStatus(status);
 
-                if (status.IsPremium)
-                {
-                    CurrentPlanText = status.Plan switch
-                    {
-                        SubscriptionPlan.Monthly => "Monthly Plan",
-                        SubscriptionPlan.Yearly => "Yearly Plan",
-                        _ => "Active"
-                    };
-
-                    StatusText = status.WillCancel
-                        ? "Cancels at end of period"
-                        : "Active";
-
-                    if (status.CurrentPeriodEnd.HasValue)
-                    {
-                        var daysLeft = (status.CurrentPeriodEnd.Value - DateTime.UtcNow).Days;
-                        ExpiryText = status.WillCancel
-                            ? $"Access until {status.CurrentPeriodEnd.Value:MMM dd, yyyy} ({daysLeft} days left)"
-                            : $"Renews {status.CurrentPeriodEnd.Value:MMM dd, yyyy}";
-                    }
-                }
-                else
-                {
-                    StatusText = "Free";
-                    CurrentPlanText = string.Empty;
-                    ExpiryText = string.Empty;
-                }
+                if (_localSubscriptionStore is not null)
+                    _ = _localSubscriptionStore.SaveAsync(status);
             }
         }
         catch (Exception ex)
@@ -101,6 +89,61 @@ public partial class SubscriptionViewModel : PageViewModel
         finally
         {
             IsLoading = false;
+        }
+    }
+
+    private async Task LoadStatusFromCacheAsync()
+    {
+        if (_localSubscriptionStore is null) return;
+
+        IsLoading = true;
+        try
+        {
+            var status = await _localSubscriptionStore.LoadAsync();
+            if (status is not null)
+                ApplyStatus(status);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Load subscription status from cache failed: {ex.Message}");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private void ApplyStatus(SubscriptionStatusResponse status)
+    {
+        IsPremium = status.IsPremium;
+        WillCancel = status.WillCancel;
+
+        if (status.IsPremium)
+        {
+            CurrentPlanText = status.Plan switch
+            {
+                SubscriptionPlan.Monthly => "Monthly Plan",
+                SubscriptionPlan.Yearly => "Yearly Plan",
+                _ => "Active"
+            };
+
+            StatusText = status.WillCancel
+                ? "Cancels at end of period"
+                : "Active";
+
+            if (status.CurrentPeriodEnd.HasValue)
+            {
+                var daysLeft = (status.CurrentPeriodEnd.Value - DateTime.UtcNow).Days;
+                ExpiryText = status.WillCancel
+                    ? $"Access until {status.CurrentPeriodEnd.Value:MMM dd, yyyy} ({daysLeft} days left)"
+                    : $"Renews {status.CurrentPeriodEnd.Value:MMM dd, yyyy}";
+            }
+        }
+        else
+        {
+            StatusText = "Free";
+            CurrentPlanText = string.Empty;
+            ExpiryText = string.Empty;
         }
     }
 

@@ -10,7 +10,8 @@ public class DailyActivityService(
     IRepository<ActivityItem> itemRepo,
     IRepository<ActivityCompletion> completionRepo,
     IRepository<GroupMembership> membershipRepo,
-    IVisionService visionService) : IDailyActivityService
+    IVisionService visionService,
+    IStatsService statsService) : IDailyActivityService
 {
     public async Task<List<ActivityGroupResponse>> GetGroupsAsync(Guid accountId, CancellationToken ct = default)
     {
@@ -283,6 +284,8 @@ public class DailyActivityService(
             };
             await completionRepo.AddAsync(completion, ct);
         }
+
+        await statsService.RecalculateGoalMetAsync(accountId, request.Date, ct);
 
         return true;
     }

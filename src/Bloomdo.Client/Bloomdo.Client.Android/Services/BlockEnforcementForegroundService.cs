@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using Android.App;
@@ -8,6 +9,8 @@ using Android.Content;
 using Android.Content.PM;
 using Android.OS;
 using Android.Util;
+using Bloomdo.Client.Domain.Models;
+using Bloomdo.Client.Infrastructure.Services;
 using Bloomdo.Shared.DTOs.Blocks;
 using Bloomdo.Shared.Enums;
 
@@ -19,10 +22,12 @@ public class BlockEnforcementForegroundService : Service
     private const int NotificationId = 9001;
     private const string ChannelId = "bloomdo_enforcement";
     private const string OwnPackage = "com.CompanyName.Bloomdo.Client";
+    private static readonly TimeSpan UsageSaveInterval = TimeSpan.FromMinutes(15);
     private Timer? _timer;
     private List<BlockRuleResponse> _cachedRules = [];
     private Dictionary<Guid, bool> _cachedGroupCompletion = [];
     private string? _lastBlockedPackage;
+    private DateTime _lastUsageSaveUtc = DateTime.MinValue;
 
     public override IBinder? OnBind(Intent? intent) => null;
 
@@ -71,6 +76,9 @@ public class BlockEnforcementForegroundService : Service
             {
                 _lastBlockedPackage = null;
             }
+
+            // Periodically save usage data locally so it survives reboots
+            SaveUsageLocallyIfDue();
         }
         catch (Exception ex)
         {
@@ -164,6 +172,71 @@ public class BlockEnforcementForegroundService : Service
         }
 
         return false;
+    }
+
+    private void SaveUsageLocallyIfDue()
+    {
+        if (DateTime.UtcNow - _lastUsageSaveUtc < UsageSaveInterval) return;
+        _lastUsageSaveUtc = DateTime.UtcNow;
+
+        try
+        {
+            var usm = (UsageStatsManager)GetSystemService(UsageStatsService)!;
+            var cal = Java.Util.Calendar.Instance;
+            cal.TimeInMillis = Java.Lang.JavaSystem.CurrentTimeMillis();
+            cal.Set(Java.Util.CalendarField.HourOfDay, 0);
+            cal.Set(Java.Util.CalendarField.Minute, 0);
+            cal.Set(Java.Util.CalendarField.Second, 0);
+            cal.Set(Java.Util.CalendarField.Millisecond, 0);
+            var startOfDay = cal.TimeInMillis;
+            var now = Java.Lang.JavaSystem.CurrentTimeMillis();
+
+            var pm = PackageManager!;
+            var stats = usm.QueryAndAggregateUsageStats(startOfDay, now);
+            var apps = new List<LocalAppUsageEntry>();
+
+            foreach (var kv in stats)
+            {
+                var pkg = kv.Key;
+                var s = kv.Value;
+                if (s == null) continue;
+
+                try
+                {
+                    if (pm.GetLaunchIntentForPackage(pkg) == null) continue;
+                }
+                catch { continue; }
+
+                var fgMs = s.TotalTimeInForeground;
+                if (fgMs <= 0) continue;
+
+                string? label = null;
+                try
+                {
+                    var appInfo = pm.GetApplicationInfo(pkg, 0);
+                    label = pm.GetApplicationLabel(appInfo);
+                }
+                catch { }
+
+                apps.Add(new LocalAppUsageEntry
+                {
+                    PackageName = pkg,
+                    AppLabel = label,
+                    ForegroundSeconds = (int)(fgMs / 1000)
+                });
+            }
+
+            if (apps.Count > 0)
+            {
+                var today = DateOnly.FromDateTime(DateTime.Today);
+                LocalUsageStore.SaveSnapshotDirect(today, 0, apps);
+                Log.Info("Bloomdo", $"Saved local usage snapshot: {apps.Count} apps");
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Bloomdo", $"SaveUsageLocally error: {ex.Message}");
+        }
     }
 
     private string? GetForegroundPackage()

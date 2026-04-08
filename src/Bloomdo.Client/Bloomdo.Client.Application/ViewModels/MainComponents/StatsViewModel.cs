@@ -16,7 +16,13 @@ public partial class StatsViewModel : PageViewModel
 	private readonly IStatsApiService? _statsApiService;
 	private readonly IAppIconProvider? _appIconProvider;
 	private readonly ISubscriptionApiService? _subscriptionApiService;
+	private readonly IUsageSyncService? _usageSyncService;
+	private readonly IConnectivityService? _connectivityService;
+	private readonly ILocalStatsStore? _localStatsStore;
+	private readonly ILocalSubscriptionStore? _localSubscriptionStore;
 	private CancellationTokenSource? _cancellationTokenSource;
+	private DateTime _lastServerSyncUtc = DateTime.MinValue;
+	private static readonly TimeSpan ServerSyncInterval = TimeSpan.FromMinutes(5);
 
 	// Calendar data from server, keyed by DateOnly
 	private Dictionary<DateOnly, CalendarDayDto> _calendarData = [];
@@ -104,24 +110,39 @@ public partial class StatsViewModel : PageViewModel
 	public string CurrentMonthTitle => CurrentMonth.ToString("MMMM yyyy", CultureInfo.CurrentCulture);
 	public string WeekRangeTitle => $"{CurrentWeekStart:MMM d} - {CurrentWeekStart.AddDays(6):MMM d}";
 
-	public StatsViewModel(IAppUsageService? appUsageService = null, IStatsApiService? statsApiService = null, IAppIconProvider? appIconProvider = null, ISubscriptionApiService? subscriptionApiService = null)
+	public StatsViewModel(IAppUsageService? appUsageService = null, IStatsApiService? statsApiService = null, IAppIconProvider? appIconProvider = null, ISubscriptionApiService? subscriptionApiService = null, IUsageSyncService? usageSyncService = null, IConnectivityService? connectivityService = null, ILocalStatsStore? localStatsStore = null, ILocalSubscriptionStore? localSubscriptionStore = null)
 	{
 		_appUsageService = appUsageService;
 		_statsApiService = statsApiService;
 		_appIconProvider = appIconProvider;
 		_subscriptionApiService = subscriptionApiService;
+		_usageSyncService = usageSyncService;
+		_connectivityService = connectivityService;
+		_localStatsStore = localStatsStore;
+		_localSubscriptionStore = localSubscriptionStore;
 		CurrentWeekStart = GetWeekStart(DateOnly.FromDateTime(DateTime.Today));
 		InitializeWeeklyChart();
 		LoadMonthCalendar();
+		_ = _localStatsStore?.CleanupAsync();
 	}
 
 	public override void OnAppearing()
 	{
 		base.OnAppearing();
 		StartRefreshTimer();
-		_ = LoadSubscriptionStatusAsync();
-		_ = LoadCalendarFromServerAsync();
-		_ = LoadWeeklyStatsAsync();
+		var isOnline = _connectivityService?.IsOnline ?? true;
+		if (isOnline)
+		{
+			_ = LoadSubscriptionStatusAsync();
+			_ = LoadCalendarFromServerAsync();
+			_ = LoadWeeklyStatsAsync();
+		}
+		else
+		{
+			_ = LoadSubscriptionStatusFromCacheAsync();
+			_ = LoadCalendarFromCacheAsync();
+			_ = LoadWeeklyStatsFromCacheAsync();
+		}
 	}
 
 	public override void OnDisappearing()
@@ -135,7 +156,11 @@ public partial class StatsViewModel : PageViewModel
 	{
 		CurrentMonth = CurrentMonth.AddMonths(-1);
 		LoadMonthCalendar();
-		_ = LoadCalendarFromServerAsync();
+		var isOnline = _connectivityService?.IsOnline ?? true;
+		if (isOnline)
+			_ = LoadCalendarFromServerAsync();
+		else
+			_ = LoadCalendarFromCacheAsync();
 	}
 
 	[RelayCommand]
@@ -143,7 +168,11 @@ public partial class StatsViewModel : PageViewModel
 	{
 		CurrentMonth = CurrentMonth.AddMonths(1);
 		LoadMonthCalendar();
-		_ = LoadCalendarFromServerAsync();
+		var isOnline = _connectivityService?.IsOnline ?? true;
+		if (isOnline)
+			_ = LoadCalendarFromServerAsync();
+		else
+			_ = LoadCalendarFromCacheAsync();
 	}
 
 	[RelayCommand]
@@ -151,7 +180,11 @@ public partial class StatsViewModel : PageViewModel
 	{
 		CurrentWeekStart = CurrentWeekStart.AddDays(-7);
 		InitializeWeeklyChart();
-		_ = LoadWeeklyStatsAsync();
+		var isOnline = _connectivityService?.IsOnline ?? true;
+		if (isOnline)
+			_ = LoadWeeklyStatsAsync();
+		else
+			_ = LoadWeeklyStatsFromCacheAsync();
 	}
 
 	[RelayCommand(CanExecute = nameof(CanGoToNextWeek))]
@@ -159,7 +192,11 @@ public partial class StatsViewModel : PageViewModel
 	{
 		CurrentWeekStart = CurrentWeekStart.AddDays(7);
 		InitializeWeeklyChart();
-		_ = LoadWeeklyStatsAsync();
+		var isOnline = _connectivityService?.IsOnline ?? true;
+		if (isOnline)
+			_ = LoadWeeklyStatsAsync();
+		else
+			_ = LoadWeeklyStatsFromCacheAsync();
 	}
 
 	private bool CanGoToNextWeek() =>
@@ -211,8 +248,17 @@ public partial class StatsViewModel : PageViewModel
 		CurrentWeekStart = GetWeekStart(DateOnly.FromDateTime(DateTime.Today));
 		LoadMonthCalendar();
 		InitializeWeeklyChart();
-		_ = LoadCalendarFromServerAsync();
-		_ = LoadWeeklyStatsAsync();
+		var isOnline = _connectivityService?.IsOnline ?? true;
+		if (isOnline)
+		{
+			_ = LoadCalendarFromServerAsync();
+			_ = LoadWeeklyStatsAsync();
+		}
+		else
+		{
+			_ = LoadCalendarFromCacheAsync();
+			_ = LoadWeeklyStatsFromCacheAsync();
+		}
 
 		// Select today
 		var todayVm = FindDayViewModel(DateTime.Today);
@@ -250,11 +296,31 @@ public partial class StatsViewModel : PageViewModel
 		{
 			var status = await _subscriptionApiService.GetStatusAsync();
 			if (status is not null)
+			{
 				IsPremium = status.IsPremium;
+				if (_localSubscriptionStore is not null)
+					_ = _localSubscriptionStore.SaveAsync(status);
+			}
 		}
 		catch (Exception ex)
 		{
 			System.Diagnostics.Debug.WriteLine($"LoadSubscriptionStatus error: {ex}");
+		}
+	}
+
+	private async Task LoadSubscriptionStatusFromCacheAsync()
+	{
+		if (_localSubscriptionStore is null) return;
+
+		try
+		{
+			var status = await _localSubscriptionStore.LoadAsync();
+			if (status is not null)
+				IsPremium = status.IsPremium;
+		}
+		catch (Exception ex)
+		{
+			System.Diagnostics.Debug.WriteLine($"LoadSubscriptionStatusFromCache error: {ex}");
 		}
 	}
 
@@ -323,7 +389,19 @@ public partial class StatsViewModel : PageViewModel
 			UpdateAppCollection(AllAppsUsage, sortedUsage, _appIconProvider);
 			UpdateAppCollection(MostUsedApps, sortedUsage.Take(3).ToList(), _appIconProvider);
 
-			// Sync to server periodically (every 5 minutes handled by separate sync logic)
+			// Save locally on every tick so data survives reboots
+			if (_usageSyncService is not null)
+			{
+				_ = _usageSyncService.SaveLocalSnapshotAsync();
+
+				// Sync to server every 5 minutes (only when online)
+				var isOnline = _connectivityService?.IsOnline ?? true;
+				if (isOnline && DateTime.UtcNow - _lastServerSyncUtc > ServerSyncInterval)
+				{
+					_lastServerSyncUtc = DateTime.UtcNow;
+					_ = _usageSyncService.SyncToServerAsync();
+				}
+			}
 		}
 		catch (Exception ex)
 		{
@@ -392,10 +470,34 @@ public partial class StatsViewModel : PageViewModel
 
 			_calendarData = calendar.Days.ToDictionary(d => d.Date);
 			ApplyStreakDataToCalendar();
+
+			if (_localStatsStore is not null)
+				_ = _localStatsStore.SaveMonthCalendarAsync(CurrentMonth.Year, CurrentMonth.Month, calendar);
 		}
 		catch (Exception ex)
 		{
 			System.Diagnostics.Debug.WriteLine($"LoadCalendarFromServer error: {ex}");
+		}
+	}
+
+	private async Task LoadCalendarFromCacheAsync()
+	{
+		if (_localStatsStore is null) return;
+
+		try
+		{
+			var calendar = await _localStatsStore.LoadMonthCalendarAsync(CurrentMonth.Year, CurrentMonth.Month);
+			if (calendar is null) return;
+
+			CurrentStreak = calendar.CurrentStreak;
+			LongestStreak = calendar.LongestStreak;
+
+			_calendarData = calendar.Days.ToDictionary(d => d.Date);
+			ApplyStreakDataToCalendar();
+		}
+		catch (Exception ex)
+		{
+			System.Diagnostics.Debug.WriteLine($"LoadCalendarFromCache error: {ex}");
 		}
 	}
 
@@ -498,30 +600,39 @@ public partial class StatsViewModel : PageViewModel
 			return;
 		}
 
-		if (_statsApiService is null) return;
+		// Try server first, then fall back to local cache
+		var isOnline = _connectivityService?.IsOnline ?? true;
+		DailyStatsResponse? stats = null;
 
-		try
+		if (isOnline && _statsApiService is not null)
 		{
-			var stats = await _statsApiService.GetDailyStatsAsync(date);
-			if (stats is null) return;
-
-			SelectedDayScreenTime = FormatDuration(TimeSpan.FromSeconds(stats.TotalScreenTimeSeconds));
-			SelectedDayPickups = stats.Pickups;
-			SelectedDayGoalMet = stats.GoalMet;
-
-			var totalSeconds = stats.Apps.Sum(a => a.ForegroundSeconds);
-			foreach (var app in stats.Apps)
+			try
 			{
-				var name = string.IsNullOrWhiteSpace(app.AppLabel) ? app.PackageName : app.AppLabel;
-				var duration = FormatDuration(TimeSpan.FromSeconds(app.ForegroundSeconds));
-				var percent = totalSeconds > 0 ? (double)app.ForegroundSeconds / totalSeconds * 100 : 0;
-				var iconBytes = _appIconProvider?.GetIcon(app.PackageName);
-				SelectedDayApps.Add(new MostUsedAppViewModel(name, duration, app.ForegroundSeconds, percent, iconBytes));
+				stats = await _statsApiService.GetDailyStatsAsync(date);
+				if (stats is not null && _localStatsStore is not null)
+					_ = _localStatsStore.SaveDailyStatsAsync(date, stats);
+			}
+			catch (Exception ex)
+			{
+				System.Diagnostics.Debug.WriteLine($"LoadSelectedDayStats error: {ex}");
 			}
 		}
-		catch (Exception ex)
+
+		stats ??= _localStatsStore is not null ? await _localStatsStore.LoadDailyStatsAsync(date) : null;
+		if (stats is null) return;
+
+		SelectedDayScreenTime = FormatDuration(TimeSpan.FromSeconds(stats.TotalScreenTimeSeconds));
+		SelectedDayPickups = stats.Pickups;
+		SelectedDayGoalMet = stats.GoalMet;
+
+		var totalSec = stats.Apps.Sum(a => a.ForegroundSeconds);
+		foreach (var app in stats.Apps)
 		{
-			System.Diagnostics.Debug.WriteLine($"LoadSelectedDayStats error: {ex}");
+			var name = string.IsNullOrWhiteSpace(app.AppLabel) ? app.PackageName : app.AppLabel;
+			var duration = FormatDuration(TimeSpan.FromSeconds(app.ForegroundSeconds));
+			var percent = totalSec > 0 ? (double)app.ForegroundSeconds / totalSec * 100 : 0;
+			var iconBytes = _appIconProvider?.GetIcon(app.PackageName);
+			SelectedDayApps.Add(new MostUsedAppViewModel(name, duration, app.ForegroundSeconds, percent, iconBytes));
 		}
 	}
 
@@ -620,67 +731,97 @@ public partial class StatsViewModel : PageViewModel
 				return;
 			}
 
-			// Update totals
-			WeeklyTotalTime = FormatDuration(TimeSpan.FromSeconds(weeklyStats.TotalScreenTimeSeconds));
-			WeeklyAverageTime = FormatDuration(TimeSpan.FromSeconds(weeklyStats.AverageScreenTimeSeconds));
-			WeeklyTotalPickups = weeklyStats.TotalPickups;
-			WeeklyAveragePickups = weeklyStats.AveragePickups;
+			ApplyWeeklyStats(weeklyStats);
 
-			// Update comparison
-			if (weeklyStats.Comparison is not null)
+			if (_localStatsStore is not null)
+				_ = _localStatsStore.SaveWeeklyStatsAsync(CurrentWeekStart, weeklyStats);
+		}
+		catch (Exception ex)
+		{
+			System.Diagnostics.Debug.WriteLine($"LoadWeeklyStats error: {ex}");
+			ResetWeeklyStats();
+		}
+	}
+
+	private async Task LoadWeeklyStatsFromCacheAsync()
+	{
+		if (_localStatsStore is null) return;
+
+		try
+		{
+			var weeklyStats = await _localStatsStore.LoadWeeklyStatsAsync(CurrentWeekStart);
+			if (weeklyStats is null)
 			{
-				HasComparison = true;
-				IsImproving = weeklyStats.Comparison.IsImproving;
-				ScreenTimeChangePercent = weeklyStats.Comparison.ScreenTimeChangePercent;
-				ScreenTimeChangeSeconds = weeklyStats.Comparison.ScreenTimeChangeSeconds;
-
-				var changeText = Math.Abs(ScreenTimeChangePercent).ToString("F0");
-				var direction = IsImproving ? "less" : "more";
-				var arrow = IsImproving ? "▼" : "▲";
-				ComparisonText = $"{arrow} {changeText}% {direction} than last week";
-			}
-			else
-			{
-				HasComparison = false;
-				ComparisonText = "";
-			}
-
-			// Update chart bars
-			var maxSeconds = weeklyStats.DailyData.Count > 0 
-				? weeklyStats.DailyData.Max(d => d.ScreenTimeSeconds) 
-				: 1;
-			maxSeconds = Math.Max(maxSeconds, 1); // Avoid division by zero
-
-			foreach (var dayData in weeklyStats.DailyData)
-			{
-				var barVm = WeeklyChartData.FirstOrDefault(b => b.Date == dayData.Date);
-				if (barVm is not null)
-				{
-					barVm.ScreenTimeSeconds = dayData.ScreenTimeSeconds;
-					barVm.Pickups = dayData.Pickups;
-					barVm.GoalMet = dayData.GoalMet;
-					barVm.BarHeightPercent = (double)dayData.ScreenTimeSeconds / maxSeconds * 100;
-				}
+				ResetWeeklyStats();
+				return;
 			}
 
-						// Update weekly top apps with percentages
-						WeeklyTopApps.Clear();
-						var totalAppSeconds = weeklyStats.TopApps.Sum(a => a.ForegroundSeconds);
-						foreach (var app in weeklyStats.TopApps.Take(5))
-						{
-							var name = string.IsNullOrWhiteSpace(app.AppLabel) ? app.PackageName : app.AppLabel;
-							var duration = FormatDuration(TimeSpan.FromSeconds(app.ForegroundSeconds));
-							var percent = totalAppSeconds > 0 ? (double)app.ForegroundSeconds / totalAppSeconds * 100 : 0;
-							var iconBytes = _appIconProvider?.GetIcon(app.PackageName);
-							WeeklyTopApps.Add(new MostUsedAppViewModel(name, duration, app.ForegroundSeconds, percent, iconBytes));
-						}
-					}
-					catch (Exception ex)
-					{
-						System.Diagnostics.Debug.WriteLine($"LoadWeeklyStats error: {ex}");
-						ResetWeeklyStats();
-					}
-				}
+			ApplyWeeklyStats(weeklyStats);
+		}
+		catch (Exception ex)
+		{
+			System.Diagnostics.Debug.WriteLine($"LoadWeeklyStatsFromCache error: {ex}");
+			ResetWeeklyStats();
+		}
+	}
+
+	private void ApplyWeeklyStats(WeeklyStatsResponse weeklyStats)
+	{
+		// Update totals
+		WeeklyTotalTime = FormatDuration(TimeSpan.FromSeconds(weeklyStats.TotalScreenTimeSeconds));
+		WeeklyAverageTime = FormatDuration(TimeSpan.FromSeconds(weeklyStats.AverageScreenTimeSeconds));
+		WeeklyTotalPickups = weeklyStats.TotalPickups;
+		WeeklyAveragePickups = weeklyStats.AveragePickups;
+
+		// Update comparison
+		if (weeklyStats.Comparison is not null)
+		{
+			HasComparison = true;
+			IsImproving = weeklyStats.Comparison.IsImproving;
+			ScreenTimeChangePercent = weeklyStats.Comparison.ScreenTimeChangePercent;
+			ScreenTimeChangeSeconds = weeklyStats.Comparison.ScreenTimeChangeSeconds;
+
+			var changeText = Math.Abs(ScreenTimeChangePercent).ToString("F0");
+			var direction = IsImproving ? "less" : "more";
+			var arrow = IsImproving ? "▼" : "▲";
+			ComparisonText = $"{arrow} {changeText}% {direction} than last week";
+		}
+		else
+		{
+			HasComparison = false;
+			ComparisonText = "";
+		}
+
+		// Update chart bars
+		var maxSeconds = weeklyStats.DailyData.Count > 0
+			? weeklyStats.DailyData.Max(d => d.ScreenTimeSeconds)
+			: 1;
+		maxSeconds = Math.Max(maxSeconds, 1);
+
+		foreach (var dayData in weeklyStats.DailyData)
+		{
+			var barVm = WeeklyChartData.FirstOrDefault(b => b.Date == dayData.Date);
+			if (barVm is not null)
+			{
+				barVm.ScreenTimeSeconds = dayData.ScreenTimeSeconds;
+				barVm.Pickups = dayData.Pickups;
+				barVm.GoalMet = dayData.GoalMet;
+				barVm.BarHeightPercent = (double)dayData.ScreenTimeSeconds / maxSeconds * 100;
+			}
+		}
+
+		// Update weekly top apps with percentages
+		WeeklyTopApps.Clear();
+		var totalAppSeconds = weeklyStats.TopApps.Sum(a => a.ForegroundSeconds);
+		foreach (var app in weeklyStats.TopApps.Take(5))
+		{
+			var name = string.IsNullOrWhiteSpace(app.AppLabel) ? app.PackageName : app.AppLabel;
+			var duration = FormatDuration(TimeSpan.FromSeconds(app.ForegroundSeconds));
+			var percent = totalAppSeconds > 0 ? (double)app.ForegroundSeconds / totalAppSeconds * 100 : 0;
+			var iconBytes = _appIconProvider?.GetIcon(app.PackageName);
+			WeeklyTopApps.Add(new MostUsedAppViewModel(name, duration, app.ForegroundSeconds, percent, iconBytes));
+		}
+	}
 
 	private void ResetWeeklyStats()
 	{

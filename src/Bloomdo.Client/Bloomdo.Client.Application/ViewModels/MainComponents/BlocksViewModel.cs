@@ -16,6 +16,8 @@ public partial class BlocksViewModel : PageViewModel
     private readonly IDailyActivityApiService? _activityApiService;
     private readonly IAppIconProvider? _appIconProvider;
     private readonly ISubscriptionApiService? _subscriptionApiService;
+    private readonly IConnectivityService? _connectivityService;
+    private readonly ILocalSubscriptionStore? _localSubscriptionStore;
     private List<BlockRuleResponse> _cachedRules = [];
 
     [ObservableProperty]
@@ -37,6 +39,9 @@ public partial class BlocksViewModel : PageViewModel
     [NotifyPropertyChangedFor(nameof(IsEditing))]
     private BlockEditorViewModel? _editor;
 
+    [ObservableProperty]
+    private bool _isOffline;
+
     public bool IsEditing => Editor is not null;
 
     public ObservableCollection<BlockerItem> Blockers { get; } = [];
@@ -47,7 +52,9 @@ public partial class BlocksViewModel : PageViewModel
         IBlockRuleStore? blockRuleStore = null,
         IDailyActivityApiService? activityApiService = null,
         IAppIconProvider? appIconProvider = null,
-        ISubscriptionApiService? subscriptionApiService = null)
+        ISubscriptionApiService? subscriptionApiService = null,
+        IConnectivityService? connectivityService = null,
+        ILocalSubscriptionStore? localSubscriptionStore = null)
     {
         _blockApiService = blockApiService;
         _installedAppsService = installedAppsService;
@@ -55,13 +62,19 @@ public partial class BlocksViewModel : PageViewModel
         _activityApiService = activityApiService;
         _appIconProvider = appIconProvider;
         _subscriptionApiService = subscriptionApiService;
+        _connectivityService = connectivityService;
+        _localSubscriptionStore = localSubscriptionStore;
     }
 
     public override void OnAppearing()
     {
         base.OnAppearing();
+        IsOffline = _connectivityService is not null && !_connectivityService.IsOnline;
         _ = LoadBlockRulesAsync();
-        _ = LoadSubscriptionLimitsAsync();
+        if (!IsOffline)
+            _ = LoadSubscriptionLimitsAsync();
+        else
+            _ = LoadSubscriptionLimitsFromCacheAsync();
     }
 
     private async Task LoadSubscriptionLimitsAsync()
@@ -75,11 +88,33 @@ public partial class BlocksViewModel : PageViewModel
             {
                 MaxBlockRules = status.Limits.MaxBlockRules;
                 IsLimitReached = !status.IsPremium && Blockers.Count >= status.Limits.MaxBlockRules;
+
+                if (_localSubscriptionStore is not null)
+                    _ = _localSubscriptionStore.SaveAsync(status);
             }
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"LoadSubscriptionLimits error: {ex}");
+        }
+    }
+
+    private async Task LoadSubscriptionLimitsFromCacheAsync()
+    {
+        if (_localSubscriptionStore is null) return;
+
+        try
+        {
+            var status = await _localSubscriptionStore.LoadAsync();
+            if (status?.Limits is not null)
+            {
+                MaxBlockRules = status.Limits.MaxBlockRules;
+                IsLimitReached = !status.IsPremium && Blockers.Count >= status.Limits.MaxBlockRules;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"LoadSubscriptionLimitsFromCache error: {ex}");
         }
     }
 
@@ -221,12 +256,34 @@ public partial class BlocksViewModel : PageViewModel
 
     private async Task LoadBlockRulesAsync()
     {
-        if (_blockApiService is null) return;
-
         IsLoading = true;
         try
         {
-            var rules = await _blockApiService.GetBlockRulesAsync();
+            List<BlockRuleResponse>? rules = null;
+
+            if (!IsOffline && _blockApiService is not null)
+            {
+                try
+                {
+                    rules = await _blockApiService.GetBlockRulesAsync();
+                }
+                catch (HttpRequestException)
+                {
+                    IsOffline = true;
+                }
+                catch (TaskCanceledException)
+                {
+                    IsOffline = true;
+                }
+            }
+
+            // Fallback to local cache
+            if (rules is null && _blockRuleStore is not null)
+            {
+                var localRules = await _blockRuleStore.LoadRulesAsync();
+                rules = localRules.ToList();
+            }
+
             Blockers.Clear();
             _cachedRules.Clear();
 
@@ -238,7 +295,9 @@ public partial class BlocksViewModel : PageViewModel
             }
 
             HasNoBlockers = Blockers.Count == 0;
-            await SyncRulesToLocalStoreAsync();
+
+            if (!IsOffline)
+                await SyncRulesToLocalStoreAsync();
         }
         catch (Exception ex)
         {

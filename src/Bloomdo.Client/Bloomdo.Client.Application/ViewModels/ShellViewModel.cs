@@ -13,10 +13,12 @@ public partial class ShellViewModel : ObservableObject
     private readonly IAccessTokenManager _tokenManager;
     private readonly IPreferencesService _preferencesService;
     private readonly Func<INavigationService> _navigationServiceFactory;
+    private readonly IConnectivityService _connectivityService;
     private INavigationService? _navigationService;
     private SynchronizationContext? _uiContext;
 
     private const string OnboardingCompletedKey = "OnboardingCompleted";
+    private const string WasAuthenticatedKey = "WasAuthenticated";
 
     private readonly Stack<IPage> _navigationHistory = new();
 
@@ -46,11 +48,13 @@ public partial class ShellViewModel : ObservableObject
     public ShellViewModel(
         IAccessTokenManager tokenManager,
         IPreferencesService preferencesService,
-        Func<INavigationService> navigationServiceFactory)
+        Func<INavigationService> navigationServiceFactory,
+        IConnectivityService connectivityService)
     {
         _tokenManager = tokenManager;
         _preferencesService = preferencesService;
         _navigationServiceFactory = navigationServiceFactory;
+        _connectivityService = connectivityService;
     }
 
     public async Task InitializeAsync()
@@ -84,6 +88,7 @@ public partial class ShellViewModel : ObservableObject
             if (_tokenManager.IsAuthenticated)
             {
                 Debug.WriteLine("User is authenticated, navigating to MainViewModel");
+                _preferencesService.Set(WasAuthenticatedKey, true);
                 _navigationService.NavigateTo<MainViewModel>();
             }
             else
@@ -95,13 +100,30 @@ public partial class ShellViewModel : ObservableObject
         catch (HttpRequestException ex)
         {
             Debug.WriteLine($"Network error during initialization: {ex.Message}");
+            if (TryStartOffline()) return;
             _navigationService.NavigateTo<NoConnectionViewModel>();
         }
         catch (TaskCanceledException ex) when (ex.InnerException is TimeoutException)
         {
             Debug.WriteLine($"Timeout during initialization: {ex.Message}");
+            if (TryStartOffline()) return;
             _navigationService.NavigateTo<NoConnectionViewModel>();
         }
+    }
+
+    private bool TryStartOffline()
+    {
+        // WasAuthenticatedKey covers new sessions; IsAuthenticated covers
+        // users who logged in before the offline feature was added (tokens
+        // are already loaded from storage by AccessTokenManager.InitializeAsync
+        // before the network call fails).
+        if (!_preferencesService.Get(WasAuthenticatedKey, false) && !_tokenManager.IsAuthenticated)
+            return false;
+
+        Debug.WriteLine("Starting in offline mode — user was previously authenticated");
+        _preferencesService.Set(WasAuthenticatedKey, true);
+        _navigationService!.NavigateTo<MainViewModel>();
+        return true;
     }
 
     private void OnSessionInvalidated()

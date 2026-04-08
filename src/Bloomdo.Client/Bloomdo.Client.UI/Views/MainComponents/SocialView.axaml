@@ -40,8 +40,17 @@
                      HorizontalAlignment="Stretch"
                      Height="3" Margin="0"/>
 
+        <!-- Offline overlay -->
+        <Border Grid.Row="1" IsVisible="{Binding IsOffline}" Background="{DynamicResource WindowBackgroundColor}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+                <PathIcon Data="{StaticResource people_regular}" Width="48" Height="48" Opacity="0.2" HorizontalAlignment="Center"/>
+                <TextBlock Text="Social Unavailable" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center" Opacity="0.6"/>
+                <TextBlock Text="Connect to the internet to view groups." FontSize="13" Opacity="0.4" HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
         <!-- Content -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="1" IsVisible="{Binding !IsOffline}">
             <ScrollViewer>
                 <StackPanel Spacing="12" Margin="20,16,20,100">
 

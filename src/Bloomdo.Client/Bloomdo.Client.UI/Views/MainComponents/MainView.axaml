@@ -51,15 +51,21 @@
 		</Style>
 	</UserControl.Styles>
 	
-	<Grid RowDefinitions="*,Auto" Background="{DynamicResource Brush.Background}">
+	<Grid RowDefinitions="Auto,*,Auto" Background="{DynamicResource Brush.Background}">
+		<!-- Offline banner -->
+		<Border Grid.Row="0" IsVisible="{Binding IsOffline}" Background="#E65100" Padding="0,6" HorizontalAlignment="Stretch">
+			<TextBlock Text="You are offline" FontSize="12" FontWeight="SemiBold"
+					   Foreground="White" HorizontalAlignment="Center"/>
+		</Border>
+
 		<!-- Main content area -->
-		<ContentControl Grid.Row="0" 
+		<ContentControl Grid.Row="1" 
 						Content="{Binding CurrentPage}"
 						HorizontalAlignment="Stretch"
 						VerticalAlignment="Stretch"/>
 		
 		<!-- Bottom tab bar -->
-		<Border Grid.Row="1" 
+		<Border Grid.Row="2" 
 				Background="{DynamicResource Brush.Background}"
 				BorderBrush="{DynamicResource OutlineColor}"
 				BorderThickness="0,1,0,0"

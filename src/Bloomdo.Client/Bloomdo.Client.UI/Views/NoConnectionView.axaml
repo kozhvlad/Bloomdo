@@ -31,6 +31,11 @@
             </shad:Card>
             <Button Content="Retry" Classes="Primary" HorizontalAlignment="Stretch" Command="{Binding RetryCommand}"
                     IsEnabled="{Binding !IsRetrying}" />
+            <Button Content="Continue Offline" HorizontalAlignment="Stretch" Command="{Binding ContinueOfflineCommand}"
+                    IsVisible="{Binding CanContinueOffline}"
+                    Background="Transparent" BorderThickness="1"
+                    BorderBrush="{DynamicResource Brush.Foreground.Subtle}"
+                    Foreground="{DynamicResource Brush.Foreground.Subtle}" />
         </StackPanel>
     </Grid>
 </UserControl>

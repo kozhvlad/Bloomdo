@@ -9,6 +9,7 @@ using Avalonia;
 using Avalonia.Android;
 using Bloomdo.Client.Android.Services;
 using Bloomdo.Client.Core.Interfaces;
+using Bloomdo.Client.Infrastructure.Services;
 using Bloomdo.Client.Startup;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Maui.ApplicationModel;
@@ -39,6 +40,7 @@ public class MainActivity : AvaloniaMainActivity<App>
 
         EnsureRequiredPermissions();
         StartBlockEnforcement();
+        SyncPendingUsage();
     }
 
     protected override AppBuilder CustomizeAppBuilder(AppBuilder builder)
@@ -92,6 +94,24 @@ public class MainActivity : AvaloniaMainActivity<App>
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Failed to start enforcement: {ex.Message}");
+        }
+    }
+
+    private static void SyncPendingUsage()
+    {
+        try
+        {
+            // Cleanup old cache files (keep 14 days)
+            LocalUsageStore.CleanupOldFiles();
+
+            // Sync any data that wasn't pushed before the phone was turned off
+            var syncService = DependencyContainer.ServiceProvider.GetService<IUsageSyncService>();
+            if (syncService is not null)
+                _ = syncService.SyncPendingAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to sync pending usage: {ex.Message}");
         }
     }
 }

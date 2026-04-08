@@ -10,6 +10,9 @@ public partial class MainViewModel : PageViewModel
 {
     private readonly ISocialApiService _socialApiService;
     private readonly ISignalRClientService _signalR;
+    private readonly IConnectivityService _connectivityService;
+    private readonly IDailyActivityApiService _activityApiService;
+    private readonly ILocalActivityCache _localActivityCache;
 
     [ObservableProperty]
     private PageViewModel _currentPage;
@@ -27,6 +30,9 @@ public partial class MainViewModel : PageViewModel
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasUnreadNotifications))]
     private int _unreadNotificationCount;
+
+    [ObservableProperty]
+    private bool _isOffline;
 
     public bool IsHomeSelected => SelectedTabIndex == 0;
     public bool IsSocialSelected => SelectedTabIndex == 1;
@@ -49,10 +55,17 @@ public partial class MainViewModel : PageViewModel
         SubscriptionViewModel subscriptionViewModel,
         ProfileViewModel profileViewModel,
         ISocialApiService socialApiService,
-        ISignalRClientService signalR)
+        ISignalRClientService signalR,
+        IConnectivityService connectivityService,
+        IDailyActivityApiService activityApiService,
+        ILocalActivityCache localActivityCache)
     {
         _socialApiService = socialApiService;
         _signalR = signalR;
+        _connectivityService = connectivityService;
+        _activityApiService = activityApiService;
+        _localActivityCache = localActivityCache;
+        _isOffline = !connectivityService.IsOnline;
 
         Tabs = new ObservableCollection<TabItemViewModel>
         {
@@ -74,6 +87,58 @@ public partial class MainViewModel : PageViewModel
 
         _currentPage = homeViewModel;
         _currentPage.OnAppearing();
+
+        connectivityService.ConnectivityChanged += OnConnectivityChanged;
+    }
+
+    private void OnConnectivityChanged(bool isOnline)
+    {
+        IsOffline = !isOnline;
+
+        if (isOnline)
+        {
+            _ = SyncPendingOfflineDataAsync();
+            _ = LoadUnreadCountAsync();
+            if (_signalR is not null)
+                SubscribeSignalR();
+        }
+    }
+
+    private async Task SyncPendingOfflineDataAsync()
+    {
+        try
+        {
+            var pendingToggles = await _localActivityCache.LoadPendingTogglesAsync();
+            if (pendingToggles.Count > 0)
+            {
+                foreach (var toggle in pendingToggles)
+                {
+                    try
+                    {
+                        await _activityApiService.ToggleCompletionAsync(
+                            new Bloomdo.Shared.DTOs.Activities.ToggleCompletionRequest
+                            {
+                                ActivityItemId = toggle.ActivityItemId,
+                                Date = toggle.Date,
+                                CountValue = toggle.CountValue
+                            });
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"SyncPendingToggle {toggle.ActivityItemId} failed: {ex.Message}");
+                    }
+                }
+
+                await _localActivityCache.ClearPendingTogglesAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"SyncPendingOfflineData error: {ex}");
+        }
+
+        // Refresh current page to get fresh server data
+        CurrentPage?.OnAppearing();
     }
 
     partial void OnSelectedTabIndexChanged(int value)
