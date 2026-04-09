@@ -1,3 +1,4 @@
+using Bloomdo.Server.Api.Authorization;
 using Bloomdo.Shared.DTOs.Auth;
 using Bloomdo.Shared.DTOs.Profile;
 using Bloomdo.Shared.Constants;
@@ -33,6 +34,10 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
         var response = await _authService.LoginAsync(request, GetIpAddress(), cancellationToken);
+
+        if (response == null)
+            return Unauthorized(new { message = "Invalid email or password" });
+
         return Ok(response);
     }
 
@@ -51,11 +56,15 @@ public class AuthController : ControllerBase
     [HttpPost(ApiRoutes.Auth.Revoke)]
     public async Task<IActionResult> RevokeToken([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
     {
-        await _authService.RevokeTokenAsync(request.RefreshToken, GetIpAddress(), cancellationToken);
+        if (!TryGetAccountId(out var accountId))
+            return Unauthorized(new { message = "Invalid token" });
+
+        await _authService.RevokeTokenAsync(accountId, request.RefreshToken, GetIpAddress(), cancellationToken);
         return Ok(new { message = "Token revoked" });
     }
 
     [Authorize]
+    [RequirePermission(Permissions.ProfileView)]
     [HttpGet(ApiRoutes.Auth.Me)]
     public async Task<IActionResult> GetCurrentUser(CancellationToken cancellationToken)
     {
@@ -72,9 +81,14 @@ public class AuthController : ControllerBase
 
     private string GetIpAddress()
     {
-        if (Request.Headers.ContainsKey("X-Forwarded-For"))
+        if (Request.Headers.TryGetValue("X-Forwarded-For", out var forwardedFor))
         {
-            return Request.Headers["X-Forwarded-For"].ToString();
+            // Take only the leftmost (client) IP; the rest are proxies
+            var raw = forwardedFor.ToString();
+            var firstIp = raw.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                .FirstOrDefault();
+            if (!string.IsNullOrEmpty(firstIp))
+                return firstIp;
         }
 
         return HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
@@ -87,6 +101,7 @@ public class AuthController : ControllerBase
     }
 
     [Authorize]
+    [RequirePermission(Permissions.ProfileEdit)]
     [HttpPut(ApiRoutes.Profile.Update)]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request, CancellationToken cancellationToken)
     {
@@ -98,6 +113,7 @@ public class AuthController : ControllerBase
     }
 
     [Authorize]
+    [RequirePermission(Permissions.ProfileView)]
     [HttpGet(ApiRoutes.Profile.Stats)]
     public async Task<IActionResult> GetProfileStats(CancellationToken cancellationToken)
     {

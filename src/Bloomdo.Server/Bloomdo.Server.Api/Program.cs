@@ -4,6 +4,7 @@ using Bloomdo.Server.Api.Middleware;
 using Bloomdo.Server.Application.Settings;
 using Bloomdo.Server.Infrastructure.Data;
 using Bloomdo.Server.Infrastructure.Settings;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.OpenApi;
 using Serilog;
 
@@ -58,7 +59,7 @@ public class Program
         builder.Services.AddSingleton<IStripeSettings>(stripeSettings);
 
         // JWT Authentication & authorization
-        builder.Services.AddJwtAuthentication(jwtSettings);
+        builder.Services.AddJwtAuthentication(jwtSettings, builder.Environment.IsDevelopment());
 
         // Dependency injection
         builder.Services.AddDatabaseContext(builder.Configuration.GetConnectionString("DefaultConnection"));
@@ -70,9 +71,19 @@ public class Program
         {
             options.AddPolicy("AllowAll", policy =>
             {
-                policy.AllowAnyOrigin()
-                    .AllowAnyMethod()
-                    .AllowAnyHeader();
+                if (builder.Environment.IsDevelopment())
+                {
+                    policy.AllowAnyOrigin()
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
+                }
+                else
+                {
+                    // TODO: Replace with actual production origins
+                    policy.WithOrigins("https://bloomdo.com")
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
+                }
             });
         });
 
@@ -108,6 +119,13 @@ public class Program
         }
 
         app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+        // Trust X-Forwarded-* headers only behind a reverse proxy
+        app.UseForwardedHeaders(new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+        });
+
         app.UseHttpsRedirection();
 
         app.UseCors("AllowAll");

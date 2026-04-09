@@ -11,9 +11,12 @@
     mc:Ignorable="d">
     
     <Grid RowDefinitions="2*,Auto,Auto" Background="{DynamicResource Brush.Background}" Margin="0">
-        <!-- Hero image placeholder taking ~2/3 top -->
-        <Border Grid.Row="0" Background="{DynamicResource Brush.Surface}" CornerRadius="24" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1">
-            <TextBlock Text="[ Illustration ]" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource Brush.Foreground.Subtle}"/>
+        <!-- Hero image -->
+        <Border Grid.Row="0" CornerRadius="24" ClipToBounds="True">
+            <Image Source="avares://Bloomdo.Client.UI/Assets/Images/onboarding-icon.png"
+                   Stretch="Uniform"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"/>
         </Border>
 
         <!-- Copy -->

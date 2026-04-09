@@ -1,3 +1,5 @@
+using Bloomdo.Client.Core.Interfaces;
+using Bloomdo.Client.Domain.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -5,7 +7,16 @@ namespace Bloomdo.Client.Application.ViewModels;
 
 public partial class TimerDialogViewModel : ObservableObject
 {
+    /// <summary>Fired when user explicitly closes the dialog (X button).</summary>
     public event Action? CloseRequested;
+
+    /// <summary>Fired ONLY when the timer naturally reaches zero.</summary>
+    public event Action? TimerCompleted;
+
+    private readonly ITimerStateStore? _stateStore;
+
+    [ObservableProperty]
+    private Guid _taskId;
 
     [ObservableProperty]
     private string _taskTitle = string.Empty;
@@ -33,6 +44,13 @@ public partial class TimerDialogViewModel : ObservableObject
 
     private int _originalDurationMinutes;
     private CancellationTokenSource? _timerCts;
+    private int _ticksSinceLastSave;
+    private const int SaveIntervalTicks = 10;
+
+    public TimerDialogViewModel(ITimerStateStore? stateStore = null)
+    {
+        _stateStore = stateStore;
+    }
 
     public string TimerDisplay
     {
@@ -73,17 +91,66 @@ public partial class TimerDialogViewModel : ObservableObject
 
     public string StartButtonText => $"{StartButtonIcon} {StartButtonLabel}";
 
-    public void Configure(string title, string icon, string color, int durationMinutes, int streak = 0)
+    public async Task ConfigureAsync(Guid taskId, string title, string icon, string color, int durationMinutes, int streak = 0)
     {
-        TaskTitle = title;
-        TaskIcon = icon;
-        TaskColor = color;
+        TaskId = taskId;
         _originalDurationMinutes = durationMinutes;
-        TotalSeconds = durationMinutes * 60;
-        RemainingSeconds = TotalSeconds;
-        CurrentStreak = streak;
-        IsRunning = false;
-        IsPaused = false;
+
+        // Try to restore saved state for this task (today only)
+        var saved = _stateStore is not null ? await _stateStore.LoadAsync(taskId) : null;
+
+        if (saved is not null && saved.RemainingSeconds > 0)
+        {
+            TaskTitle = saved.TaskTitle;
+            TaskIcon = saved.TaskIcon;
+            TaskColor = saved.TaskColor;
+            TotalSeconds = saved.TotalSeconds;
+            CurrentStreak = saved.Streak;
+            _originalDurationMinutes = saved.DurationMinutes;
+
+            if (saved.IsRunning && !saved.IsPaused)
+            {
+                // Timer was actively running — account for real elapsed time
+                var elapsed = (int)(DateTime.UtcNow - saved.LastTickUtc).TotalSeconds;
+                RemainingSeconds = Math.Max(0, saved.RemainingSeconds - elapsed);
+
+                if (RemainingSeconds > 0)
+                {
+                    IsRunning = true;
+                    IsPaused = false;
+                    _timerCts = new CancellationTokenSource();
+                    _ = RunAsync(_timerCts.Token);
+                }
+                else
+                {
+                    // Timer completed while the dialog was closed
+                    RemainingSeconds = 0;
+                    IsRunning = false;
+                    IsPaused = false;
+                    _ = ClearStateAsync();
+                }
+            }
+            else
+            {
+                // Timer was paused or not started — restore as-is
+                RemainingSeconds = saved.RemainingSeconds;
+                IsRunning = saved.IsRunning;
+                IsPaused = saved.IsPaused;
+            }
+        }
+        else
+        {
+            // No saved state — fresh start
+            TaskTitle = title;
+            TaskIcon = icon;
+            TaskColor = color;
+            TotalSeconds = durationMinutes * 60;
+            RemainingSeconds = TotalSeconds;
+            CurrentStreak = streak;
+            IsRunning = false;
+            IsPaused = false;
+        }
+
         RefreshComputedProperties();
     }
 
@@ -98,6 +165,7 @@ public partial class TimerDialogViewModel : ObservableObject
             _timerCts = new CancellationTokenSource();
             _ = RunAsync(_timerCts.Token);
             RefreshComputedProperties();
+            _ = SaveStateAsync();
             return;
         }
 
@@ -105,6 +173,7 @@ public partial class TimerDialogViewModel : ObservableObject
         {
             IsPaused = true;
             RefreshComputedProperties();
+            _ = SaveStateAsync();
             return;
         }
 
@@ -112,6 +181,7 @@ public partial class TimerDialogViewModel : ObservableObject
         {
             IsPaused = false;
             RefreshComputedProperties();
+            _ = SaveStateAsync();
             return;
         }
 
@@ -120,6 +190,7 @@ public partial class TimerDialogViewModel : ObservableObject
         _timerCts = new CancellationTokenSource();
         _ = RunAsync(_timerCts.Token);
         RefreshComputedProperties();
+        _ = SaveStateAsync();
     }
 
     [RelayCommand]
@@ -131,6 +202,7 @@ public partial class TimerDialogViewModel : ObservableObject
         IsPaused = false;
         RemainingSeconds = TotalSeconds;
         RefreshComputedProperties();
+        _ = ClearStateAsync();
     }
 
     [RelayCommand]
@@ -142,6 +214,7 @@ public partial class TimerDialogViewModel : ObservableObject
         IsPaused = false;
         RemainingSeconds = TotalSeconds;
         RefreshComputedProperties();
+        _ = ClearStateAsync();
     }
 
     [RelayCommand]
@@ -150,6 +223,7 @@ public partial class TimerDialogViewModel : ObservableObject
         RemainingSeconds = Math.Max(0, RemainingSeconds + minutes * 60);
         TotalSeconds = Math.Max(TotalSeconds, RemainingSeconds);
         RefreshComputedProperties();
+        _ = SaveStateAsync();
     }
 
     [RelayCommand]
@@ -159,6 +233,7 @@ public partial class TimerDialogViewModel : ObservableObject
         RemainingSeconds = Math.Max(60, RemainingSeconds + seconds);
         TotalSeconds = RemainingSeconds;
         RefreshComputedProperties();
+        _ = SaveStateAsync();
     }
 
     [RelayCommand]
@@ -166,15 +241,54 @@ public partial class TimerDialogViewModel : ObservableObject
     {
         _timerCts?.Cancel();
         _timerCts = null;
+
+        if (RemainingSeconds <= 0)
+        {
+            // Timer was complete — signal completion and clear state
+            _ = ClearStateAsync();
+            IsRunning = false;
+            IsPaused = false;
+            TimerCompleted?.Invoke();
+            CloseRequested?.Invoke();
+        }
+        else
+        {
+            // Timer still in progress — save state for later resume
+            _ = SaveStateAsync();
+            IsRunning = false;
+            IsPaused = false;
+            CloseRequested?.Invoke();
+        }
+    }
+
+    /// <summary>
+    /// Called on background tap dismissal. Saves state without firing any events.
+    /// The overlay is already closed by ShellViewModel.CloseOverlay().
+    /// </summary>
+    public void SaveOnDismiss()
+    {
+        _timerCts?.Cancel();
+        _timerCts = null;
+
+        if ((IsRunning || IsPaused) && RemainingSeconds > 0)
+        {
+            _ = SaveStateAsync();
+        }
+        else if (RemainingSeconds <= 0)
+        {
+            _ = ClearStateAsync();
+        }
+
         IsRunning = false;
         IsPaused = false;
-        CloseRequested?.Invoke();
     }
 
     private async Task RunAsync(CancellationToken ct)
     {
         try
         {
+            _ticksSinceLastSave = 0;
+
             while (RemainingSeconds > 0 && !ct.IsCancellationRequested)
             {
                 if (!IsPaused)
@@ -183,7 +297,15 @@ public partial class TimerDialogViewModel : ObservableObject
                     if (!IsPaused)
                     {
                         RemainingSeconds--;
+                        _ticksSinceLastSave++;
                         RefreshComputedProperties();
+
+                        // Periodic save (every N ticks) to avoid excessive I/O
+                        if (_ticksSinceLastSave >= SaveIntervalTicks)
+                        {
+                            _ticksSinceLastSave = 0;
+                            _ = SaveStateAsync();
+                        }
                     }
                 }
                 else
@@ -196,9 +318,55 @@ public partial class TimerDialogViewModel : ObservableObject
             {
                 IsRunning = false;
                 RefreshComputedProperties();
+                _ = ClearStateAsync();
+                TimerCompleted?.Invoke();
             }
         }
         catch (OperationCanceledException) { }
+    }
+
+    private async Task SaveStateAsync()
+    {
+        if (_stateStore is null) return;
+
+        var snapshot = new TimerStateSnapshot
+        {
+            TaskId = TaskId,
+            TaskTitle = TaskTitle,
+            TaskIcon = TaskIcon,
+            TaskColor = TaskColor,
+            TotalSeconds = TotalSeconds,
+            RemainingSeconds = RemainingSeconds,
+            DurationMinutes = _originalDurationMinutes,
+            Streak = CurrentStreak,
+            IsRunning = IsRunning,
+            IsPaused = IsPaused,
+            LastTickUtc = DateTime.UtcNow,
+            Date = DateOnly.FromDateTime(DateTime.UtcNow)
+        };
+
+        try
+        {
+            await _stateStore.SaveAsync(snapshot);
+        }
+        catch
+        {
+            // Best-effort persistence — don't crash the timer
+        }
+    }
+
+    private async Task ClearStateAsync()
+    {
+        if (_stateStore is null) return;
+
+        try
+        {
+            await _stateStore.ClearAsync(TaskId);
+        }
+        catch
+        {
+            // Best-effort
+        }
     }
 
     private void RefreshComputedProperties()

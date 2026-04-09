@@ -16,6 +16,7 @@ public class AuthService : IAuthService
     private readonly IRepository<ActivityCompletion> _completionRepository;
     private readonly IRepository<BlockRule> _blockRuleRepository;
     private readonly IRepository<AccountAchievement> _achievementRepository;
+    private readonly IRepository<Friendship> _friendshipRepository;
     private readonly IJwtService _jwtService;
     private readonly IAuthSettings _authSettings;
 
@@ -26,6 +27,7 @@ public class AuthService : IAuthService
         IRepository<ActivityCompletion> completionRepository,
         IRepository<BlockRule> blockRuleRepository,
         IRepository<AccountAchievement> achievementRepository,
+        IRepository<Friendship> friendshipRepository,
         IJwtService jwtService,
         IAuthSettings authSettings)
     {
@@ -35,6 +37,7 @@ public class AuthService : IAuthService
         _completionRepository = completionRepository;
         _blockRuleRepository = blockRuleRepository;
         _achievementRepository = achievementRepository;
+        _friendshipRepository = friendshipRepository;
         _jwtService = jwtService;
         _authSettings = authSettings;
     }
@@ -68,13 +71,13 @@ public class AuthService : IAuthService
         return await GenerateAuthResponseAsync(account, ipAddress, cancellationToken);
     }
 
-    public async Task<AuthResponse> LoginAsync(LoginRequest request, string ipAddress, CancellationToken cancellationToken = default)
+    public async Task<AuthResponse?> LoginAsync(LoginRequest request, string ipAddress, CancellationToken cancellationToken = default)
     {
         var account = await _accountRepository.GetByEmailAsync(request.Email, cancellationToken);
 
         if (account == null || !BCrypt.Net.BCrypt.Verify(request.Password, account.PasswordHash))
         {
-            throw new InvalidCredentialsException();
+            return null;
         }
 
         account.LastLoginAt = DateTime.UtcNow;
@@ -178,7 +181,7 @@ public class AuthService : IAuthService
         };
     }
 
-    public async Task RevokeTokenAsync(string refreshToken, string ipAddress, CancellationToken cancellationToken = default)
+    public async Task RevokeTokenAsync(Guid accountId, string refreshToken, string ipAddress, CancellationToken cancellationToken = default)
     {
         var token = await _refreshTokenRepository.FirstOrDefaultAsync(
             rt => rt.Token == refreshToken,
@@ -187,6 +190,12 @@ public class AuthService : IAuthService
         if (token == null || !token.IsActive)
         {
             throw new InvalidRefreshTokenException();
+        }
+
+        // Verify the token belongs to the calling user (prevent IDOR)
+        if (token.AccountId != accountId)
+        {
+            throw new ForbiddenAccessException("Cannot revoke a token that belongs to another account");
         }
 
         token.IsRevoked = true;
@@ -208,6 +217,11 @@ public class AuthService : IAuthService
         var roles = GetAccountRoles(account);
         var permissions = await _rolePermissionRepository.GetPermissionsForRolesAsync(roles, cancellationToken);
 
+        var followers = (await _friendshipRepository.FindAsync(
+            f => f.AddresseeId == accountId && f.Status == FriendshipStatus.Accepted, cancellationToken)).ToList();
+        var following = (await _friendshipRepository.FindAsync(
+            f => f.RequesterId == accountId && f.Status == FriendshipStatus.Accepted, cancellationToken)).ToList();
+
         return new AccountProfileResponse
         {
             Id = account.Id,
@@ -222,7 +236,9 @@ public class AuthService : IAuthService
             IsEmailConfirmed = account.IsEmailConfirmed,
             LastLoginAt = account.LastLoginAt,
             CreatedAt = account.CreatedAt,
-            ProfileVisibility = account.ProfileVisibility
+            ProfileVisibility = account.ProfileVisibility,
+            FollowersCount = followers.Count,
+            FollowingCount = following.Count
         };
     }
 

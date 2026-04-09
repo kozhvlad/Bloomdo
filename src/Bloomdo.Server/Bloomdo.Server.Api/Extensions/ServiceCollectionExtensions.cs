@@ -31,7 +31,7 @@ public static class ServiceCollectionExtensions
                 options.UseNpgsql(connectionString));
         }
 
-        public void AddJwtAuthentication(JwtSettings jwtSettings)
+        public void AddJwtAuthentication(JwtSettings jwtSettings, bool isDevelopment = false)
         {
             var key = Encoding.UTF8.GetBytes(jwtSettings.Secret);
 
@@ -42,7 +42,7 @@ public static class ServiceCollectionExtensions
                 })
                 .AddJwtBearer(options =>
                 {
-                    options.RequireHttpsMetadata = false;
+                    options.RequireHttpsMetadata = !isDevelopment;
                     options.SaveToken = true;
                     options.MapInboundClaims = false;
                     options.TokenValidationParameters = new TokenValidationParameters

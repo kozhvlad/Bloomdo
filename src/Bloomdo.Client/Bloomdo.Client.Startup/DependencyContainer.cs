@@ -83,7 +83,7 @@ public static class DependencyContainer
             return manager;
         });
         services.AddSingleton<ITimerDialogService>(sp =>
-            new TimerDialogService(sp.GetRequiredService<ShellViewModel>()));
+            new TimerDialogService(sp.GetRequiredService<ShellViewModel>(), sp.GetRequiredService<ITimerStateStore>()));
         services.AddSingleton<IConfirmDialogService>(sp => 
             new ConfirmDialogService(sp.GetRequiredService<ShellViewModel>()));
 
@@ -101,6 +101,9 @@ public static class DependencyContainer
 
         // Block rule local store
         services.AddSingleton<IBlockRuleStore, BlockRuleStore>();
+
+        // Timer state persistence
+        services.AddSingleton<ITimerStateStore, LocalTimerStateStore>();
 
         // Group completion local store
         services.AddSingleton<IGroupCompletionStore, GroupCompletionStore>();

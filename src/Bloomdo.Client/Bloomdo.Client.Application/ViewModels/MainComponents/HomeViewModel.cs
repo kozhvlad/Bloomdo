@@ -573,6 +573,7 @@ public partial class HomeViewModel : PageViewModel
         if (task is null || !task.HasDuration) return;
 
         _timerDialogService?.ShowTimer(
+            task.Id,
             task.Title,
             string.IsNullOrEmpty(task.Icon) ? "⏰" : task.Icon,
             string.IsNullOrEmpty(task.Color) ? "#7E57C2" : task.Color,
