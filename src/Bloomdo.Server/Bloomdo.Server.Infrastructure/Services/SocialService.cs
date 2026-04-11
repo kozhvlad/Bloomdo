@@ -443,6 +443,8 @@ public class SocialService(
             .Where(c => itemIds.Contains(c.ActivityItemId) && memberIds.Contains(c.AccountId) && c.Date == today)
             .ToListAsync(ct);
 
+        var memberLookup = group.Memberships.ToDictionary(m => m.AccountId, m => MapToProfileSummary(m.Account));
+
         var items = group.Items.Select(item =>
         {
             var myCompletion = completions.FirstOrDefault(c => c.ActivityItemId == item.Id && c.AccountId == accountId);
@@ -463,18 +465,31 @@ public class SocialService(
                 VerificationTemplate = item.VerificationTemplateId.HasValue
                     ? (VerificationTemplate?)item.VerificationTemplateId.Value
                     : null,
-                CustomVerificationCriteria = item.CustomVerificationCriteria
+                CustomVerificationCriteria = item.CustomVerificationCriteria,
+                CompletedBy = completions
+                    .Where(c => c.ActivityItemId == item.Id)
+                    .Select(c => memberLookup.GetValueOrDefault(c.AccountId))
+                    .OfType<ProfileSummaryDto>()
+                    .ToList()
             };
         }).ToList();
 
         var memberProgresses = group.Memberships.Select(m =>
         {
             var memberCompletions = completions.Where(c => c.AccountId == m.AccountId).ToList();
+            var completedItemIds = memberCompletions.Select(c => c.ActivityItemId).ToHashSet();
             return new GroupMemberProgressDto
             {
                 Account = MapToProfileSummary(m.Account),
                 CompletedItems = memberCompletions.Count,
-                TotalItems = group.Items.Count
+                TotalItems = group.Items.Count,
+                TaskDetails = group.Items.Select(item => new MemberTaskCompletionDto
+                {
+                    TaskId = item.Id,
+                    Title = item.Title,
+                    Icon = item.Icon ?? "✨",
+                    IsCompleted = completedItemIds.Contains(item.Id)
+                }).ToList()
             };
         }).ToList();
 

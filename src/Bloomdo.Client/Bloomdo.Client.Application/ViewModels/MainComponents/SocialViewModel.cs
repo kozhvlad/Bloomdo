@@ -21,9 +21,23 @@ public partial class SocialViewModel : PageViewModel
     [ObservableProperty]
     private bool _isOffline;
 
-    public ObservableCollection<SharedGroupDto> Groups { get; } = [];
+    [ObservableProperty]
+    private bool _hasNoGroups;
 
-    public bool HasNoGroups => Groups.Count == 0;
+    [ObservableProperty]
+    private string _searchText = string.Empty;
+
+    private List<SharedGroupDto> _allGroups = [];
+    private bool? _sortDirection;
+
+    public string SortButtonText => _sortDirection switch
+    {
+        true => "A \u2192 Z",
+        false => "Z \u2192 A",
+        _ => "Sort"
+    };
+
+    public ObservableCollection<SharedGroupDto> Groups { get; } = [];
 
     public SocialViewModel(
         ISocialApiService socialApiService,
@@ -63,11 +77,8 @@ public partial class SocialViewModel : PageViewModel
         try
         {
             var groups = await _socialApiService.GetSharedGroupsAsync();
-            Groups.Clear();
-            foreach (var g in groups)
-                Groups.Add(g);
-
-            OnPropertyChanged(nameof(HasNoGroups));
+            _allGroups = [..groups];
+            ApplyFilterAndSort();
         }
         finally
         {
@@ -104,8 +115,8 @@ public partial class SocialViewModel : PageViewModel
             var result = await _socialApiService.DeleteSharedGroupAsync(group.Id);
             if (result)
             {
-                Groups.Remove(group);
-                OnPropertyChanged(nameof(HasNoGroups));
+                _allGroups.RemoveAll(g => g.Id == group.Id);
+                ApplyFilterAndSort();
                 _toastService.ShowSuccess("Group deleted.");
             }
             else
@@ -146,8 +157,47 @@ public partial class SocialViewModel : PageViewModel
 
     private void OnGroupDeletedReceived(Guid groupId)
     {
-        var existing = Groups.FirstOrDefault(g => g.Id == groupId);
-        if (existing != null) Groups.Remove(existing);
-        OnPropertyChanged(nameof(HasNoGroups));
+        _allGroups.RemoveAll(g => g.Id == groupId);
+        ApplyFilterAndSort();
+    }
+
+    partial void OnSearchTextChanged(string value) => ApplyFilterAndSort();
+
+    [RelayCommand]
+    private void ToggleSort()
+    {
+        _sortDirection = _sortDirection switch
+        {
+            null => true,
+            true => false,
+            false => null
+        };
+        OnPropertyChanged(nameof(SortButtonText));
+        ApplyFilterAndSort();
+    }
+
+    private void ApplyFilterAndSort()
+    {
+        var filtered = _allGroups.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(SearchText))
+        {
+            var search = SearchText.Trim();
+            filtered = filtered.Where(g =>
+                g.Title.Contains(search, StringComparison.OrdinalIgnoreCase));
+        }
+
+        filtered = _sortDirection switch
+        {
+            true => filtered.OrderBy(g => g.Title, StringComparer.OrdinalIgnoreCase),
+            false => filtered.OrderByDescending(g => g.Title, StringComparer.OrdinalIgnoreCase),
+            _ => filtered
+        };
+
+        Groups.Clear();
+        foreach (var g in filtered)
+            Groups.Add(g);
+
+        HasNoGroups = Groups.Count == 0;
     }
 }

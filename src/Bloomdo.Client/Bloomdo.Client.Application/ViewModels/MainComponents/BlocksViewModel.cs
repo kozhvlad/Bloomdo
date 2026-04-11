@@ -18,7 +18,10 @@ public partial class BlocksViewModel : PageViewModel
     private readonly ISubscriptionApiService? _subscriptionApiService;
     private readonly IConnectivityService? _connectivityService;
     private readonly ILocalSubscriptionStore? _localSubscriptionStore;
+    private readonly IConfirmDialogService? _confirmDialogService;
     private List<BlockRuleResponse> _cachedRules = [];
+    private List<BlockerItem> _allBlockers = [];
+    private bool? _sortDirection;
 
     [ObservableProperty]
     private bool _isMenuOpen;
@@ -42,6 +45,16 @@ public partial class BlocksViewModel : PageViewModel
     [ObservableProperty]
     private bool _isOffline;
 
+    [ObservableProperty]
+    private string _searchText = string.Empty;
+
+    public string SortButtonText => _sortDirection switch
+    {
+        true => "A \u2192 Z",
+        false => "Z \u2192 A",
+        _ => "Sort"
+    };
+
     public bool IsEditing => Editor is not null;
 
     public ObservableCollection<BlockerItem> Blockers { get; } = [];
@@ -54,7 +67,8 @@ public partial class BlocksViewModel : PageViewModel
         IAppIconProvider? appIconProvider = null,
         ISubscriptionApiService? subscriptionApiService = null,
         IConnectivityService? connectivityService = null,
-        ILocalSubscriptionStore? localSubscriptionStore = null)
+        ILocalSubscriptionStore? localSubscriptionStore = null,
+        IConfirmDialogService? confirmDialogService = null)
     {
         _blockApiService = blockApiService;
         _installedAppsService = installedAppsService;
@@ -64,6 +78,7 @@ public partial class BlocksViewModel : PageViewModel
         _subscriptionApiService = subscriptionApiService;
         _connectivityService = connectivityService;
         _localSubscriptionStore = localSubscriptionStore;
+        _confirmDialogService = confirmDialogService;
     }
 
     public override void OnAppearing()
@@ -87,7 +102,7 @@ public partial class BlocksViewModel : PageViewModel
             if (status?.Limits is not null)
             {
                 MaxBlockRules = status.Limits.MaxBlockRules;
-                IsLimitReached = !status.IsPremium && Blockers.Count >= status.Limits.MaxBlockRules;
+                IsLimitReached = !status.IsPremium && _allBlockers.Count >= status.Limits.MaxBlockRules;
 
                 if (_localSubscriptionStore is not null)
                     _ = _localSubscriptionStore.SaveAsync(status);
@@ -109,7 +124,7 @@ public partial class BlocksViewModel : PageViewModel
             if (status?.Limits is not null)
             {
                 MaxBlockRules = status.Limits.MaxBlockRules;
-                IsLimitReached = !status.IsPremium && Blockers.Count >= status.Limits.MaxBlockRules;
+                IsLimitReached = !status.IsPremium && _allBlockers.Count >= status.Limits.MaxBlockRules;
             }
         }
         catch (Exception ex)
@@ -157,6 +172,14 @@ public partial class BlocksViewModel : PageViewModel
     {
         if (item is null || _blockApiService is null || item.IsDeleting) return;
 
+        if (_confirmDialogService is not null)
+        {
+            var confirmed = await _confirmDialogService.ConfirmAsync(
+                "Delete Block Rule",
+                $"Are you sure you want to delete \"{item.Title}\"? This action cannot be undone.");
+            if (!confirmed) return;
+        }
+
         item.IsDeleting = true;
 
         try
@@ -164,10 +187,10 @@ public partial class BlocksViewModel : PageViewModel
             var deleted = await _blockApiService.DeleteBlockRuleAsync(item.Id);
             if (deleted)
             {
-                Blockers.Remove(item);
+                _allBlockers.RemoveAll(b => b.Id == item.Id);
                 _cachedRules.RemoveAll(r => r.Id == item.Id);
-                HasNoBlockers = Blockers.Count == 0;
-                IsLimitReached = MaxBlockRules > 0 && Blockers.Count >= MaxBlockRules;
+                ApplyFilterAndSort();
+                IsLimitReached = MaxBlockRules > 0 && _allBlockers.Count >= MaxBlockRules;
                 await SyncRulesToLocalStoreAsync();
             }
         }
@@ -214,8 +237,8 @@ public partial class BlocksViewModel : PageViewModel
         if (cached is null) return;
 
         var editor = new BlockEditorViewModel(_blockApiService, _installedAppsService, _activityApiService, _appIconProvider);
-        editor.Configure(cached.Type, cached.Title);
-        editor.Saved += OnBlockSaved;
+        editor.ConfigureForEdit(cached);
+        editor.Updated += OnBlockUpdated;
         editor.Cancelled += OnEditorCancelled;
         Editor = editor;
     }
@@ -231,10 +254,39 @@ public partial class BlocksViewModel : PageViewModel
 
     private async void OnBlockSaved(BlockRuleResponse response)
     {
-        Blockers.Add(MapToBlockerItem(response));
+        _allBlockers.Add(MapToBlockerItem(response));
         _cachedRules.Add(response);
-        HasNoBlockers = false;
-        IsLimitReached = MaxBlockRules > 0 && Blockers.Count >= MaxBlockRules;
+        ApplyFilterAndSort();
+        IsLimitReached = MaxBlockRules > 0 && _allBlockers.Count >= MaxBlockRules;
+        CloseEditor();
+        await SyncRulesToLocalStoreAsync();
+    }
+
+    private async void OnBlockUpdated(BlockRuleResponse response)
+    {
+        var existingIndex = -1;
+        for (var i = 0; i < Blockers.Count; i++)
+        {
+            if (Blockers[i].Id == response.Id)
+            {
+                existingIndex = i;
+                break;
+            }
+        }
+
+        if (existingIndex >= 0)
+        {
+            var updatedItem = MapToBlockerItem(response);
+            var allIndex = _allBlockers.FindIndex(b => b.Id == response.Id);
+            if (allIndex >= 0)
+                _allBlockers[allIndex] = updatedItem;
+            Blockers[existingIndex] = updatedItem;
+        }
+
+        var cachedIndex = _cachedRules.FindIndex(r => r.Id == response.Id);
+        if (cachedIndex >= 0)
+            _cachedRules[cachedIndex] = response;
+
         CloseEditor();
         await SyncRulesToLocalStoreAsync();
     }
@@ -249,6 +301,7 @@ public partial class BlocksViewModel : PageViewModel
         if (Editor is not null)
         {
             Editor.Saved -= OnBlockSaved;
+            Editor.Updated -= OnBlockUpdated;
             Editor.Cancelled -= OnEditorCancelled;
             Editor = null;
         }
@@ -286,15 +339,16 @@ public partial class BlocksViewModel : PageViewModel
 
             Blockers.Clear();
             _cachedRules.Clear();
+            _allBlockers.Clear();
 
             if (rules is not null)
             {
                 _cachedRules = [..rules];
                 foreach (var rule in rules)
-                    Blockers.Add(MapToBlockerItem(rule));
+                    _allBlockers.Add(MapToBlockerItem(rule));
             }
 
-            HasNoBlockers = Blockers.Count == 0;
+            ApplyFilterAndSort();
 
             if (!IsOffline)
                 await SyncRulesToLocalStoreAsync();
@@ -321,6 +375,47 @@ public partial class BlocksViewModel : PageViewModel
         {
             System.Diagnostics.Debug.WriteLine($"SyncRulesToLocalStore error: {ex}");
         }
+    }
+
+    partial void OnSearchTextChanged(string value) => ApplyFilterAndSort();
+
+    [RelayCommand]
+    private void ToggleSort()
+    {
+        _sortDirection = _sortDirection switch
+        {
+            null => true,
+            true => false,
+            false => null
+        };
+        OnPropertyChanged(nameof(SortButtonText));
+        ApplyFilterAndSort();
+    }
+
+    private void ApplyFilterAndSort()
+    {
+        var filtered = _allBlockers.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(SearchText))
+        {
+            var search = SearchText.Trim();
+            filtered = filtered.Where(b =>
+                b.Title.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                b.TypeLabel.Contains(search, StringComparison.OrdinalIgnoreCase));
+        }
+
+        filtered = _sortDirection switch
+        {
+            true => filtered.OrderBy(b => b.Title, StringComparer.OrdinalIgnoreCase),
+            false => filtered.OrderByDescending(b => b.Title, StringComparer.OrdinalIgnoreCase),
+            _ => filtered
+        };
+
+        Blockers.Clear();
+        foreach (var b in filtered)
+            Blockers.Add(b);
+
+        HasNoBlockers = Blockers.Count == 0;
     }
 
     private static BlockerItem MapToBlockerItem(BlockRuleResponse rule)

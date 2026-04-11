@@ -1,3 +1,5 @@
+using Bloomdo.Shared.DTOs.Friends;
+
 namespace Bloomdo.Shared.DTOs.Activities;
 
 public class DailyActivitiesResponse
@@ -37,4 +39,9 @@ public class DailyActivityItemDto
     public DateTime? CompletedAtUtc { get; set; }
     public VerificationTemplate? VerificationTemplate { get; set; }
     public string? CustomVerificationCriteria { get; set; }
+
+    /// <summary>
+    /// Members who completed this task today (shared groups only).
+    /// </summary>
+    public List<ProfileSummaryDto> CompletedBy { get; set; } = [];
 }

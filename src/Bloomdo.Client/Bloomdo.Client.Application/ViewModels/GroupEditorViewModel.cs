@@ -88,11 +88,20 @@ public partial class GroupEditorViewModel : PageViewModel
     [ObservableProperty]
     private bool _isTaskEmojiPickerOpen;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsNewTaskCustomVerification))]
+    private VerificationTemplate _newTaskVerificationTemplate = VerificationTemplate.Workout;
+
+    [ObservableProperty]
+    private string? _newTaskCustomVerificationCriteria;
+
     public bool IsNewTaskTimer => NewTaskType == ActivityItemType.Timer;
     public bool IsNewTaskCount => NewTaskType == ActivityItemType.Count;
     public bool IsNewTaskSteps => NewTaskType == ActivityItemType.Steps;
     public bool IsNewTaskCheckbox => NewTaskType == ActivityItemType.Checkbox;
     public bool IsNewTaskPhoto => NewTaskType == ActivityItemType.PhotoVerification;
+    public bool IsNewTaskCustomVerification => IsNewTaskPhoto
+                                               && NewTaskVerificationTemplate == VerificationTemplate.Custom;
 
     public string NewTaskPreviewSubtitle => NewTaskType switch
     {
@@ -100,6 +109,7 @@ public partial class GroupEditorViewModel : PageViewModel
         ActivityItemType.Count => $"0 / {NewTaskTargetCount}",
         ActivityItemType.Steps => $"0 / {NewTaskTargetCount} steps",
         ActivityItemType.Checkbox => "Tap to complete",
+        ActivityItemType.PhotoVerification => "📷 Photo required",
         _ => string.Empty
     };
 
@@ -284,6 +294,13 @@ public partial class GroupEditorViewModel : PageViewModel
     }
 
     [RelayCommand]
+    private void SelectNewTaskVerificationTemplate(string template)
+    {
+        if (Enum.TryParse<VerificationTemplate>(template, out var parsed))
+            NewTaskVerificationTemplate = parsed;
+    }
+
+    [RelayCommand]
     private void IncrementTargetCount() => NewTaskTargetCount = Math.Min(NewTaskTargetCount + 1, 999);
 
     [RelayCommand]
@@ -345,6 +362,8 @@ public partial class GroupEditorViewModel : PageViewModel
         NewTaskTargetCount = 8;
         NewTaskIcon = "✨";
         NewTaskColor = GroupColor;
+        NewTaskVerificationTemplate = VerificationTemplate.Workout;
+        NewTaskCustomVerificationCriteria = null;
         IsAddingTask = true;
         IsTaskEmojiPickerOpen = false;
         OnPropertyChanged(nameof(IsNewTaskTimer));
@@ -377,7 +396,9 @@ public partial class GroupEditorViewModel : PageViewModel
                 DurationMinutes = IsNewTaskTimer ? NewTaskDurationMinutes : null,
                 TargetCount = (IsNewTaskCount || IsNewTaskSteps) ? NewTaskTargetCount : null,
                 Icon = NewTaskIcon,
-                Color = NewTaskColor
+                Color = NewTaskColor,
+                VerificationTemplate = IsNewTaskPhoto ? NewTaskVerificationTemplate : null,
+                CustomVerificationCriteria = IsNewTaskCustomVerification ? NewTaskCustomVerificationCriteria : null
             };
 
             var result = await _activityApi.CreateItemAsync(request);
@@ -407,7 +428,9 @@ public partial class GroupEditorViewModel : PageViewModel
                 DurationMinutes = IsNewTaskTimer ? NewTaskDurationMinutes : null,
                 TargetCount = (IsNewTaskCount || IsNewTaskSteps) ? NewTaskTargetCount : null,
                 Icon = NewTaskIcon,
-                Color = NewTaskColor
+                Color = NewTaskColor,
+                VerificationTemplate = IsNewTaskPhoto ? NewTaskVerificationTemplate : null,
+                CustomVerificationCriteria = IsNewTaskCustomVerification ? NewTaskCustomVerificationCriteria : null
             });
         }
 
@@ -491,7 +514,9 @@ public partial class GroupEditorViewModel : PageViewModel
                             DurationMinutes = task.IsTimerType ? task.DurationMinutes : null,
                             TargetCount = (task.IsCountType || task.IsStepsType) ? task.TargetCount : null,
                             Icon = task.Icon,
-                            Color = task.Color
+                            Color = task.Color,
+                            VerificationTemplate = task.IsPhotoVerificationType ? task.VerificationTemplate : null,
+                            CustomVerificationCriteria = task.IsPhotoVerificationType ? task.CustomVerificationCriteria : null
                         };
                         await _activityApi.CreateItemAsync(itemReq);
                     }

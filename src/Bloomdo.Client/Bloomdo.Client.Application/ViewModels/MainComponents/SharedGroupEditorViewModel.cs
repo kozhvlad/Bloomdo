@@ -87,9 +87,20 @@ public partial class SharedGroupEditorViewModel : PageViewModel
     [ObservableProperty]
     private bool _isTaskEmojiPickerOpen;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsNewTaskCustomVerification))]
+    private VerificationTemplate _newTaskVerificationTemplate = VerificationTemplate.Workout;
+
+    [ObservableProperty]
+    private string? _newTaskCustomVerificationCriteria;
+
     public bool IsNewTaskTimer => NewTaskType == ActivityItemType.Timer;
     public bool IsNewTaskCount => NewTaskType == ActivityItemType.Count;
     public bool IsNewTaskSteps => NewTaskType == ActivityItemType.Steps;
+    public bool IsNewTaskCheckbox => NewTaskType == ActivityItemType.Checkbox;
+    public bool IsNewTaskPhoto => NewTaskType == ActivityItemType.PhotoVerification;
+    public bool IsNewTaskCustomVerification => IsNewTaskPhoto
+                                               && NewTaskVerificationTemplate == VerificationTemplate.Custom;
 
     public string NewTaskPreviewSubtitle => NewTaskType switch
     {
@@ -97,6 +108,7 @@ public partial class SharedGroupEditorViewModel : PageViewModel
         ActivityItemType.Count => $"0 / {NewTaskTargetCount}",
         ActivityItemType.Steps => $"0 / {NewTaskTargetCount} steps",
         ActivityItemType.Checkbox => "Tap to complete",
+        ActivityItemType.PhotoVerification => "📷 Photo required",
         _ => string.Empty
     };
 
@@ -449,6 +461,8 @@ public partial class SharedGroupEditorViewModel : PageViewModel
         NewTaskTargetCount = 8;
         NewTaskIcon = "\u2728";
         NewTaskColor = EditColor;
+        NewTaskVerificationTemplate = VerificationTemplate.Workout;
+        NewTaskCustomVerificationCriteria = null;
         IsAddingTask = true;
         IsTaskEmojiPickerOpen = false;
         OnPropertyChanged(nameof(IsNewTaskTimer));
@@ -479,7 +493,9 @@ public partial class SharedGroupEditorViewModel : PageViewModel
                 DurationMinutes = IsNewTaskTimer ? NewTaskDurationMinutes : null,
                 TargetCount = (IsNewTaskCount || IsNewTaskSteps) ? NewTaskTargetCount : null,
                 Icon = NewTaskIcon,
-                Color = NewTaskColor
+                Color = NewTaskColor,
+                VerificationTemplate = IsNewTaskPhoto ? NewTaskVerificationTemplate : null,
+                CustomVerificationCriteria = IsNewTaskCustomVerification ? NewTaskCustomVerificationCriteria : null
             });
             _toastService.ShowSuccess("Task added!");
         }
@@ -494,7 +510,9 @@ public partial class SharedGroupEditorViewModel : PageViewModel
                 DurationMinutes = IsNewTaskTimer ? NewTaskDurationMinutes : null,
                 TargetCount = (IsNewTaskCount || IsNewTaskSteps) ? NewTaskTargetCount : null,
                 Icon = NewTaskIcon,
-                Color = NewTaskColor
+                Color = NewTaskColor,
+                VerificationTemplate = IsNewTaskPhoto ? NewTaskVerificationTemplate : null,
+                CustomVerificationCriteria = IsNewTaskCustomVerification ? NewTaskCustomVerificationCriteria : null
             };
 
             var result = await _activityApiService.CreateItemAsync(request);
@@ -531,6 +549,8 @@ public partial class SharedGroupEditorViewModel : PageViewModel
         OnPropertyChanged(nameof(IsNewTaskTimer));
         OnPropertyChanged(nameof(IsNewTaskCount));
         OnPropertyChanged(nameof(IsNewTaskSteps));
+        OnPropertyChanged(nameof(IsNewTaskCheckbox));
+        OnPropertyChanged(nameof(IsNewTaskPhoto));
     }
 
     [RelayCommand]
@@ -580,6 +600,13 @@ public partial class SharedGroupEditorViewModel : PageViewModel
 
     [RelayCommand]
     private void DecrementTargetSteps() => NewTaskTargetCount = Math.Max(NewTaskTargetCount - 1000, 1000);
+
+    [RelayCommand]
+    private void SelectNewTaskVerificationTemplate(string template)
+    {
+        if (Enum.TryParse<VerificationTemplate>(template, out var parsed))
+            NewTaskVerificationTemplate = parsed;
+    }
 
     // --- Delete Group ---
 

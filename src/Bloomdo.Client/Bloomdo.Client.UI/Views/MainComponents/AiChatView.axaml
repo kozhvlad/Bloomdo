@@ -160,7 +160,7 @@
         </Grid>
 
         <!-- History overlay -->
-        <Panel IsVisible="{Binding IsHistoryVisible}">
+        <Panel Grid.RowSpan="2" IsVisible="{Binding IsHistoryVisible}">
             <!-- Dark backdrop — tap to close -->
             <Button Background="#B0000000" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                     BorderThickness="0" CornerRadius="0" Opacity="1"

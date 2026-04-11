@@ -15,6 +15,7 @@ public partial class BlockEditorViewModel : ObservableObject
     private readonly IDailyActivityApiService? _activityApiService;
     private readonly IAppIconProvider? _appIconProvider;
     private List<SelectableAppItem> _allApps = [];
+    private Guid? _editingRuleId;
 
     [ObservableProperty]
     private BlockType _selectedType;
@@ -105,6 +106,7 @@ public partial class BlockEditorViewModel : ObservableObject
     };
 
     public event Action<BlockRuleResponse>? Saved;
+    public event Action<BlockRuleResponse>? Updated;
     public event Action? Cancelled;
 
     public BlockEditorViewModel(
@@ -121,6 +123,7 @@ public partial class BlockEditorViewModel : ObservableObject
 
     public void Configure(BlockType type, string defaultTitle)
     {
+        _editingRuleId = null;
         SelectedType = type;
         BlockTitle = defaultTitle;
         OnPropertyChanged(nameof(IsScheduleType));
@@ -132,6 +135,43 @@ public partial class BlockEditorViewModel : ObservableObject
 
         if (type == BlockType.Bloomdo)
             _ = LoadGroupsAsync();
+    }
+
+    public void ConfigureForEdit(BlockRuleResponse rule)
+    {
+        _editingRuleId = rule.Id;
+        SelectedType = rule.Type;
+        BlockTitle = rule.Title;
+
+        // Populate type-specific fields
+        if (rule.StartTime.HasValue)
+            StartTime = rule.StartTime.Value.ToTimeSpan();
+        if (rule.EndTime.HasValue)
+            EndTime = rule.EndTime.Value.ToTimeSpan();
+        if (rule.Days is not null)
+        {
+            Monday = rule.Days.Contains(DayOfWeek.Monday);
+            Tuesday = rule.Days.Contains(DayOfWeek.Tuesday);
+            Wednesday = rule.Days.Contains(DayOfWeek.Wednesday);
+            Thursday = rule.Days.Contains(DayOfWeek.Thursday);
+            Friday = rule.Days.Contains(DayOfWeek.Friday);
+            Saturday = rule.Days.Contains(DayOfWeek.Saturday);
+            Sunday = rule.Days.Contains(DayOfWeek.Sunday);
+        }
+        if (rule.DailyLimitMinutes.HasValue)
+            DailyLimitMinutes = rule.DailyLimitMinutes.Value;
+        if (rule.FocusDurationMinutes.HasValue)
+            FocusDurationMinutes = rule.FocusDurationMinutes.Value;
+
+        OnPropertyChanged(nameof(IsScheduleType));
+        OnPropertyChanged(nameof(IsLimitType));
+        OnPropertyChanged(nameof(IsFocusType));
+        OnPropertyChanged(nameof(IsBloomdoType));
+        OnPropertyChanged(nameof(TypeColor));
+        _ = LoadAppsAsync(rule.BlockedPackages);
+
+        if (rule.Type == BlockType.Bloomdo)
+            _ = LoadGroupsAsync(rule.RequiredActivityGroupId);
     }
 
     partial void OnSearchTextChanged(string value) => ApplyFilter();
@@ -164,17 +204,35 @@ public partial class BlockEditorViewModel : ObservableObject
         IsSaving = true;
         try
         {
-            var request = BuildRequest();
-            System.Diagnostics.Debug.WriteLine($"Creating block: {request.Title}, type={request.Type}, apps={request.BlockedPackages.Count}");
-            var result = await _blockApiService.CreateBlockRuleAsync(request);
-            if (result is not null)
+            if (_editingRuleId.HasValue)
             {
-                System.Diagnostics.Debug.WriteLine($"Block created: {result.Id}");
-                Saved?.Invoke(result);
+                // Update existing rule
+                var updateRequest = BuildUpdateRequest();
+                var result = await _blockApiService.UpdateBlockRuleAsync(_editingRuleId.Value, updateRequest);
+                if (result is not null)
+                {
+                    Updated?.Invoke(result);
+                }
+                else
+                {
+                    ErrorMessage = "Server returned empty response";
+                }
             }
             else
             {
-                ErrorMessage = "Server returned empty response";
+                // Create new rule
+                var request = BuildRequest();
+                System.Diagnostics.Debug.WriteLine($"Creating block: {request.Title}, type={request.Type}, apps={request.BlockedPackages.Count}");
+                var result = await _blockApiService.CreateBlockRuleAsync(request);
+                if (result is not null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Block created: {result.Id}");
+                    Saved?.Invoke(result);
+                }
+                else
+                {
+                    ErrorMessage = "Server returned empty response";
+                }
             }
         }
         catch (HttpRequestException ex)
@@ -216,7 +274,7 @@ public partial class BlockEditorViewModel : ObservableObject
         SelectedGroup = item;
     }
 
-    private async Task LoadGroupsAsync()
+    private async Task LoadGroupsAsync(Guid? preSelectedGroupId = null)
     {
         if (_activityApiService is null) return;
 
@@ -229,7 +287,15 @@ public partial class BlockEditorViewModel : ObservableObject
             if (groups is not null)
             {
                 foreach (var group in groups)
-                    AvailableGroups.Add(new SelectableGroupItem(group.Id, group.Title));
+                {
+                    var item = new SelectableGroupItem(group.Id, group.Title);
+                    if (preSelectedGroupId.HasValue && group.Id == preSelectedGroupId.Value)
+                    {
+                        item.IsSelected = true;
+                        SelectedGroup = item;
+                    }
+                    AvailableGroups.Add(item);
+                }
             }
         }
         catch (Exception ex)
@@ -242,7 +308,7 @@ public partial class BlockEditorViewModel : ObservableObject
         }
     }
 
-    private async Task LoadAppsAsync()
+    private async Task LoadAppsAsync(List<string>? preSelectedPackages = null)
     {
         if (_installedAppsService is null) return;
 
@@ -250,12 +316,20 @@ public partial class BlockEditorViewModel : ObservableObject
         try
         {
             var apps = await _installedAppsService.GetInstalledAppsAsync();
+            var selectedSet = preSelectedPackages?.ToHashSet(StringComparer.OrdinalIgnoreCase);
             _allApps = apps
                 .OrderBy(a => a.AppLabel)
-                .Select(a => new SelectableAppItem(a.PackageName, a.AppLabel, iconBytes: _appIconProvider?.GetIcon(a.PackageName)))
+                .Select(a =>
+                {
+                    var item = new SelectableAppItem(a.PackageName, a.AppLabel, iconBytes: _appIconProvider?.GetIcon(a.PackageName));
+                    if (selectedSet is not null && selectedSet.Contains(a.PackageName))
+                        item.IsSelected = true;
+                    return item;
+                })
                 .ToList();
 
             ApplyFilter();
+            OnPropertyChanged(nameof(SelectedAppCountText));
         }
         catch (Exception ex)
         {
@@ -290,6 +364,26 @@ public partial class BlockEditorViewModel : ObservableObject
         {
             Title = BlockTitle,
             Type = SelectedType,
+            BlockedPackages = selectedPackages,
+            StartTime = IsScheduleType ? TimeOnly.FromTimeSpan(StartTime) : null,
+            EndTime = IsScheduleType ? TimeOnly.FromTimeSpan(EndTime) : null,
+            Days = IsScheduleType ? GetSelectedDays() : null,
+            DailyLimitMinutes = IsLimitType ? (int)DailyLimitMinutes : null,
+            FocusDurationMinutes = IsFocusType ? (int)FocusDurationMinutes : null,
+            RequiredActivityGroupId = IsBloomdoType ? SelectedGroup?.Id : null
+        };
+    }
+
+    private UpdateBlockRuleRequest BuildUpdateRequest()
+    {
+        var selectedPackages = _allApps
+            .Where(a => a.IsSelected)
+            .Select(a => a.PackageName)
+            .ToList();
+
+        return new UpdateBlockRuleRequest
+        {
+            Title = BlockTitle,
             BlockedPackages = selectedPackages,
             StartTime = IsScheduleType ? TimeOnly.FromTimeSpan(StartTime) : null,
             EndTime = IsScheduleType ? TimeOnly.FromTimeSpan(EndTime) : null,

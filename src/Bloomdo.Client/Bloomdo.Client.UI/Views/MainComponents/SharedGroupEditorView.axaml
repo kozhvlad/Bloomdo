@@ -15,6 +15,7 @@
     <UserControl.Resources>
         <converters:BlockTypeColorConverter x:Key="GroupColorConverter"/>
         <converters:AvatarJsonToBrushConverter x:Key="AvatarJsonToBrush"/>
+        <converters:BoolToOpacityConverter x:Key="BoolToOpacity"/>
     </UserControl.Resources>
 
     <UserControl.Styles>
@@ -608,6 +609,7 @@
                                                 HorizontalAlignment="Stretch"
                                                 HorizontalContentAlignment="Center"
                                                 CornerRadius="8"
+                                                Opacity="{Binding IsNewTaskTimer, Converter={StaticResource BoolToOpacity}}"
                                                 Command="{Binding SelectNewTaskTypeCommand}"
                                                 CommandParameter="Timer">
                                             <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
@@ -620,6 +622,7 @@
                                                 HorizontalAlignment="Stretch"
                                                 HorizontalContentAlignment="Center"
                                                 CornerRadius="8"
+                                                Opacity="{Binding IsNewTaskCount, Converter={StaticResource BoolToOpacity}}"
                                                 Command="{Binding SelectNewTaskTypeCommand}"
                                                 CommandParameter="Count">
                                             <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
@@ -632,6 +635,7 @@
                                                 HorizontalAlignment="Stretch"
                                                 HorizontalContentAlignment="Center"
                                                 CornerRadius="8"
+                                                Opacity="{Binding IsNewTaskSteps, Converter={StaticResource BoolToOpacity}}"
                                                 Command="{Binding SelectNewTaskTypeCommand}"
                                                 CommandParameter="Steps">
                                             <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
@@ -644,6 +648,7 @@
                                                 HorizontalAlignment="Stretch"
                                                 HorizontalContentAlignment="Center"
                                                 CornerRadius="8"
+                                                Opacity="{Binding IsNewTaskCheckbox, Converter={StaticResource BoolToOpacity}}"
                                                 Command="{Binding SelectNewTaskTypeCommand}"
                                                 CommandParameter="Checkbox">
                                             <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
@@ -656,6 +661,7 @@
                                                 HorizontalAlignment="Stretch"
                                                 HorizontalContentAlignment="Center"
                                                 CornerRadius="8"
+                                                Opacity="{Binding IsNewTaskPhoto, Converter={StaticResource BoolToOpacity}}"
                                                 Command="{Binding SelectNewTaskTypeCommand}"
                                                 CommandParameter="Photo">
                                             <StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
@@ -665,6 +671,126 @@
                                             </StackPanel>
                                         </Button>
                                     </Grid>
+                                </StackPanel>
+
+                                <!-- Photo Verification Template -->
+                                <StackPanel IsVisible="{Binding IsNewTaskPhoto}" Spacing="6">
+                                    <TextBlock Text="Verification Template" FontSize="11" Opacity="0.5"
+                                               Foreground="{DynamicResource ForegroundColor}"/>
+                                    <TextBlock Text="AI will check the photo against this criteria"
+                                               FontSize="10" Opacity="0.3"
+                                               Foreground="{DynamicResource ForegroundColor}"/>
+                                    <WrapPanel>
+                                        <Button Margin="0,0,6,6" Padding="8,5" CornerRadius="8"
+                                                Command="{Binding SelectNewTaskVerificationTemplateCommand}"
+                                                CommandParameter="Workout">
+                                            <StackPanel Orientation="Horizontal" Spacing="3">
+                                                <TextBlock Text="&#x1F4AA;" FontFamily="{StaticResource EmojiFont}" FontSize="12" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Workout" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource ForegroundColor}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Margin="0,0,6,6" Padding="8,5" CornerRadius="8"
+                                                Command="{Binding SelectNewTaskVerificationTemplateCommand}"
+                                                CommandParameter="Meal">
+                                            <StackPanel Orientation="Horizontal" Spacing="3">
+                                                <TextBlock Text="&#x1F37D;&#xFE0F;" FontFamily="{StaticResource EmojiFont}" FontSize="12" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Meal" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource ForegroundColor}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Margin="0,0,6,6" Padding="8,5" CornerRadius="8"
+                                                Command="{Binding SelectNewTaskVerificationTemplateCommand}"
+                                                CommandParameter="Workspace">
+                                            <StackPanel Orientation="Horizontal" Spacing="3">
+                                                <TextBlock Text="&#x1F4BC;" FontFamily="{StaticResource EmojiFont}" FontSize="12" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Workspace" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource ForegroundColor}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Margin="0,0,6,6" Padding="8,5" CornerRadius="8"
+                                                Command="{Binding SelectNewTaskVerificationTemplateCommand}"
+                                                CommandParameter="Reading">
+                                            <StackPanel Orientation="Horizontal" Spacing="3">
+                                                <TextBlock Text="&#x1F4D6;" FontFamily="{StaticResource EmojiFont}" FontSize="12" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Reading" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource ForegroundColor}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Margin="0,0,6,6" Padding="8,5" CornerRadius="8"
+                                                Command="{Binding SelectNewTaskVerificationTemplateCommand}"
+                                                CommandParameter="Outdoors">
+                                            <StackPanel Orientation="Horizontal" Spacing="3">
+                                                <TextBlock Text="&#x1F33F;" FontFamily="{StaticResource EmojiFont}" FontSize="12" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Outdoors" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource ForegroundColor}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Margin="0,0,6,6" Padding="8,5" CornerRadius="8"
+                                                Command="{Binding SelectNewTaskVerificationTemplateCommand}"
+                                                CommandParameter="Sleep">
+                                            <StackPanel Orientation="Horizontal" Spacing="3">
+                                                <TextBlock Text="&#x1F634;" FontFamily="{StaticResource EmojiFont}" FontSize="12" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Sleep" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource ForegroundColor}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Margin="0,0,6,6" Padding="8,5" CornerRadius="8"
+                                                Command="{Binding SelectNewTaskVerificationTemplateCommand}"
+                                                CommandParameter="Meditation">
+                                            <StackPanel Orientation="Horizontal" Spacing="3">
+                                                <TextBlock Text="&#x1F9D8;" FontFamily="{StaticResource EmojiFont}" FontSize="12" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Meditation" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource ForegroundColor}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Margin="0,0,6,6" Padding="8,5" CornerRadius="8"
+                                                Command="{Binding SelectNewTaskVerificationTemplateCommand}"
+                                                CommandParameter="Cleaning">
+                                            <StackPanel Orientation="Horizontal" Spacing="3">
+                                                <TextBlock Text="&#x1F9F9;" FontFamily="{StaticResource EmojiFont}" FontSize="12" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Cleaning" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource ForegroundColor}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Margin="0,0,6,6" Padding="8,5" CornerRadius="8"
+                                                Command="{Binding SelectNewTaskVerificationTemplateCommand}"
+                                                CommandParameter="Water">
+                                            <StackPanel Orientation="Horizontal" Spacing="3">
+                                                <TextBlock Text="&#x1F4A7;" FontFamily="{StaticResource EmojiFont}" FontSize="12" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Water" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource ForegroundColor}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Margin="0,0,6,6" Padding="8,5" CornerRadius="8"
+                                                Command="{Binding SelectNewTaskVerificationTemplateCommand}"
+                                                CommandParameter="ColdShower">
+                                            <StackPanel Orientation="Horizontal" Spacing="3">
+                                                <TextBlock Text="&#x1F6BF;" FontFamily="{StaticResource EmojiFont}" FontSize="12" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Cold Shower" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource ForegroundColor}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Margin="0,0,6,6" Padding="8,5" CornerRadius="8"
+                                                Command="{Binding SelectNewTaskVerificationTemplateCommand}"
+                                                CommandParameter="Study">
+                                            <StackPanel Orientation="Horizontal" Spacing="3">
+                                                <TextBlock Text="&#x1F4DA;" FontFamily="{StaticResource EmojiFont}" FontSize="12" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Study" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource ForegroundColor}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Margin="0,0,6,6" Padding="8,5" CornerRadius="8"
+                                                Command="{Binding SelectNewTaskVerificationTemplateCommand}"
+                                                CommandParameter="Custom">
+                                            <StackPanel Orientation="Horizontal" Spacing="3">
+                                                <TextBlock Text="&#x270F;&#xFE0F;" FontFamily="{StaticResource EmojiFont}" FontSize="12" VerticalAlignment="Center"/>
+                                                <TextBlock Text="Custom" FontSize="10" FontWeight="SemiBold" Foreground="{DynamicResource ForegroundColor}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </WrapPanel>
+                                    <Border Background="#15FFFFFF" CornerRadius="6" Padding="8,4">
+                                        <TextBlock FontSize="10" Foreground="{DynamicResource ForegroundColor}" Opacity="0.8">
+                                            <Run Text="Selected: "/>
+                                            <Run Text="{Binding NewTaskVerificationTemplate}" FontWeight="SemiBold"/>
+                                        </TextBlock>
+                                    </Border>
+                                    <StackPanel IsVisible="{Binding IsNewTaskCustomVerification}" Spacing="4">
+                                        <TextBlock Text="Custom Criteria" FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource ForegroundColor}"/>
+                                        <TextBox Text="{Binding NewTaskCustomVerificationCriteria}"
+                                                 Watermark="Describe what the photo should show..."
+                                                 FontSize="12" AcceptsReturn="True" MaxHeight="80"/>
+                                    </StackPanel>
                                 </StackPanel>
 
                                 <!-- Duration (Timer type) -->
@@ -881,14 +1007,18 @@
                 </Button>
                 <Button Grid.Column="2"
                         Command="{Binding SaveCommand}"
-                        Classes="Primary"
+                        Background="#66BB6A"
                         HorizontalAlignment="Stretch"
                         HorizontalContentAlignment="Center"
                         Padding="0,14"
                         Height="48"
                         CornerRadius="14">
-                    <TextBlock Text="{Binding SaveButtonText}" HorizontalAlignment="Center"
-                               FontWeight="SemiBold" FontSize="15" Foreground="White"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
+                        <PathIcon Data="{x:Static shad:Icons.Check}" Width="16" Height="16"
+                                  Foreground="White"/>
+                        <TextBlock Text="{Binding SaveButtonText}" HorizontalAlignment="Center"
+                                   FontWeight="SemiBold" FontSize="15" Foreground="White"/>
+                    </StackPanel>
                 </Button>
             </Grid>
         </Border>

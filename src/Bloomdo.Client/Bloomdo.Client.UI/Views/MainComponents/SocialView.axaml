@@ -14,22 +14,36 @@
 
         <!-- Header -->
         <Border Grid.Row="0" Padding="20,48,20,16" Background="{DynamicResource Brush.Background}">
-            <Grid ColumnDefinitions="*, Auto">
-                <TextBlock Text="Social" FontSize="26" FontWeight="Bold"
-                           Foreground="{DynamicResource ForegroundLeadColor}"
-                           VerticalAlignment="Center"/>
-                <Button Grid.Column="1"
-                        Command="{Binding ShowCreatePanelCommand}"
-                        Classes="Primary"
-                        Padding="16,8"
-                        CornerRadius="20">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <PathIcon Data="{StaticResource add_regular}" Width="14" Height="14"
-                                  Foreground="{DynamicResource PrimaryForegroundColor}"/>
-                        <TextBlock Text="New Group" FontSize="13" Foreground="{DynamicResource PrimaryForegroundColor}"/>
-                    </StackPanel>
-                </Button>
-            </Grid>
+            <StackPanel Spacing="12">
+                <Grid ColumnDefinitions="*, Auto">
+                    <TextBlock Text="Social" FontSize="26" FontWeight="Bold"
+                               Foreground="{DynamicResource ForegroundLeadColor}"
+                               VerticalAlignment="Center"/>
+                    <Button Grid.Column="1"
+                            Command="{Binding ShowCreatePanelCommand}"
+                            Classes="Primary"
+                            Padding="16,8"
+                            CornerRadius="20">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <PathIcon Data="{StaticResource add_regular}" Width="14" Height="14"
+                                      Foreground="{DynamicResource PrimaryForegroundColor}"/>
+                            <TextBlock Text="New Group" FontSize="13" Foreground="{DynamicResource PrimaryForegroundColor}"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <!-- Search & toolbar -->
+                <Grid ColumnDefinitions="*,Auto" Margin="0,-4,0,-8">
+                    <TextBox Text="{Binding SearchText}"
+                             Watermark="Search groups..."
+                             FontSize="13"/>
+                    <Button Grid.Column="1" Classes="Ghost" Padding="8,6" Margin="4,0,0,0"
+                            Command="{Binding ToggleSortCommand}">
+                        <TextBlock Text="{Binding SortButtonText}" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource ForegroundColor}" Opacity="0.7"/>
+                    </Button>
+                </Grid>
+            </StackPanel>
         </Border>
 
         <!-- Loading bar -->

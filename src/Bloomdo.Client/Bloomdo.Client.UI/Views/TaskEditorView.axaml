@@ -11,6 +11,7 @@
 
     <UserControl.Resources>
         <converters:BlockTypeColorConverter x:Key="ColorConverter"/>
+        <converters:BoolToOpacityConverter x:Key="BoolToOpacity"/>
     </UserControl.Resources>
 
     <UserControl.Styles>
@@ -171,6 +172,7 @@
                                     HorizontalAlignment="Stretch"
                                     HorizontalContentAlignment="Center"
                                     CornerRadius="12"
+                                    Opacity="{Binding IsTimerType, Converter={StaticResource BoolToOpacity}}"
                                     Command="{Binding SelectTaskTypeCommand}"
                                     CommandParameter="Timer">
                                 <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
@@ -183,6 +185,7 @@
                                     HorizontalAlignment="Stretch"
                                     HorizontalContentAlignment="Center"
                                     CornerRadius="12"
+                                    Opacity="{Binding IsCountType, Converter={StaticResource BoolToOpacity}}"
                                     Command="{Binding SelectTaskTypeCommand}"
                                     CommandParameter="Count">
                                 <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
@@ -195,6 +198,7 @@
                                     HorizontalAlignment="Stretch"
                                     HorizontalContentAlignment="Center"
                                     CornerRadius="12"
+                                    Opacity="{Binding IsStepsType, Converter={StaticResource BoolToOpacity}}"
                                     Command="{Binding SelectTaskTypeCommand}"
                                     CommandParameter="Steps">
                                 <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
@@ -207,6 +211,7 @@
                                     HorizontalAlignment="Stretch"
                                     HorizontalContentAlignment="Center"
                                     CornerRadius="12"
+                                    Opacity="{Binding IsCheckboxType, Converter={StaticResource BoolToOpacity}}"
                                     Command="{Binding SelectTaskTypeCommand}"
                                     CommandParameter="Checkbox">
                                 <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
@@ -219,6 +224,7 @@
                                     HorizontalAlignment="Stretch"
                                     HorizontalContentAlignment="Center"
                                     CornerRadius="12"
+                                    Opacity="{Binding IsPhotoVerificationType, Converter={StaticResource BoolToOpacity}}"
                                     Command="{Binding SelectTaskTypeCommand}"
                                     CommandParameter="PhotoVerification">
                                 <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">

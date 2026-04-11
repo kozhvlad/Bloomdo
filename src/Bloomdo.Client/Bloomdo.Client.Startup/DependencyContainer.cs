@@ -63,8 +63,11 @@ public static class DependencyContainer
     {
         services.AddSingleton<ITokenStorage, TokenStorage>();
 
-        services.AddSingleton<IAccessTokenManager>(sp =>
-            new AccessTokenManager(() => sp.GetRequiredService<IAuthApiService>(), sp.GetRequiredService<ITokenStorage>()));
+        // Func<> factories for lazy resolution (breaks circular dependencies)
+        services.AddSingleton<Func<IAuthApiService>>(sp => () => sp.GetRequiredService<IAuthApiService>());
+        services.AddSingleton<Func<INavigationService>>(sp => () => sp.GetRequiredService<INavigationService>());
+
+        services.AddSingleton<IAccessTokenManager, AccessTokenManager>();
 
         // Preferences
         services.AddSingleton<IPreferencesService, PreferencesService>();
@@ -77,27 +80,15 @@ public static class DependencyContainer
         services.AddSingleton<IToastService, ToastService>();
 
         // Dialog system
-        services.AddSingleton(sp =>
-        {
-            var manager = new DialogManager();
-            return manager;
-        });
-        services.AddSingleton<ITimerDialogService>(sp =>
-            new TimerDialogService(sp.GetRequiredService<ShellViewModel>(), sp.GetRequiredService<ITimerStateStore>()));
-        services.AddSingleton<IConfirmDialogService>(sp => 
-            new ConfirmDialogService(sp.GetRequiredService<ShellViewModel>()));
+        services.AddSingleton<DialogManager>();
+        services.AddSingleton<ITimerDialogService, TimerDialogService>();
+        services.AddSingleton<IConfirmDialogService, ConfirmDialogService>();
 
         // Theme service
         services.AddSingleton<IThemeService, ThemeService>();
 
         // NavigationService
-        services.AddSingleton<INavigationService>(sp =>
-        {
-            var shellViewModel = sp.GetRequiredService<ShellViewModel>();
-            var authorizationService = sp.GetRequiredService<IAuthorizationService>();
-            var toastService = sp.GetRequiredService<IToastService>();
-            return new NavigationService(sp, authorizationService, toastService, shellViewModel);
-        });
+        services.AddSingleton<INavigationService, NavigationService>();
 
         // Block rule local store
         services.AddSingleton<IBlockRuleStore, BlockRuleStore>();
@@ -124,10 +115,7 @@ public static class DependencyContainer
         services.AddSingleton<ILocalSubscriptionStore, LocalSubscriptionStore>();
 
         // Usage sync service (local cache + server sync)
-        services.AddSingleton<IUsageSyncService>(sp => new UsageSyncService(
-            sp.GetService<IAppUsageService>(),
-            sp.GetRequiredService<ILocalUsageStore>(),
-            sp.GetRequiredService<IStatsApiService>()));
+        services.AddSingleton<IUsageSyncService, UsageSyncService>();
 
         // Connectivity service
         services.AddSingleton<IConnectivityService, ConnectivityService>();
@@ -139,12 +127,7 @@ public static class DependencyContainer
         services.AddSingleton<IImagePickerService, AvaloniaImagePickerService>();
 
         // Photo verification dialog service
-        services.AddSingleton<IPhotoVerificationDialogService>(sp =>
-            new PhotoVerificationDialogService(
-                sp.GetRequiredService<ShellViewModel>(),
-                sp.GetRequiredService<IDailyActivityApiService>(),
-                sp.GetRequiredService<IImagePickerService>(),
-                sp.GetRequiredService<IToastService>()));
+        services.AddSingleton<IPhotoVerificationDialogService, PhotoVerificationDialogService>();
     }
 
     private static void RegisterRepositories(IServiceCollection services)
@@ -302,175 +285,46 @@ public static class DependencyContainer
 
     private static void RegisterViewModels(IServiceCollection services)
     {
-        services.AddSingleton<ShellViewModel>(sp =>
-        {
-            var tokenManager = sp.GetRequiredService<IAccessTokenManager>();
-            var preferencesService = sp.GetRequiredService<IPreferencesService>();
-            var connectivityService = sp.GetRequiredService<IConnectivityService>();
-            return new ShellViewModel(tokenManager, preferencesService, () => sp.GetRequiredService<INavigationService>(), connectivityService);
-        });
-        
+        services.AddSingleton<ShellViewModel>();
+
         // Auth views
         services.AddTransient<LoginViewModel>();
         services.AddTransient<RegisterViewModel>();
         services.AddTransient<AccessDeniedViewModel>();
         services.AddTransient<NoConnectionViewModel>();
-        
+
         // Onboarding components
         services.AddSingleton<OnboardingViewModel>();
         services.AddTransient<WelcomeStepViewModel>();
         services.AddTransient<AskNameStepViewModel>();
         services.AddTransient<SetGoalsStepViewModel>();
-        
+
         // Main view and tabs
-        services.AddTransient<MainViewModel>(sp => new MainViewModel(
-            sp.GetRequiredService<HomeViewModel>(),
-            sp.GetRequiredService<SocialViewModel>(),
-            sp.GetRequiredService<BlocksViewModel>(),
-            sp.GetRequiredService<StatsViewModel>(),
-            sp.GetRequiredService<AiChatViewModel>(),
-            sp.GetRequiredService<SubscriptionViewModel>(),
-            sp.GetRequiredService<ProfileViewModel>(),
-            sp.GetRequiredService<ISocialApiService>(),
-            sp.GetRequiredService<ISignalRClientService>(),
-            sp.GetRequiredService<IConnectivityService>(),
-            sp.GetRequiredService<IDailyActivityApiService>(),
-            sp.GetRequiredService<ILocalActivityCache>()));
-        services.AddTransient<HomeViewModel>(sp => new HomeViewModel(
-            sp.GetRequiredService<IDailyActivityApiService>(),
-            sp.GetRequiredService<IGroupCompletionStore>(),
-            sp.GetRequiredService<IBlockRuleStore>(),
-            sp.GetRequiredService<IBlockApiService>(),
-            sp.GetRequiredService<INavigationService>(),
-            sp.GetRequiredService<ITimerDialogService>(),
-            sp.GetRequiredService<IConfirmDialogService>(),
-            sp.GetRequiredService<IPhotoVerificationDialogService>(),
-            sp.GetRequiredService<IToastService>(),
-            sp.GetRequiredService<IConnectivityService>(),
-            sp.GetRequiredService<ILocalActivityCache>()));
-        services.AddTransient<BlocksViewModel>(sp => new BlocksViewModel(
-            sp.GetRequiredService<IBlockApiService>(),
-            sp.GetService<IInstalledAppsService>(),
-            sp.GetService<IBlockRuleStore>(),
-            sp.GetRequiredService<IDailyActivityApiService>(),
-            sp.GetService<IAppIconProvider>(),
-            sp.GetRequiredService<ISubscriptionApiService>(),
-            sp.GetRequiredService<IConnectivityService>(),
-            sp.GetRequiredService<ILocalSubscriptionStore>()));
-        services.AddTransient<StatsViewModel>(sp =>
-        {
-            var appUsageService = sp.GetService<IAppUsageService>();
-            var statsApiService = sp.GetRequiredService<IStatsApiService>();
-            var appIconProvider = sp.GetService<IAppIconProvider>();
-            var subscriptionApiService = sp.GetRequiredService<ISubscriptionApiService>();
-            var usageSyncService = sp.GetRequiredService<IUsageSyncService>();
-            var connectivityService = sp.GetRequiredService<IConnectivityService>();
-            var localStatsStore = sp.GetRequiredService<ILocalStatsStore>();
-            var localSubscriptionStore = sp.GetRequiredService<ILocalSubscriptionStore>();
-            return new StatsViewModel(appUsageService, statsApiService, appIconProvider, subscriptionApiService, usageSyncService, connectivityService, localStatsStore, localSubscriptionStore);
-        });
-        services.AddTransient<AiChatViewModel>(sp => new AiChatViewModel(
-            sp.GetRequiredService<IChatApiService>(),
-            sp.GetRequiredService<ISubscriptionApiService>(),
-            sp.GetService<IAppUsageService>(),
-            sp.GetRequiredService<IConnectivityService>()));
-        services.AddTransient<SubscriptionViewModel>(sp => new SubscriptionViewModel(
-            sp.GetRequiredService<ISubscriptionApiService>(),
-            sp.GetRequiredService<IToastService>(),
-            sp.GetRequiredService<IBrowserService>(),
-            sp.GetRequiredService<IConnectivityService>(),
-            sp.GetRequiredService<ILocalSubscriptionStore>()));
-        services.AddTransient<ProfileViewModel>(sp => new ProfileViewModel(
-            sp.GetRequiredService<IAccessTokenManager>(),
-            sp.GetRequiredService<INavigationService>(),
-            sp.GetRequiredService<IProfileApiService>(),
-            sp.GetRequiredService<ISocialApiService>(),
-            sp.GetRequiredService<ISubscriptionApiService>(),
-            sp.GetRequiredService<IConnectivityService>(),
-            sp.GetRequiredService<ILocalProfileStore>()));
+        services.AddTransient<MainViewModel>();
+        services.AddTransient<HomeViewModel>();
+        services.AddTransient<BlocksViewModel>();
+        services.AddTransient<StatsViewModel>();
+        services.AddTransient<AiChatViewModel>();
+        services.AddTransient<SubscriptionViewModel>();
+        services.AddTransient<ProfileViewModel>();
 
-        services.AddTransient<SocialViewModel>(sp => new SocialViewModel(
-            sp.GetRequiredService<ISocialApiService>(),
-            sp.GetRequiredService<INavigationService>(),
-            sp.GetRequiredService<IToastService>(),
-            sp.GetRequiredService<IConfirmDialogService>(),
-            sp.GetRequiredService<ISignalRClientService>(),
-            sp.GetRequiredService<IConnectivityService>()));
+        // Social
+        services.AddTransient<SocialViewModel>();
+        services.AddTransient<UserSearchViewModel>();
+        services.AddTransient<NotificationsViewModel>();
+        services.AddTransient<FollowListViewModel>();
+        services.AddTransient<UserProfileViewModel>();
+        services.AddTransient<SharedGroupDetailViewModel>();
+        services.AddTransient<SharedGroupEditorViewModel>();
 
-        services.AddTransient<UserSearchViewModel>(sp => new UserSearchViewModel(
-            sp.GetRequiredService<ISocialApiService>(),
-            sp.GetRequiredService<INavigationService>(),
-            sp.GetRequiredService<IToastService>()));
+        // Profile editors
+        services.AddTransient<AvatarEditorViewModel>();
+        services.AddTransient<ProfileEditorViewModel>();
+        services.AddTransient<SettingsViewModel>();
+        services.AddTransient<AccountEditorViewModel>();
 
-        services.AddTransient<NotificationsViewModel>(sp => new NotificationsViewModel(
-            sp.GetRequiredService<ISocialApiService>(),
-            sp.GetRequiredService<INavigationService>()));
-
-        services.AddTransient<FollowListViewModel>(sp => new FollowListViewModel(
-            sp.GetRequiredService<ISocialApiService>(),
-            sp.GetRequiredService<INavigationService>(),
-            sp.GetRequiredService<IToastService>()));
-
-        services.AddTransient<UserProfileViewModel>(sp => new UserProfileViewModel(
-            sp.GetRequiredService<ISocialApiService>(),
-            sp.GetRequiredService<INavigationService>(),
-            sp.GetRequiredService<IToastService>()));
-
-        services.AddTransient<SharedGroupDetailViewModel>(sp => new SharedGroupDetailViewModel(
-            sp.GetRequiredService<ISocialApiService>(),
-            sp.GetRequiredService<IDailyActivityApiService>(),
-            sp.GetRequiredService<ISignalRClientService>(),
-            sp.GetRequiredService<INavigationService>(),
-            sp.GetRequiredService<IToastService>(),
-            sp.GetRequiredService<IConfirmDialogService>()));
-
-        services.AddTransient<SharedGroupEditorViewModel>(sp => new SharedGroupEditorViewModel(
-            sp.GetRequiredService<ISocialApiService>(),
-            sp.GetRequiredService<IDailyActivityApiService>(),
-            sp.GetRequiredService<INavigationService>(),
-            sp.GetRequiredService<IToastService>(),
-            sp.GetRequiredService<IConfirmDialogService>(),
-            sp.GetRequiredService<ISubscriptionApiService>()));
-
-        services.AddTransient<AvatarEditorViewModel>(sp => new AvatarEditorViewModel(
-            sp.GetRequiredService<INavigationService>(),
-            sp.GetRequiredService<IAccessTokenManager>(),
-            sp.GetRequiredService<IProfileApiService>()));
-
-        services.AddTransient<ProfileEditorViewModel>(sp => new ProfileEditorViewModel(
-            sp.GetRequiredService<INavigationService>(),
-            sp.GetRequiredService<IAccessTokenManager>(),
-            sp.GetRequiredService<IProfileApiService>(),
-            sp.GetRequiredService<AvatarEditorViewModel>()));
-
-        services.AddTransient<SettingsViewModel>(sp => new SettingsViewModel(
-            sp.GetRequiredService<INavigationService>(),
-            sp.GetRequiredService<IAccessTokenManager>(),
-            sp.GetRequiredService<IThemeService>(),
-            sp.GetRequiredService<IToastService>(),
-            sp.GetRequiredService<IPreferencesService>(),
-            sp.GetRequiredService<IProfileApiService>()));
-
-        services.AddTransient<AccountEditorViewModel>(sp => new AccountEditorViewModel(
-            sp.GetRequiredService<INavigationService>(),
-            sp.GetRequiredService<IAccessTokenManager>(),
-            sp.GetRequiredService<IProfileApiService>(),
-            sp.GetRequiredService<IToastService>()));
-
-        services.AddSingleton<GroupEditorViewModel>(sp => new GroupEditorViewModel(
-            sp.GetRequiredService<IDailyActivityApiService>(),
-            sp.GetRequiredService<INavigationService>(),
-            sp.GetRequiredService<IToastService>(),
-            sp.GetRequiredService<ISubscriptionApiService>(),
-            sp.GetRequiredService<IConfirmDialogService>(),
-            sp.GetRequiredService<ILocalSubscriptionStore>()));
-
-        services.AddSingleton<TaskEditorViewModel>(sp => new TaskEditorViewModel(
-            sp.GetRequiredService<IDailyActivityApiService>(),
-            sp.GetRequiredService<INavigationService>(),
-            sp.GetRequiredService<IToastService>(),
-            sp.GetRequiredService<ISubscriptionApiService>(),
-            sp.GetRequiredService<IConfirmDialogService>(),
-            sp.GetRequiredService<ILocalSubscriptionStore>()));
+        // Activity editors (singleton — preserves state across navigation)
+        services.AddSingleton<GroupEditorViewModel>();
+        services.AddSingleton<TaskEditorViewModel>();
     }
 }

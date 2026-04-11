@@ -5,9 +5,9 @@ using Bloomdo.Shared.DTOs.Stats;
 namespace Bloomdo.Client.Application.Services;
 
 public class UsageSyncService(
-    IAppUsageService? appUsageService,
     ILocalUsageStore localUsageStore,
-    IStatsApiService statsApiService) : IUsageSyncService
+    IStatsApiService statsApiService,
+    IAppUsageService? appUsageService = null) : IUsageSyncService
 {
     public async Task SaveLocalSnapshotAsync()
     {

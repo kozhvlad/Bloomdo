@@ -19,6 +19,8 @@ public partial class FollowListViewModel : PageViewModel
     private readonly IToastService _toastService;
 
     private FollowListMode _mode;
+    private List<FollowStatusDto> _allUsers = [];
+    private bool? _sortDirection;
 
     [ObservableProperty]
     private string _title = "Followers";
@@ -26,9 +28,20 @@ public partial class FollowListViewModel : PageViewModel
     [ObservableProperty]
     private bool _isLoading;
 
-    public ObservableCollection<FollowStatusDto> Users { get; } = [];
+    [ObservableProperty]
+    private bool _hasUsers;
 
-    public bool HasUsers => Users.Count > 0;
+    [ObservableProperty]
+    private string _searchText = string.Empty;
+
+    public string SortButtonText => _sortDirection switch
+    {
+        true => "A \u2192 Z",
+        false => "Z \u2192 A",
+        _ => "Sort"
+    };
+
+    public ObservableCollection<FollowStatusDto> Users { get; } = [];
 
     public FollowListViewModel(
         ISocialApiService socialApiService,
@@ -62,11 +75,8 @@ public partial class FollowListViewModel : PageViewModel
                 ? await _socialApiService.GetFollowersAsync()
                 : await _socialApiService.GetFollowingAsync();
 
-            Users.Clear();
-            foreach (var u in users)
-                Users.Add(u);
-
-            OnPropertyChanged(nameof(HasUsers));
+            _allUsers = [..users];
+            ApplyFilterAndSort();
         }
         finally
         {
@@ -110,6 +120,48 @@ public partial class FollowListViewModel : PageViewModel
     {
         if (item == null) return;
         _navigationService.NavigateTo<UserProfileViewModel>(vm => vm.Initialize(item.User.Id));
+    }
+
+    partial void OnSearchTextChanged(string value) => ApplyFilterAndSort();
+
+    [RelayCommand]
+    private void ToggleSort()
+    {
+        _sortDirection = _sortDirection switch
+        {
+            null => true,
+            true => false,
+            false => null
+        };
+        OnPropertyChanged(nameof(SortButtonText));
+        ApplyFilterAndSort();
+    }
+
+    private void ApplyFilterAndSort()
+    {
+        var filtered = _allUsers.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(SearchText))
+        {
+            var search = SearchText.Trim();
+            filtered = filtered.Where(u =>
+                u.User.Username.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                (!string.IsNullOrEmpty(u.User.FirstName) && u.User.FirstName.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                (!string.IsNullOrEmpty(u.User.LastName) && u.User.LastName.Contains(search, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        filtered = _sortDirection switch
+        {
+            true => filtered.OrderBy(u => u.User.Username, StringComparer.OrdinalIgnoreCase),
+            false => filtered.OrderByDescending(u => u.User.Username, StringComparer.OrdinalIgnoreCase),
+            _ => filtered
+        };
+
+        Users.Clear();
+        foreach (var u in filtered)
+            Users.Add(u);
+
+        HasUsers = Users.Count > 0;
     }
 
     [RelayCommand]

@@ -190,6 +190,8 @@ public class DailyActivityService(
 
             var completionSet = completions.Select(c => c.ActivityItemId).ToHashSet();
 
+            var isShared = sharedGroupIdSet.Contains(group.Id);
+
             var dailyItems = new List<DailyActivityItemDto>();
             foreach (var item in items)
             {
@@ -233,7 +235,7 @@ public class DailyActivityService(
                 Color = group.Color,
                 SortOrder = group.SortOrder,
                 CurrentStreak = streak,
-                IsShared = sharedGroupIdSet.Contains(group.Id),
+                IsShared = isShared,
                 Items = dailyItems
             });
 
