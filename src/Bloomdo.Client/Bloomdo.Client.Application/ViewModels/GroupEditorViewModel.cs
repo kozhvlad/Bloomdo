@@ -525,7 +525,7 @@ public partial class GroupEditorViewModel : PageViewModel
                 }
             }
 
-            _navigationService.NavigateTo<MainComponents.MainViewModel>();
+            _navigationService.NavigateBack();
         }
         finally
         {
@@ -536,7 +536,7 @@ public partial class GroupEditorViewModel : PageViewModel
     [RelayCommand]
     private void Cancel()
     {
-        _navigationService.NavigateTo<MainComponents.MainViewModel>();
+        _navigationService.NavigateBack();
     }
 
     private async Task PromptPremiumUpgradeAsync()

@@ -22,12 +22,20 @@ public class SocialService(
     {
         if (string.IsNullOrWhiteSpace(query)) return [];
 
-        var normalized = query.ToLower();
-        var users = await accountRepo.FindAsync(a =>
-            a.Id != currentAccountId &&
-            ((a.Username != null && a.Username.ToLower().Contains(normalized)) ||
-             a.Email.ToLower().Contains(normalized) ||
-             (a.FirstName + " " + a.LastName).ToLower().Contains(normalized)), ct);
+        // Trim and strip a leading "@" so users can search by tag (e.g. "@vlad")
+        var trimmed = query.Trim().TrimStart('@');
+        if (string.IsNullOrWhiteSpace(trimmed)) return [];
+
+        var pattern = $"%{trimmed}%";
+
+        var users = await db.Accounts
+            .Where(a => a.Id != currentAccountId &&
+                (EF.Functions.ILike(a.Username ?? string.Empty, pattern) ||
+                 EF.Functions.ILike(a.Email, pattern) ||
+                 EF.Functions.ILike(a.FirstName ?? string.Empty, pattern) ||
+                 EF.Functions.ILike(a.LastName ?? string.Empty, pattern) ||
+                 EF.Functions.ILike((a.FirstName ?? string.Empty) + " " + (a.LastName ?? string.Empty), pattern)))
+            .ToListAsync(ct);
 
         var myFriendships = await friendshipRepo.FindAsync(f =>
             f.RequesterId == currentAccountId || f.AddresseeId == currentAccountId, ct);

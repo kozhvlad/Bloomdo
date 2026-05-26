@@ -20,6 +20,11 @@ public partial class HomeViewModel : PageViewModel
     private readonly IToastService? _toastService;
     private readonly IConnectivityService? _connectivityService;
     private readonly ILocalActivityCache? _localActivityCache;
+    private readonly ITimerStateStore? _timerStateStore;
+
+    private readonly SynchronizationContext? _uiContext;
+    private CancellationTokenSource? _timerTickCts;
+    private bool _timerEventsHooked;
 
     [ObservableProperty]
     private string _welcomeMessage = "Welcome to Bloomdo!";
@@ -87,7 +92,8 @@ public partial class HomeViewModel : PageViewModel
         IPhotoVerificationDialogService? photoVerificationDialogService = null,
         IToastService? toastService = null,
         IConnectivityService? connectivityService = null,
-        ILocalActivityCache? localActivityCache = null)
+        ILocalActivityCache? localActivityCache = null,
+        ITimerStateStore? timerStateStore = null)
     {
         _activityApi = activityApi;
         _groupCompletionStore = groupCompletionStore;
@@ -100,6 +106,8 @@ public partial class HomeViewModel : PageViewModel
         _toastService = toastService;
         _connectivityService = connectivityService;
         _localActivityCache = localActivityCache;
+        _timerStateStore = timerStateStore;
+        _uiContext = SynchronizationContext.Current;
     }
 
     public override void OnAppearing()
@@ -107,6 +115,140 @@ public partial class HomeViewModel : PageViewModel
         base.OnAppearing();
         TodayDateText = DateTime.Now.ToString("dddd, MMMM d");
         _ = LoadDailyActivitiesAsync();
+
+        HookTimerEvents();
+        StartTimerTickLoop();
+    }
+
+    public override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        StopTimerTickLoop();
+        UnhookTimerEvents();
+    }
+
+    // --- Active-timer indicators on task cards ---
+
+    private void HookTimerEvents()
+    {
+        if (_timerEventsHooked || _timerDialogService is null) return;
+        _timerDialogService.TimerStateChanged += OnTimerStateChanged;
+        _timerEventsHooked = true;
+    }
+
+    private void UnhookTimerEvents()
+    {
+        if (!_timerEventsHooked || _timerDialogService is null) return;
+        _timerDialogService.TimerStateChanged -= OnTimerStateChanged;
+        _timerEventsHooked = false;
+    }
+
+    private void OnTimerStateChanged() => _ = RefreshActiveTimersAsync();
+
+    private async Task RefreshActiveTimersAsync()
+    {
+        if (_timerStateStore is null) return;
+
+        List<Domain.Models.TimerStateSnapshot> active;
+        try
+        {
+            active = await _timerStateStore.GetAllActiveAsync();
+        }
+        catch
+        {
+            return;
+        }
+
+        var byTaskId = active.ToDictionary(s => s.TaskId);
+
+        PostToUi(() =>
+        {
+            foreach (var group in _allGroups)
+            {
+                foreach (var task in group.Tasks)
+                {
+                    if (byTaskId.TryGetValue(task.Id, out var snap))
+                    {
+                        var remaining = snap.RemainingSeconds;
+                        if (snap.IsRunning && !snap.IsPaused)
+                        {
+                            // Account for real elapsed time since the snapshot was taken
+                            var elapsed = (int)(DateTime.UtcNow - snap.LastTickUtc).TotalSeconds;
+                            remaining = Math.Max(0, remaining - elapsed);
+                        }
+
+                        if (remaining <= 0)
+                        {
+                            task.IsTimerRunning = false;
+                            task.IsTimerPaused = false;
+                            task.TimerRemainingSeconds = 0;
+                        }
+                        else
+                        {
+                            task.IsTimerRunning = snap.IsRunning && !snap.IsPaused;
+                            task.IsTimerPaused = snap.IsPaused;
+                            task.TimerRemainingSeconds = remaining;
+                        }
+                    }
+                    else if (task.IsTimerRunning || task.IsTimerPaused)
+                    {
+                        task.IsTimerRunning = false;
+                        task.IsTimerPaused = false;
+                        task.TimerRemainingSeconds = 0;
+                    }
+                }
+            }
+        });
+    }
+
+    private void StartTimerTickLoop()
+    {
+        StopTimerTickLoop();
+        _timerTickCts = new CancellationTokenSource();
+        _ = RunTimerTickLoopAsync(_timerTickCts.Token);
+    }
+
+    private void StopTimerTickLoop()
+    {
+        _timerTickCts?.Cancel();
+        _timerTickCts = null;
+    }
+
+    private async Task RunTimerTickLoopAsync(CancellationToken ct)
+    {
+        try
+        {
+            while (!ct.IsCancellationRequested)
+            {
+                await Task.Delay(1000, ct);
+                PostToUi(TickRunningTimers);
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private void TickRunningTimers()
+    {
+        foreach (var group in _allGroups)
+        {
+            foreach (var task in group.Tasks)
+            {
+                if (!task.IsTimerRunning || task.IsTimerPaused) continue;
+                if (task.TimerRemainingSeconds <= 0) continue;
+
+                task.TimerRemainingSeconds--;
+                if (task.TimerRemainingSeconds <= 0)
+                {
+                    task.IsTimerRunning = false;
+                }
+            }
+        }
+    }
+
+    private void PostToUi(Action action)
+    {
+        if (_uiContext is null) action();
+        else _uiContext.Post(_ => action(), null);
     }
 
     [RelayCommand]
@@ -191,6 +333,9 @@ public partial class HomeViewModel : PageViewModel
             OnPropertyChanged(nameof(ProgressText));
             OnPropertyChanged(nameof(ProgressPercent));
             OnPropertyChanged(nameof(ProgressFraction));
+
+            // Apply per-task running-timer indicators (now that _allGroups is built)
+            _ = RefreshActiveTimersAsync();
 
             if (!IsOffline)
                 await SyncGroupCompletionAsync();

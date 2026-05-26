@@ -123,11 +123,12 @@ public partial class TimerDialogViewModel : ObservableObject
                 }
                 else
                 {
-                    // Timer completed while the dialog was closed
+                    // Timer completed while the dialog was closed — fire completion
                     RemainingSeconds = 0;
                     IsRunning = false;
                     IsPaused = false;
-                    _ = ClearStateAsync();
+                    await ClearStateAsync();
+                    TimerCompleted?.Invoke();
                 }
             }
             else
@@ -136,6 +137,14 @@ public partial class TimerDialogViewModel : ObservableObject
                 RemainingSeconds = saved.RemainingSeconds;
                 IsRunning = saved.IsRunning;
                 IsPaused = saved.IsPaused;
+
+                // If the saved state was "running but paused", start the loop so
+                // resume works on next PlayPause. The loop checks IsPaused per tick.
+                if (IsRunning)
+                {
+                    _timerCts = new CancellationTokenSource();
+                    _ = RunAsync(_timerCts.Token);
+                }
             }
         }
         else
@@ -180,6 +189,15 @@ public partial class TimerDialogViewModel : ObservableObject
         if (IsPaused)
         {
             IsPaused = false;
+            // Defensive: if the loop isn't alive (e.g. restored from saved
+            // "running + paused" state), start a fresh one. Otherwise resume
+            // would visually flip the icon but never tick.
+            if (_timerCts is null)
+            {
+                IsRunning = true;
+                _timerCts = new CancellationTokenSource();
+                _ = RunAsync(_timerCts.Token);
+            }
             RefreshComputedProperties();
             _ = SaveStateAsync();
             return;
@@ -270,6 +288,10 @@ public partial class TimerDialogViewModel : ObservableObject
         _timerCts?.Cancel();
         _timerCts = null;
 
+        // Snapshot capture is synchronous, so the current IsRunning/IsPaused
+        // values are recorded correctly. Do NOT mutate those fields here —
+        // the VM is being abandoned, and mutating them adds zero value while
+        // making the "still running on disk" intent confusing.
         if ((IsRunning || IsPaused) && RemainingSeconds > 0)
         {
             _ = SaveStateAsync();
@@ -278,9 +300,6 @@ public partial class TimerDialogViewModel : ObservableObject
         {
             _ = ClearStateAsync();
         }
-
-        IsRunning = false;
-        IsPaused = false;
     }
 
     private async Task RunAsync(CancellationToken ct)

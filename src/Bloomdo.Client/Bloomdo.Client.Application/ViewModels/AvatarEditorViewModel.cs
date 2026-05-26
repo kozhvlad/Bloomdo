@@ -419,6 +419,6 @@ public partial class AvatarEditorViewModel : PageViewModel
     [RelayCommand]
     private void Cancel()
     {
-        _navigationService.NavigateTo<MainComponents.MainViewModel>();
+        _navigationService.NavigateBack();
     }
 }

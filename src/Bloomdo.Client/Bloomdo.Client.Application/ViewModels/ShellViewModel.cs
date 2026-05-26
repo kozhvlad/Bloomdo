@@ -149,6 +149,7 @@ public partial class ShellViewModel : ObservableObject
     public void SetViewModel(IPage viewModel, bool pushHistory = true)
     {
         Debug.WriteLine($"ShellViewModel.SetViewModel called with {viewModel?.GetType().Name ?? "null"}");
+        DismissOverlayIfAny();
         if (CurrentViewModel != null)
         {
             if (pushHistory) _navigationHistory.Push(CurrentViewModel);
@@ -162,10 +163,23 @@ public partial class ShellViewModel : ObservableObject
     public void NavigateBack()
     {
         if (_navigationHistory.Count == 0) return;
+        DismissOverlayIfAny();
         var previous = _navigationHistory.Pop();
         CurrentViewModel?.OnDisappearing();
         CurrentViewModel = previous;
         CurrentViewModel.OnAppearing();
+    }
+
+    // Overlays (e.g. the timer dialog) must not float across page navigation.
+    // Fire the saved OnOverlayClosed callback so the overlay can persist its
+    // state (timer snapshot), then clear OverlayContent.
+    private void DismissOverlayIfAny()
+    {
+        if (OverlayContent is null) return;
+        var callback = OnOverlayClosed;
+        OnOverlayClosed = null;
+        OverlayContent = null;
+        callback?.Invoke();
     }
 
     public void CompleteOnboarding()

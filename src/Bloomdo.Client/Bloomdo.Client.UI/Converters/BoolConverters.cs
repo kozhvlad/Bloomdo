@@ -91,3 +91,34 @@ public class TodayFontWeightConverter : IValueConverter
         throw new NotSupportedException();
     }
 }
+
+// Parameter format: "TrueValue|FalseValue" — returns the appropriate side based on the bool.
+public class BoolToStringConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (parameter is not string p) return string.Empty;
+        var parts = p.Split('|');
+        if (parts.Length != 2) return p;
+        return value is true ? parts[0] : parts[1];
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        throw new NotSupportedException();
+    }
+}
+
+// Returns the first character of a string, or "?" if the string is null or empty.
+public class FirstCharConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        return value is string s && s.Length > 0 ? s[0].ToString() : "?";
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        throw new NotSupportedException();
+    }
+}

@@ -84,6 +84,47 @@ public class LocalTimerStateStore : ITimerStateStore
         }
     }
 
+    public async Task<List<TimerStateSnapshot>> GetAllActiveAsync(CancellationToken ct = default)
+    {
+        var result = new List<TimerStateSnapshot>();
+        if (!Directory.Exists(StoreDir)) return result;
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        await Lock.WaitAsync(ct);
+        try
+        {
+            foreach (var file in Directory.EnumerateFiles(StoreDir, "timer_*.json"))
+            {
+                ct.ThrowIfCancellationRequested();
+                try
+                {
+                    var json = await File.ReadAllTextAsync(file, ct);
+                    var state = JsonSerializer.Deserialize<TimerStateSnapshot>(json, JsonOptions);
+                    if (state is null) continue;
+
+                    if (state.Date != today)
+                    {
+                        try { File.Delete(file); } catch { }
+                        continue;
+                    }
+
+                    result.Add(state);
+                }
+                catch
+                {
+                    // Skip unreadable / corrupt files; do not crash the refresh.
+                }
+            }
+        }
+        finally
+        {
+            Lock.Release();
+        }
+
+        return result;
+    }
+
     private static string GetFilePath(Guid taskId) =>
         Path.Combine(StoreDir, $"timer_{taskId:N}.json");
 

@@ -65,7 +65,17 @@ public partial class ActivityTaskItemViewModel : ObservableObject
     private bool _isTimerRunning;
 
     [ObservableProperty]
+    private bool _isTimerPaused;
+
+    [ObservableProperty]
     private int _timerRemainingSeconds;
+
+    public bool HasActiveTimer => IsTimerRunning || IsTimerPaused;
+
+    public bool ShowIdleTimerButton => HasDuration && !HasActiveTimer;
+
+    public string TimerStatusIcon =>
+        IsTimerPaused ? "⏸" : (IsTimerRunning ? "▶" : string.Empty);
 
     [ObservableProperty]
     private VerificationTemplate? _verificationTemplate;
@@ -153,6 +163,18 @@ public partial class ActivityTaskItemViewModel : ObservableObject
 
     partial void OnTitleChanged(string value) => OnPropertyChanged(nameof(FirstLetter));
     partial void OnTimerRemainingSecondsChanged(int value) => OnPropertyChanged(nameof(TimerDisplayText));
+    partial void OnIsTimerRunningChanged(bool value)
+    {
+        OnPropertyChanged(nameof(HasActiveTimer));
+        OnPropertyChanged(nameof(ShowIdleTimerButton));
+        OnPropertyChanged(nameof(TimerStatusIcon));
+    }
+    partial void OnIsTimerPausedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(HasActiveTimer));
+        OnPropertyChanged(nameof(ShowIdleTimerButton));
+        OnPropertyChanged(nameof(TimerStatusIcon));
+    }
     partial void OnTaskTypeChanged(ActivityItemType value)
     {
         OnPropertyChanged(nameof(IsTimerType));
@@ -162,11 +184,13 @@ public partial class ActivityTaskItemViewModel : ObservableObject
         OnPropertyChanged(nameof(IsPhotoVerificationType));
         OnPropertyChanged(nameof(IsCountBasedType));
         OnPropertyChanged(nameof(HasDuration));
+        OnPropertyChanged(nameof(ShowIdleTimerButton));
         OnPropertyChanged(nameof(Subtitle));
     }
     partial void OnDurationMinutesChanged(int? value)
     {
         OnPropertyChanged(nameof(HasDuration));
+        OnPropertyChanged(nameof(ShowIdleTimerButton));
         OnPropertyChanged(nameof(DurationLabel));
         OnPropertyChanged(nameof(Subtitle));
     }

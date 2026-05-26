@@ -330,7 +330,7 @@ public partial class TaskEditorViewModel : PageViewModel
             if (_onComplete is not null)
                 _onComplete();
             else
-                _navigationService.NavigateTo<MainComponents.MainViewModel>();
+                _navigationService.NavigateBack();
         }
         finally
         {
@@ -344,7 +344,7 @@ public partial class TaskEditorViewModel : PageViewModel
         if (_onComplete is not null)
             _onComplete();
         else
-            _navigationService.NavigateTo<MainComponents.MainViewModel>();
+            _navigationService.NavigateBack();
     }
 
     private async Task PromptPremiumUpgradeAsync()

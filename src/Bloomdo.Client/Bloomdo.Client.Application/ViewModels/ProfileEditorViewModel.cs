@@ -81,7 +81,7 @@ public partial class ProfileEditorViewModel : PageViewModel
             if (result != null)
             {
                 _tokenManager.UpdateCurrentUser(result);
-                _navigationService.NavigateTo<MainViewModel>(vm => vm.SelectedTabIndex = 3);
+                _navigationService.NavigateBack();
             }
             else
             {
@@ -102,6 +102,6 @@ public partial class ProfileEditorViewModel : PageViewModel
     [RelayCommand]
     private void Cancel()
     {
-        _navigationService.NavigateTo<MainViewModel>(vm => vm.SelectedTabIndex = 3);
+        _navigationService.NavigateBack();
     }
 }

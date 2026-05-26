@@ -288,23 +288,62 @@
 																		</Border>
 																	</Button>
 
-																	<!-- Timer button (only for timer type with duration) -->
+																	<!-- Timer column (active pill OR idle button) -->
 																	<Panel Grid.Column="3" VerticalAlignment="Center" Margin="2,0"
 																		   IsVisible="{Binding !IsPhotoVerificationType}">
-																		<Button Classes="Ghost" Padding="2"
-																				IsVisible="{Binding HasDuration}"
-																				Command="{Binding ((mainComponents1:HomeViewModel)DataContext).StartTimerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-																				CommandParameter="{Binding}">
-																			<Border Width="28" Height="28" CornerRadius="14"
-																					Background="#33FFFFFF">
-																				<TextBlock Text="⏱️"
+																		<!-- Active-timer pill: running (purple) -->
+																		<Button Classes="Ghost" Padding="0"
+																			IsVisible="{Binding IsTimerRunning}"
+																			Command="{Binding ((mainComponents1:HomeViewModel)DataContext).StartTimerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+																			CommandParameter="{Binding}">
+																			<Border CornerRadius="12" Padding="8,3" MinWidth="68"
+																				Background="#7E57C2">
+																				<StackPanel Orientation="Horizontal" Spacing="4"
+																					HorizontalAlignment="Center" VerticalAlignment="Center">
+																					<TextBlock Text="▶"
 																						   FontFamily="{StaticResource EmojiFont}"
-																						   FontSize="14"
-																						   HorizontalAlignment="Center"
+																						   FontSize="11" Foreground="White"
 																						   VerticalAlignment="Center"/>
+																					<TextBlock Text="{Binding TimerDisplayText}"
+																						   FontSize="12" FontWeight="SemiBold"
+																						   Foreground="White" VerticalAlignment="Center"/>
+																				</StackPanel>
 																			</Border>
 																		</Button>
-																		<!-- Count type controls -->
+																		<!-- Active-timer pill: paused (grey) -->
+																		<Button Classes="Ghost" Padding="0"
+																			IsVisible="{Binding IsTimerPaused}"
+																			Command="{Binding ((mainComponents1:HomeViewModel)DataContext).StartTimerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+																			CommandParameter="{Binding}">
+																			<Border CornerRadius="12" Padding="8,3" MinWidth="68"
+																				Background="#66666666">
+																				<StackPanel Orientation="Horizontal" Spacing="4"
+																					HorizontalAlignment="Center" VerticalAlignment="Center">
+																					<TextBlock Text="⏸"
+																						   FontFamily="{StaticResource EmojiFont}"
+																						   FontSize="11" Foreground="White"
+																						   VerticalAlignment="Center"/>
+																					<TextBlock Text="{Binding TimerDisplayText}"
+																						   FontSize="12" FontWeight="SemiBold"
+																						   Foreground="White" VerticalAlignment="Center"/>
+																				</StackPanel>
+																			</Border>
+																		</Button>
+																		<!-- Idle timer button -->
+																		<Button Classes="Ghost" Padding="2"
+																			IsVisible="{Binding ShowIdleTimerButton}"
+																			Command="{Binding ((mainComponents1:HomeViewModel)DataContext).StartTimerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+																			CommandParameter="{Binding}">
+																			<Border Width="28" Height="28" CornerRadius="14"
+																				Background="#33FFFFFF">
+																				<TextBlock Text="⏱️"
+																					   FontFamily="{StaticResource EmojiFont}"
+																					   FontSize="14"
+																					   HorizontalAlignment="Center"
+																					   VerticalAlignment="Center"/>
+																			</Border>
+																		</Button>
+<!-- Count type controls -->
 																		<StackPanel Orientation="Horizontal" Spacing="2"
 																					IsVisible="{Binding IsCountType}"
 																					VerticalAlignment="Center">
