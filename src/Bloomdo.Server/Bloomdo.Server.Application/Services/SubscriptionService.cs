@@ -261,24 +261,63 @@ public class SubscriptionService(
 
         Console.WriteLine($"[Stripe Webhook] checkout.session.completed: SessionId={session.Id}, CustomerId={session.CustomerId}, SubscriptionId={session.SubscriptionId}");
 
+        await UpsertSubscriptionFromSessionAsync(session, "Stripe Webhook", ct);
+    }
+
+    public async Task ActivateFromCheckoutSessionAsync(string sessionId, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(sessionId))
+            throw new ArgumentException("Session id is required.", nameof(sessionId));
+
+        var stripeClient = new StripeClient(stripeSettings.SecretKey);
+        var sessionService = new SessionService(stripeClient);
+        var session = await sessionService.GetAsync(sessionId, cancellationToken: ct);
+
+        Console.WriteLine($"[Stripe Success] Activating from session {sessionId}: PaymentStatus={session.PaymentStatus}, SubscriptionId={session.SubscriptionId}");
+
+        if (session.PaymentStatus != "paid")
+        {
+            Console.WriteLine($"[Stripe Success] Session {sessionId} not paid (status={session.PaymentStatus}). Skipping activation.");
+            return;
+        }
+
+        await UpsertSubscriptionFromSessionAsync(session, "Stripe Success", ct);
+    }
+
+    // Idempotent upsert shared by webhook (checkout.session.completed) and the
+    // /checkout/success fallback. Safe to call twice for the same Stripe session.
+    private async Task UpsertSubscriptionFromSessionAsync(Session session, string source, CancellationToken ct)
+    {
         var accountIdStr = session.Metadata?.GetValueOrDefault("accountId");
         var planStr = session.Metadata?.GetValueOrDefault("plan");
 
-        Console.WriteLine($"[Stripe Webhook] Metadata: accountId={accountIdStr}, plan={planStr}");
+        Console.WriteLine($"[{source}] Metadata: accountId={accountIdStr}, plan={planStr}");
 
         if (!Guid.TryParse(accountIdStr, out var accountId))
         {
-            Console.WriteLine($"[Stripe Webhook] ERROR: Invalid or missing accountId in metadata: '{accountIdStr}'");
+            Console.WriteLine($"[{source}] ERROR: Invalid or missing accountId in metadata: '{accountIdStr}'");
             return;
         }
 
         if (!Enum.TryParse<SubscriptionPlan>(planStr, out var plan))
         {
-            Console.WriteLine($"[Stripe Webhook] ERROR: Invalid or missing plan in metadata: '{planStr}'");
+            Console.WriteLine($"[{source}] ERROR: Invalid or missing plan in metadata: '{planStr}'");
             return;
         }
 
         var existing = await subscriptionRepository.GetByAccountIdAsync(accountId, ct);
+
+        if (existing is not null
+            && existing.Status == SubscriptionStatus.Active
+            && existing.StripeSubscriptionId == session.SubscriptionId)
+        {
+            Console.WriteLine($"[{source}] Subscription already active for account {accountId} with StripeSubId={session.SubscriptionId}. Skipping.");
+            return;
+        }
+
+        var periodEnd = plan == SubscriptionPlan.Monthly
+            ? DateTime.UtcNow.AddMonths(1)
+            : DateTime.UtcNow.AddYears(1);
 
         if (existing is not null)
         {
@@ -289,11 +328,9 @@ public class SubscriptionService(
             existing.CancelAtPeriodEnd = false;
             existing.CancelledAt = null;
             existing.CurrentPeriodStart = DateTime.UtcNow;
-            existing.CurrentPeriodEnd = plan == SubscriptionPlan.Monthly
-                ? DateTime.UtcNow.AddMonths(1)
-                : DateTime.UtcNow.AddYears(1);
+            existing.CurrentPeriodEnd = periodEnd;
             await subscriptionRepository.UpdateAsync(existing, ct);
-            Console.WriteLine($"[Stripe Webhook] Updated existing subscription for account {accountId}");
+            Console.WriteLine($"[{source}] Updated existing subscription for account {accountId}");
         }
         else
         {
@@ -305,12 +342,10 @@ public class SubscriptionService(
                 Plan = plan,
                 Status = SubscriptionStatus.Active,
                 CurrentPeriodStart = DateTime.UtcNow,
-                CurrentPeriodEnd = plan == SubscriptionPlan.Monthly
-                    ? DateTime.UtcNow.AddMonths(1)
-                    : DateTime.UtcNow.AddYears(1)
+                CurrentPeriodEnd = periodEnd
             };
             await subscriptionRepository.CreateAsync(newSubscription, ct);
-            Console.WriteLine($"[Stripe Webhook] Created new subscription for account {accountId}");
+            Console.WriteLine($"[{source}] Created new subscription for account {accountId}");
         }
     }
 

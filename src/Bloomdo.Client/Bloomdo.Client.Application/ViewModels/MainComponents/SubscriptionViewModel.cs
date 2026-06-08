@@ -44,6 +44,8 @@ public partial class SubscriptionViewModel : PageViewModel
     [ObservableProperty]
     private bool _isOffline;
 
+    private bool _isPollingActivation;
+
     public SubscriptionViewModel(
         ISubscriptionApiService subscriptionApiService,
         IToastService toastService,
@@ -173,6 +175,7 @@ public partial class SubscriptionViewModel : PageViewModel
             if (result is not null && !string.IsNullOrEmpty(result.CheckoutUrl))
             {
                 await _browserService.OpenAsync(new Uri(result.CheckoutUrl));
+                _ = PollForActivationAsync();
             }
             else
             {
@@ -224,5 +227,46 @@ public partial class SubscriptionViewModel : PageViewModel
     private async Task RefreshStatus()
     {
         await LoadStatusAsync();
+    }
+
+    // After opening the Stripe checkout in the browser, the user is gone from
+    // the app for a few seconds. Poll the API in the background so the page
+    // flips to "Active" as soon as the server registers the payment.
+    private async Task PollForActivationAsync()
+    {
+        if (_isPollingActivation) return;
+        _isPollingActivation = true;
+
+        try
+        {
+            var deadline = DateTime.UtcNow.AddSeconds(30);
+            while (DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(2));
+
+                try
+                {
+                    var status = await _subscriptionApiService.GetStatusAsync();
+                    if (status is null) continue;
+
+                    if (status.IsPremium)
+                    {
+                        ApplyStatus(status);
+                        if (_localSubscriptionStore is not null)
+                            _ = _localSubscriptionStore.SaveAsync(status);
+                        _toastService.ShowSuccess("Bloomdo Plus activated!");
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Poll activation failed: {ex.Message}");
+                }
+            }
+        }
+        finally
+        {
+            _isPollingActivation = false;
+        }
     }
 }

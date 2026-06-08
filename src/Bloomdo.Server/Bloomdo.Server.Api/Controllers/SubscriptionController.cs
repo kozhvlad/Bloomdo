@@ -76,8 +76,22 @@ public class SubscriptionController(ISubscriptionService subscriptionService) : 
 
     [HttpGet(ApiRoutes.Subscription.CheckoutSuccess)]
     [AllowAnonymous]
-    public IActionResult CheckoutSuccess()
+    public async Task<IActionResult> CheckoutSuccess([FromQuery(Name = "session_id")] string? sessionId, CancellationToken ct)
     {
+        // Fallback path for local dev where Stripe webhooks can't reach localhost.
+        // Idempotent — webhook may still fire later and will no-op.
+        if (!string.IsNullOrWhiteSpace(sessionId))
+        {
+            try
+            {
+                await subscriptionService.ActivateFromCheckoutSessionAsync(sessionId, ct);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Stripe Success] Activation failed for session {sessionId}: {ex.Message}");
+            }
+        }
+
         var html = """
             <!DOCTYPE html>
             <html><head>

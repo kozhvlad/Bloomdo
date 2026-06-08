@@ -171,6 +171,6 @@ public partial class AccountEditorViewModel : PageViewModel
     [RelayCommand]
     private void Cancel()
     {
-        _navigationService.NavigateTo<SettingsViewModel>();
+        _navigationService.NavigateBack();
     }
 }

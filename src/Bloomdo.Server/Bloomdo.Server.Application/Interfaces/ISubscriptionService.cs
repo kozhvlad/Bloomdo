@@ -10,4 +10,5 @@ public interface ISubscriptionService
     Task<CreateCheckoutSessionResponse> CreateCheckoutSessionAsync(Guid accountId, string email, SubscriptionPlan plan, string serverBaseUrl, CancellationToken ct = default);
     Task CancelSubscriptionAsync(Guid accountId, CancellationToken ct = default);
     Task HandleWebhookAsync(string json, string stripeSignature, CancellationToken ct = default);
+    Task ActivateFromCheckoutSessionAsync(string sessionId, CancellationToken ct = default);
 }
