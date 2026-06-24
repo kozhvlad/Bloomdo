@@ -41,6 +41,26 @@ Monetisation is built in via Stripe (Free vs Plus plans).
 
 ---
 
+## Screenshots & demo
+📹 **Video demo:** [watch here](https://www.youtube.com/watch?v=yr_Mb1spl5Q)
+<img width="317" height="712" alt="image" src="https://github.com/user-attachments/assets/d2096df6-6b8b-4442-a25a-6b70f41e88d0" />
+<img width="283" height="637" alt="image" src="https://github.com/user-attachments/assets/f3af927f-d27b-4ddd-ad2f-bb14e34dd2a3" />
+<img width="289" height="656" alt="image" src="https://github.com/user-attachments/assets/27bc318c-d07a-49c2-a7a5-1ae48a745380" />
+<img width="259" height="586" alt="image" src="https://github.com/user-attachments/assets/3efa848b-857c-4227-b550-63f0dfc631fd" />
+<img width="232" height="520" alt="image" src="https://github.com/user-attachments/assets/4ef7797c-8a89-4bc1-ad67-15c0f5340ad1" />
+<img width="369" height="822" alt="image" src="https://github.com/user-attachments/assets/a15ab998-14a8-48a3-9e6c-a31798fac7a7" />
+<img width="368" height="816" alt="image" src="https://github.com/user-attachments/assets/93220766-4e5f-4a7e-890f-ac02b03a9235" />
+<img width="337" height="745" alt="image" src="https://github.com/user-attachments/assets/0f74fd38-bac4-40b4-99d3-121e9a3b69a9" />
+<img width="286" height="638" alt="image" src="https://github.com/user-attachments/assets/57b2bb5e-eb69-4e99-b7a4-0f5d03f79fdd" />
+<img width="390" height="870" alt="image" src="https://github.com/user-attachments/assets/699fb9be-02af-4659-81bd-b32446e7b27c" />
+<img width="415" height="929" alt="image" src="https://github.com/user-attachments/assets/65f212b7-cd00-4a7a-8a30-b1fcab469788" />
+<img width="387" height="875" alt="image" src="https://github.com/user-attachments/assets/392e37c5-04fd-44c2-bccd-9f963e116af8" />
+<img width="302" height="675" alt="image" src="https://github.com/user-attachments/assets/1d1ef640-baf1-471d-b7b4-2be3abf80437" />
+<img width="703" height="531" alt="image" src="https://github.com/user-attachments/assets/d6685988-b858-46a7-9006-eb9c5e8786ec" />
+
+
+---
+
 ## Features
 
 ### App blocking (four rule types)
@@ -358,6 +378,22 @@ Swagger / OpenAPI.
 
 ---
 
+## Testing
+
+Unit tests for the server business logic, written with **xUnit**, **Moq**, and **Shouldly**.
+
+- Service-level coverage: `BlockService`, `SubscriptionService`, `ChatService`,
+  `StatsService`, `AchievementService`.
+- Dependencies (repositories, settings, gateways) are mocked with Moq, so business
+  rules are tested in isolation from EF Core / network.
+- Fluent assertions via Shouldly; expected domain exceptions verified with
+  `Should.ThrowAsync` — e.g. free-tier caps raising `BlockLimitExceededException`
+  and `ChatLimitExceededException`.
+  ```bash
+dotnet test
+
+---
+
 ## Roadmap
 
 - iOS target (Avalonia.iOS).
@@ -376,5 +412,6 @@ TBD — diploma project, all rights reserved until a license is chosen.
 
 ## Author
 
-Vladyslav Kozhuhivskyi — Computer Science student, .NET developer.
+Vladyslav kozhukhivskyi — Computer Science student, .NET developer.
 Diploma project, 2026.
+🔗 [LinkedIn](https://www.linkedin.com/in/kozhukhivskyi-vladyslav/)
